@@ -1,0 +1,4 @@
+/.claude/*.local.json
+/.claude/*.local.md
+
+.playwright-cli/
