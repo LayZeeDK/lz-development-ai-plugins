@@ -10,8 +10,9 @@ license: MIT
 compatibility: >-
   Requires playwright-cli on PATH for browser-based QA testing.
   Claude Code: sub-agents loaded from the plugin's agents/ directory.
-  GitHub Copilot CLI: agents pre-installed in .github/agents/ of this repo;
-  for other projects, copy .github/agents/*.agent.md there.
+  GitHub Copilot CLI: when loaded with --plugin-dir, agents are bundled under
+  .github/agents/ inside this plugin; for other projects, copy
+  plugins/application-dev/.github/agents/*.agent.md to .github/agents/.
 metadata:
   author: Lars Gyrup Brink Nielsen
 allowed-tools: Agent agent Read
@@ -31,8 +32,10 @@ agents in an adversarial loop inspired by GANs.
 delegation tools:
 - `@application-dev-planner`, `@application-dev-generator`, `@application-dev-evaluator`
 
-Agents are pre-installed in `.github/agents/` of this repo.
-For other projects, copy `.github/agents/*.agent.md` there.
+Agents are bundled in `plugins/application-dev/.github/agents/` of this repo.
+When using Copilot CLI with `--plugin-dir ./plugins/application-dev`, they are
+picked up alongside the skill. For other projects, copy
+`plugins/application-dev/.github/agents/*.agent.md` to `.github/agents/`.
 
 ## Architecture
 

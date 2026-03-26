@@ -111,7 +111,7 @@ These patterns immediately signal generic AI-generated design. Actively avoid th
 Every design should feel like it was created by a human designer with a specific point of view, not assembled from framework components. The goal is an interface that is distinctive, intentional, and memorable.
 
 3. **Build features incrementally.** Work through the features in the spec one at a time. Get each feature working before moving to the next. Keep the application runnable at all times.
-4. **Implement AI features.** For AI-powered features described in the spec, build them using Claude API tool-use patterns with proper error handling and loading states.
+4. **Implement AI features.** Detect AI-feature requirements in SPEC.md (look for sections or keys named "AI", "assistant", "llm", "on-device", "browser-local", or an explicit 'ai' features block). When AI features are present, keep them fully in-browser. Read `plugins/application-dev/skills/browser-local-llm/SKILL.md` and follow the skill's `local_llm_prompt` procedure: check availability with `LanguageModel.availability`, create sessions with `initialPrompts`, use `responseConstraint` for structured outputs, and `promptStreaming` for streaming responses. Preserve any browser-local, offline, or privacy requirements from SPEC.md. If the Prompt API is unavailable or insufficient for the product, stay in-browser: consider and research WebLLM or WebNN before changing the architecture, surface unsupported-browser or model-download states explicitly, and never switch to remote or server-hosted AI services as a substitute. Instrument which in-browser path was used and include tests for AI endpoints where possible.
 5. **Self-test.** Start the dev server and verify it works from the terminal:
    - The server starts without errors (`npm run dev`, `python app.py`, etc.)
    - The main page responds successfully (`curl -s -o /dev/null -w "%{http_code}" http://localhost:<port>` returns 200)
@@ -169,4 +169,3 @@ pip install -r requirements.txt && python app.py
 # Full-stack with separate frontend/backend
 # Document both start commands in README.md
 ```
-

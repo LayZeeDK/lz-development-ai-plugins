@@ -32,12 +32,12 @@ If your prompt mentions a specific tech stack (e.g., "using React" or "with the 
 
 ### Setup
 
-The three sub-agent files are pre-installed in `.github/agents/` of this repo. No setup is needed when working from this repo.
+The three sub-agent files are bundled in `plugins/application-dev/.github/agents/` of this repo, so they are picked up alongside the skill when you run Copilot CLI with `--plugin-dir ./plugins/application-dev`.
 
-To use the skill from a different project, copy the agent files to your project's `.github/agents/` directory:
+To use the skill from a different project without loading this plugin directory, copy the agent files to your project's `.github/agents/` directory:
 
 ```bash
-cp .github/agents/application-dev-*.agent.md /path/to/your-project/.github/agents/
+cp plugins/application-dev/.github/agents/application-dev-*.agent.md /path/to/your-project/.github/agents/
 ```
 
 ### Usage
@@ -118,4 +118,3 @@ MIT
 ## Model recommendation
 
 Agents default to `model: inherit` so users can experiment with different models. For best long-running results, Opus 4.6 is recommended (used in the harness this plugin follows). Sonnet 4.6 (1M context) may be a lower-cost experimental alternative, but its sustained multi-hour behavior for this harness is unproven. To try a different model, edit `plugins/application-dev/agents/*.md` and set `model` to your preferred model.
-

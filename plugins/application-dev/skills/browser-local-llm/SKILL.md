@@ -119,12 +119,14 @@ const availability = await LanguageModel.availability({
 
 // Typical values include "readily", "after-download", "downloading", "unavailable"
 if (availability.status !== "readily") {
-  // Decide: show download UI, wait, or fall back to cloud
+  // Decide: show download UI, wait, or present an explicit unsupported-model state
 }
 ```
 
 If the model is not readily available, the skill should return a structured
-error and let the agent choose a cloud fallback.
+error and let the agent choose another in-browser strategy, such as waiting for
+the browser model, guiding the user through model download, or evaluating
+WebLLM/WebNN.
 
 ### 4.2 Session creation
 
@@ -295,8 +297,8 @@ Destroying a session:
 
 6. **Parse structured output**
    - If `responseConstraint` is a JSON Schema:
-     - `JSON.parse(text)` and validate against the schema
-     - On failure, treat as error or fallback
+      - `JSON.parse(text)` and validate against the schema
+      - On failure, treat as error or an alternate in-browser path
    - If `responseConstraint` is a RegExp:
      - Ensure `text` matches; otherwise treat as error
 

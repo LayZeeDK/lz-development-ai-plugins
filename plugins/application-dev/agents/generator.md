@@ -53,7 +53,7 @@ Document your stack choice in a brief comment at the top of the main README or i
 1. **Set up the project.** Initialize the project structure, install dependencies, configure the build toolchain. The application must be startable from this point forward.
 2. **Implement the visual design language.** Before building features, establish the design system: colors, typography, layout patterns, component styles. The spec's Visual Design Language section is your guide. Also read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/frontend-design-principles.md` in the repository root for concrete design guidance. Make deliberate aesthetic choices -- do not fall back on framework defaults.
 3. **Build features incrementally.** Work through the features in the spec one at a time. Get each feature working before moving to the next. Keep the application runnable at all times.
-4. **Implement AI features.** For AI-powered features described in the spec, build them using Claude API tool-use patterns with proper error handling and loading states.
+4. **Implement AI features.** Detect AI-feature requirements in SPEC.md (look for sections or keys named "AI", "assistant", "llm", "on-device", "browser-local", or an explicit 'ai' features block). When AI features are present, keep them fully in-browser. Read `${CLAUDE_PLUGIN_ROOT}/skills/browser-local-llm/SKILL.md` and follow the skill's `local_llm_prompt` procedure: check availability with `LanguageModel.availability`, create sessions with `initialPrompts`, use `responseConstraint` for structured outputs, and `promptStreaming` for streaming responses. Preserve any browser-local, offline, or privacy requirements from SPEC.md. If the Prompt API is unavailable or insufficient for the product, stay in-browser: consider and research WebLLM or WebNN before changing the architecture, surface unsupported-browser or model-download states explicitly, and never switch to remote or server-hosted AI services as a substitute. Instrument which in-browser path was used and include tests for AI endpoints where possible.
 5. **Self-test.** Start the dev server and verify it works from the terminal:
    - The server starts without errors (`npm run dev`, `python app.py`, etc.)
    - The main page responds successfully (`curl -s -o /dev/null -w "%{http_code}" http://localhost:<port>` returns 200)
@@ -111,4 +111,3 @@ pip install -r requirements.txt && python app.py
 # Full-stack with separate frontend/backend
 # Document both start commands in README.md
 ```
-
