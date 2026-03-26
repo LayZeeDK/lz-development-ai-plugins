@@ -54,7 +54,7 @@ Execute these steps in order. Do not deviate from this sequence.
 Invoke the planner sub-agent with the user's prompt verbatim.
 
 - Claude Code: `Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim>")`
-- Copilot CLI: delegate to `@application-dev-planner` via the `agent` tool
+- Copilot CLI: delegate to `@application-dev-planner` via the `agent` tool with an explicit operational note to create or overwrite `SPEC.md` in the current working directory using its edit/write tool, not return the spec only as agent output, and re-read `SPEC.md` before finishing.
 
 The Planner writes `SPEC.md` to the working directory. After it completes, read `SPEC.md` and verify it contains:
 - A product name and overview
@@ -65,7 +65,7 @@ The Planner writes `SPEC.md` to the working directory. After it completes, read 
 - AI feature integration points
 - If the user's prompt specified a tech stack, verify the spec preserves that constraint
 
-If `SPEC.md` is missing or incomplete, re-invoke the planner with an explicit note about what is missing.
+If `SPEC.md` is missing or incomplete, re-invoke the planner with an explicit note about what is missing and a reminder that it must write the file into the repository rather than leaving the spec in agent output.
 
 ### Step 2: Build/QA Loop
 
@@ -76,9 +76,11 @@ Run up to 3 rounds. Each round consists of a Build phase followed by an Evaluate
 Invoke the generator sub-agent.
 
 - Claude Code: `Agent(subagent_type: "application-dev:generator", prompt: "Build the application defined in SPEC.md. This is build round 1 -- there is no prior QA feedback.")`
-- Copilot CLI: delegate to `@application-dev-generator` via the `agent` tool
+- Copilot CLI: delegate to `@application-dev-generator` via the `agent` tool with an explicit operational note to write files directly into the current working directory, create missing parent directories with the execute tool before writing nested files, and verify the repository files exist before finishing.
 
 Rounds 2+ should pass `QA-REPORT.md` to the generator so it can fix issues.
+
+If the generator reports drafted files without repository writes, or reports that parent directories do not exist, re-invoke it with the same QA context plus an explicit reminder to create the missing directories first and retry the file writes in-repo.
 
 #### Evaluate Phase
 
@@ -109,4 +111,4 @@ After the loop completes, read the final `QA-REPORT.md` and the project's `READM
 2. **Max 3 rounds.** The build/QA loop runs at most 3 times. Each round = one Build + one Evaluate.
 3. **File-based communication.** Agents communicate through `SPEC.md` and `QA-REPORT.md` in the working directory.
 4. **All agents work in the current working directory.** Do not create a separate project directory -- let the Generator organize the project as it sees fit.
-5. **Pass the prompt verbatim.** Forward the user's exact prompt to the Planner. If the prompt mentions a tech stack, the Planner will carry it through to the spec.
+5. **Pass the prompt verbatim.** Forward the user's exact product request to the Planner unchanged. You may add separate operational instructions about writing files into the repository, but do not alter the user's product request itself.

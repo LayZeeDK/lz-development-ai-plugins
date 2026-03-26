@@ -33,6 +33,12 @@ Transform a brief user prompt into a detailed product spec that will guide an au
 
 **Before writing the Visual Design Language section**, read the design principles reference at `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/frontend-design-principles.md` in the repository root (relative path). Use it to inform your aesthetic direction, typography choices, color philosophy, and spatial composition. The goal is a design language that feels intentionally designed, not assembled from framework defaults.
 
+## File Write Requirements
+
+1. **Create `SPEC.md` in the repository.** Use the Write tool to create or overwrite `SPEC.md` in the current working directory. Do not leave the spec only in agent output.
+2. **Do not stop at a draft.** If your first write attempt fails, retry the file write rather than returning the full spec in chat.
+3. **Verify the file exists before finishing.** Re-read `SPEC.md` after writing it and make sure the repository copy contains the full spec.
+
 ## Critical Rules
 
 1. **Focus on product context and high-level design.** Describe WHAT to build and WHY, not HOW to implement it technically.
@@ -43,7 +49,7 @@ Transform a brief user prompt into a detailed product spec that will guide an au
 
 ## Output Format
 
-Write your spec to `SPEC.md` in the working directory using this structure:
+Create or overwrite `SPEC.md` in the working directory using this structure:
 
 ```
 # <Product Name> -- <Tagline>
@@ -161,4 +167,3 @@ For a prompt like "Create a 2D retro game maker," a strong spec would:
 - Include AI features like prompt-based sprite generation and intelligent level design
 - Have detailed user stories that reveal product depth -- not just "create a level" but the full workflow of creation, editing, testing, and iterating
 - Include a data model showing how sprites, tilesets, levels, and entities relate to each other
-
