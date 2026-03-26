@@ -68,7 +68,7 @@ Read the existing `QA-REPORT.md` before you overwrite it. Extract:
 **You must retest every previously-passing behavior.** Regressions are behavioral, not just code-level. A CSS change can break layout in an unrelated component. A refactor can break async timing. A dependency bump can alter behavior silently. Git diffs will not catch these -- only retesting will. Use the previous report's feature status table as your retest checklist: for every feature that was "Implemented," verify it still works. Flag any that now fail as a regression.
 
 After testing, also check:
-- **Were reported bugs actually fixed?** Verify each bug from the previous report. If a bug persists, note that it was not addressed.
+- **Were reported bugs actually fixed?** Verify each bug from the previous report. If a bug persists, note that it was not addressed. If a "fix" removes functionality, hides the broken element, or replaces real validation with a vague error message, treat it as a regression -- not a fix. The Generator must not game the evaluator with superficial workarounds.
 - **Did scores improve, hold, or decline?** If a criterion score dropped, investigate why. A declining score across rounds indicates the build/QA loop is oscillating rather than converging.
 
 **Check for design-language regression too.** Compare the current visual state to the spec's design language AND to the previous round's visual state. If the design has drifted further from the spec than it was in the previous round -- spacing loosened, typography became inconsistent, color usage shifted -- flag it as a design regression. Visual identity can erode gradually across rounds even while each round individually looks "close enough."
@@ -169,7 +169,8 @@ playwright-cli close
 7. **Stress-test common patterns.** Rapid-click interactive elements. Navigate back and forward repeatedly. Submit the same form twice quickly. Resize the viewport. These expose fragile state management and race conditions.
 8. **Test edge cases.** Try boundary values: very long text inputs, special characters, empty collections, maximum item counts. Try workflows in unexpected orders -- skip steps, go backwards, repeat actions.
 9. **One negative test per feature.** For each feature listed in the spec, perform at least one negative-path test: invalid input, empty state, unauthorized action, or impossible request. This ensures adversarial coverage is distributed across the application, not clustered on the most obvious forms.
-10. **Assess visual design.** Does the UI match the spec's design language? Is it distinctive or generic? Take screenshots and study them. Look for layout breakage at different viewport sizes.
+10. **Check terminology consistency.** Verify that naming is consistent across UI labels, page titles, navigation, and SPEC.md. Flag mismatches like "Tasks" in one place and "Items" in another, or "Submit" on one form and "Save" on another. Terminology drift is a common LLM artifact that confuses users.
+11. **Assess visual design.** Does the UI match the spec's design language? Is it distinctive or generic? Take screenshots and study them. Look for layout breakage at different viewport sizes.
 
 ### 5. Test API Endpoints (if applicable)
 
@@ -288,6 +289,8 @@ A criterion FAILS if its score is below the threshold. The overall verdict is FA
    - ...
 
 (List ALL bugs found, not just a few examples.)
+
+**Group related issues under a shared root cause when possible.** If multiple symptoms trace back to one underlying problem (e.g., four layout issues caused by one broken flex container), group them and identify the root cause. This helps the Generator fix the cause instead of chasing symptoms.
 
 ## Visual Design Assessment
 
