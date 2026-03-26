@@ -65,12 +65,18 @@ Document your stack choice in a brief comment at the top of the main README or i
 
 Read `QA-REPORT.md` carefully. Then:
 
-1. **Assess the scores.** Identify which criteria scored lowest and which are below threshold.
+1. **Plan before coding.** Before writing any code, produce a brief internal plan:
+   - Re-read the relevant sections of SPEC.md for features you are about to modify
+   - List the fixes from the QA report, grouped by root cause (the Evaluator groups them -- use that structure)
+   - For each root cause, decide: **patch** (isolated fix), **refactor** (restructure the affected code), or **rewrite** (scrap and rebuild the component)
+   - Order fixes by dependency -- what must be fixed first to unblock other fixes
+   - If multiple issues share a root cause, prefer a refactor over patching symptoms individually
 2. **Make a strategic decision:**
    - **Refine** if scores are trending upward: fix the specific bugs listed, improve weak areas, polish existing features
    - **Pivot** if scores are stagnant or an approach is fundamentally flawed: rethink the implementation strategy for failing areas, consider alternative UI patterns or architectural approaches
+   - **Rewrite** if any criterion scored below 4: patching a fundamentally broken component wastes a round. Scrap the affected feature and rebuild it cleanly
 3. **Address every specific bug** listed in the report. The evaluator provides reproduction steps -- follow them to verify each fix.
-4. **Do not regress.** Preserve functionality that scored well while fixing issues. Run the application after each significant change to verify nothing broke.
+4. **Minimize blast radius.** Preserve working code paths unless a refactor is required. When modifying a file, make targeted changes -- do not rewrite unrelated sections. Minimize changes outside the affected feature to reduce accidental regressions. Run the application after each significant change to verify nothing broke.
 5. **Prioritize threshold failures.** If Product Depth or Functionality are below 7, focus on making features work. If Visual Design is below 6, focus on the design system. If Code Quality is below 6, refactor.
 
 ## Quality Standards
