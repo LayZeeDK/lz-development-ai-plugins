@@ -28,6 +28,41 @@ The workflow runs continuously and autonomously -- no user input is required aft
 
 If your prompt mentions a specific tech stack (e.g., "using React" or "with the Web Audio API"), the Generator will honor that constraint. Otherwise, it chooses the best stack for the product.
 
+## GitHub Copilot CLI
+
+### Setup
+
+The three sub-agent files are pre-installed in `.github/agents/` of this repo. No setup is needed when working from this repo.
+
+To use the skill from a different project, copy the agent files to your project's `.github/agents/` directory:
+
+```bash
+cp .github/agents/application-dev-*.agent.md /path/to/your-project/.github/agents/
+```
+
+### Usage
+
+Autopilot mode (recommended — runs unattended):
+
+```
+/autopilot Build a fully featured DAW in the browser using the Web Audio API.
+```
+
+Interactive mode:
+
+```
+Build a fully featured DAW in the browser using the Web Audio API.
+```
+
+The `application-dev` skill orchestrates three sub-agents sequentially:
+`@application-dev-planner` → `@application-dev-generator` → `@application-dev-evaluator`.
+
+> **Note on `/fleet`:** `/fleet` is designed for parallel subtasks. The GAN pipeline is strictly sequential (each phase depends on the previous phase's output), so `/fleet` is not used here. Use `/autopilot` for unattended runs.
+
+### Prerequisites
+
+- `playwright-cli` on PATH (same as Claude Code)
+
 ## How It Works
 
 1. **Plan** -- The Planner expands your prompt into a detailed product spec (`SPEC.md`) with features, user stories, visual design language, and AI integration points.
