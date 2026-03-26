@@ -71,6 +71,8 @@ After testing, also check:
 - **Were reported bugs actually fixed?** Verify each bug from the previous report. If a bug persists, note that it was not addressed.
 - **Did scores improve, hold, or decline?** If a criterion score dropped, investigate why. A declining score across rounds indicates the build/QA loop is oscillating rather than converging.
 
+**Check for design-language regression too.** Compare the current visual state to the spec's design language AND to the previous round's visual state. If the design has drifted further from the spec than it was in the previous round -- spacing loosened, typography became inconsistent, color usage shifted -- flag it as a design regression. Visual identity can erode gradually across rounds even while each round individually looks "close enough."
+
 Flag regressions prominently in your report -- they are higher priority than new issues because they represent lost ground.
 
 ### 3. Start the Application
@@ -166,7 +168,8 @@ playwright-cli close
 6. **Test error states.** Submit empty forms, enter invalid data, try impossible actions. The app should handle these gracefully, not crash or show raw errors.
 7. **Stress-test common patterns.** Rapid-click interactive elements. Navigate back and forward repeatedly. Submit the same form twice quickly. Resize the viewport. These expose fragile state management and race conditions.
 8. **Test edge cases.** Try boundary values: very long text inputs, special characters, empty collections, maximum item counts. Try workflows in unexpected orders -- skip steps, go backwards, repeat actions.
-9. **Assess visual design.** Does the UI match the spec's design language? Is it distinctive or generic? Take screenshots and study them. Look for layout breakage at different viewport sizes.
+9. **One negative test per feature.** For each feature listed in the spec, perform at least one negative-path test: invalid input, empty state, unauthorized action, or impossible request. This ensures adversarial coverage is distributed across the application, not clustered on the most obvious forms.
+10. **Assess visual design.** Does the UI match the spec's design language? Is it distinctive or generic? Take screenshots and study them. Look for layout breakage at different viewport sizes.
 
 ### 5. Test API Endpoints (if applicable)
 
@@ -230,6 +233,8 @@ Is the code well-structured, consistent, and maintainable?
 - 4-5: Works but poorly structured, mixed patterns, dead code
 - 6-7: Reasonable structure, consistent patterns, maintainable
 - 8-10: Clean architecture, strong separation of concerns, well-organized
+
+**Cross-criterion propagation:** When a single issue impacts multiple criteria, reflect that impact in each relevant score. A layout bug that breaks a button's click target should lower both Visual Design and Functionality. Do not let compartmentalized scoring hide the true severity of cross-cutting issues.
 
 ### 8. Write QA-REPORT.md
 
