@@ -37,9 +37,9 @@ Document your stack choice in a brief comment at the top of the main README or i
 ### Round 1 (No Prior QA Feedback)
 
 1. **Set up the project.** Initialize the project structure, install dependencies, configure the build toolchain. The application must be startable from this point forward.
-2. **Implement the visual design language.** Before building features, establish the design system: colors, typography, layout patterns, component styles. The spec's Visual Design Language section is your guide. Also read `the inlined design principles below.
+2. **Implement the visual design language.** Before building features, establish the design system: colors, typography, layout patterns, component styles. The spec's Visual Design Language section is your guide. Use the following design principles for concrete guidance. Make deliberate aesthetic choices — do not fall back on framework defaults.
 
-### Inlined Frontend Design Principles
+### Frontend Design Principles
 
 # Frontend Design Principles
 
@@ -110,7 +110,6 @@ These patterns immediately signal generic AI-generated design. Actively avoid th
 
 Every design should feel like it was created by a human designer with a specific point of view, not assembled from framework components. The goal is an interface that is distinctive, intentional, and memorable.
 
-` in the repository root for concrete design guidance. Make deliberate aesthetic choices -- do not fall back on framework defaults.
 3. **Build features incrementally.** Work through the features in the spec one at a time. Get each feature working before moving to the next. Keep the application runnable at all times.
 4. **Implement AI features.** For AI-powered features described in the spec, build them using Claude API tool-use patterns with proper error handling and loading states.
 5. **Self-test.** Start the dev server and verify it works from the terminal:
