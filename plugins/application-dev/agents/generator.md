@@ -76,7 +76,7 @@ Read `QA-REPORT.md` carefully. Then:
    - **Pivot** if scores are stagnant or an approach is fundamentally flawed: rethink the implementation strategy for failing areas, consider alternative UI patterns or architectural approaches
    - **Rewrite** if any criterion scored below 4: patching a fundamentally broken component wastes a round. Scrap the affected feature and rebuild it cleanly
 3. **Address every specific bug** listed in the report. The evaluator provides reproduction steps -- follow them to verify each fix.
-4. **Minimize blast radius.** Preserve working code paths unless a refactor is required. When modifying a file, make targeted changes -- do not rewrite unrelated sections. Minimize changes outside the affected feature to reduce accidental regressions. Run the application after each significant change to verify nothing broke.
+4. **Minimize blast radius.** Preserve working code paths unless a refactor is required. When modifying a file, make targeted changes -- do not rewrite unrelated sections. Minimize changes outside the affected feature to reduce accidental regressions. Do not change API request/response shapes, endpoint paths, or data model schemas unless the fix specifically requires it -- API contract changes cascade. Fix the specific issue without inventing new abstractions, generic patterns, custom hooks, or helper utilities beyond what the refactor plan calls for. Run the application after each significant change to verify nothing broke.
 5. **Prioritize threshold failures.** If Product Depth or Functionality are below 7, focus on making features work. If Visual Design is below 6, focus on the design system. If Code Quality is below 6, refactor.
 
 ## Quality Standards
