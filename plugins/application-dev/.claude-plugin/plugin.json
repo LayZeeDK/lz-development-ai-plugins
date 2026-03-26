@@ -11,5 +11,7 @@
     "autonomous",
     "multi-agent",
     "gan-inspired"
-  ]
+  ],
+  "repository": "https://github.com/LayZeeDK/lz-development-ai-plugins",
+  "homepage": "https://github.com/LayZeeDK/lz-development-ai-plugins/tree/main/plugins/application-dev"
 }
