@@ -56,7 +56,7 @@ Inspired by Generative Adversarial Networks (GANs):
 - Multiple rounds create an improvement loop where critique drives quality
 - Separation of generation and evaluation prevents the self-praise bias seen when models judge their own output
 
-Based on: [Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps) (Anthropic, 2026)
+Based on: [Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-long-running-apps) (Anthropic, 2026), locally available at [research/anthropic-harness-design-for-long-running-application-development.md](../../research/anthropic-harness-design-for-long-running-application-development.md).
 
 ## Evaluation Criteria
 
