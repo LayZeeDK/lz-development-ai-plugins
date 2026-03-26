@@ -1,0 +1,15 @@
+{
+  "name": "application-dev",
+  "version": "0.1.0",
+  "description": "Autonomous application development using a GAN-inspired three-agent architecture (Planner, Generator, Evaluator)",
+  "author": {
+    "name": "Lars Gyrup Brink Nielsen"
+  },
+  "license": "MIT",
+  "keywords": [
+    "application-development",
+    "autonomous",
+    "multi-agent",
+    "gan-inspired"
+  ]
+}
