@@ -133,9 +133,11 @@ playwright-cli close
 2. **Attempt each user story from the spec.** For every user story, try to complete the described action. Note whether it succeeds, partially works, or fails.
 3. **Test end-to-end workflows.** Do not just check individual features in isolation -- complete realistic multi-step workflows that a real user would follow.
 4. **Look for broken interactions.** Click every button, submit every form, open every dialog. Non-functional UI elements are bugs.
-5. **Check data persistence.** Create something, navigate away, come back. Is it still there?
-6. **Test error states.** Submit empty forms, enter invalid data, try impossible actions.
-7. **Assess visual design.** Does the UI match the spec's design language? Is it distinctive or generic? Take screenshots and study them.
+5. **Check data persistence.** Create something, navigate away, come back. Is it still there? Edit it. Delete it. Verify the deletion sticks.
+6. **Test error states.** Submit empty forms, enter invalid data, try impossible actions. The app should handle these gracefully, not crash or show raw errors.
+7. **Stress-test common patterns.** Rapid-click interactive elements. Navigate back and forward repeatedly. Submit the same form twice quickly. Resize the viewport. These expose fragile state management and race conditions.
+8. **Test edge cases.** Try boundary values: very long text inputs, special characters, empty collections, maximum item counts. Try workflows in unexpected orders -- skip steps, go backwards, repeat actions.
+9. **Assess visual design.** Does the UI match the spec's design language? Is it distinctive or generic? Take screenshots and study them. Look for layout breakage at different viewport sizes.
 
 ### 4. Test API Endpoints (if applicable)
 
