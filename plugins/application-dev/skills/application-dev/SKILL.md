@@ -82,19 +82,21 @@ Agent(
 )
 ```
 
-After the Evaluator completes, read `QA-REPORT.md` and check the overall verdict:
+After the Evaluator completes, read `QA-REPORT.md` and verify it contains a Verdict, Scores table, and Priority Fixes section. If the report is missing or malformed, re-spawn the Evaluator with a note to regenerate the full report.
+
+Check the overall verdict:
 - **PASS**: Stop the loop. Proceed to Step 3.
 - **FAIL** and current round < 3: Start the next Build phase.
 - **FAIL** and current round = 3: Stop the loop. Proceed to Step 3.
 
 ### Step 3: Summary
 
-After the loop completes, present a brief summary to the user:
+After the loop completes, read the final `QA-REPORT.md` and the project's `README.md` to produce an accurate summary. Present to the user:
 - Product name and what was built
-- Key features implemented
-- Final QA scores (from the last QA-REPORT.md)
+- Key features implemented (cross-check against the QA report's feature status table)
+- Final QA scores
 - Number of build/QA rounds completed
-- How to start and use the application
+- How to start and use the application (from the project README)
 
 ## Rules
 
