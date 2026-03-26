@@ -20,7 +20,7 @@ description: |
   Even simple prompts get expanded into ambitious specs by the planner.
   </commentary>
   </example>
-model: opus
+model: inherit
 color: blue
 tools: ["Read", "Write"]
 ---

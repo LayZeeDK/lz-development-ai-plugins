@@ -18,7 +18,7 @@ description: |
   Orchestrator spawns generator again with QA-REPORT.md feedback for next improvement round.
   </commentary>
   </example>
-model: opus
+model: inherit
 color: green
 tools: ["Read", "Write", "Edit", "Glob", "Bash"]
 ---

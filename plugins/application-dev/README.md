@@ -79,3 +79,8 @@ Agents communicate via two files in the working directory:
 ## License
 
 MIT
+
+## Model recommendation
+
+Agents default to `model: inherit` so users can experiment with different models. For best long-running results, Opus 4.6 is recommended (used in the harness this plugin follows). Sonnet 4.6 (1M context) may be a lower-cost experimental alternative, but its sustained multi-hour behavior for this harness is unproven. To try a different model, edit `plugins/application-dev/agents/*.md` and set `model` to your preferred model.
+

@@ -18,7 +18,7 @@ description: |
   Orchestrator spawns evaluator for round 2+ to verify improvements and find remaining issues.
   </commentary>
   </example>
-model: opus
+model: inherit
 color: yellow
 tools: ["Read", "Write", "Glob", "Bash"]
 ---
