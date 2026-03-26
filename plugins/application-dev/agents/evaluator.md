@@ -196,6 +196,8 @@ Check for:
 - Dead code, TODOs, stubs, or placeholder implementations
 - Dependency choices (appropriate? excessive?)
 - Build configuration
+- Performance red flags: infinite loops, duplicate API calls, unbounded DOM growth, missing cleanup of event listeners or timers
+- Security red flags: hardcoded API keys or secrets, unsanitized user input rendered as HTML, credentials in client-side code, missing input validation on API endpoints
 
 ### 7. Score and Report
 
@@ -260,6 +262,8 @@ A criterion FAILS if its score is below the threshold. The overall verdict is FA
 | 1 | Feature Name | Implemented / Partial / Missing / Broken | Brief explanation |
 | 2 | Feature Name | ... | ... |
 | ... | ... | ... | ... |
+
+**Scoring "Partial" strictly:** Partial is not a safe middle ground. If the missing part of a feature is essential to its purpose, treat it as Broken. A form that submits but does not validate is Broken, not Partial. A dashboard missing one optional widget is Partial. Ask: "Can a user accomplish the feature's core purpose?" If no, it is Broken.
 
 <Detailed commentary on feature coverage. What is missing? What is superficial?>
 
