@@ -38,7 +38,9 @@ Agent(
 
 The Planner writes `SPEC.md` to the working directory. After it completes, read `SPEC.md` and verify it contains:
 - A product name and overview
-- 10+ numbered features with user stories
+- A user journey narrative
+- Constraints and non-goals
+- 10+ numbered features with priority tiers (Core/Important/Nice-to-have) and user stories
 - A visual design language section
 - AI feature integration points
 - If the user's prompt specified a tech stack, verify the spec preserves that constraint

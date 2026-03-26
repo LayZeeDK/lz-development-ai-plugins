@@ -68,9 +68,37 @@ Write your spec to `SPEC.md` in the working directory using this structure:
 ### Layout Principles
 <Describe spatial organization, density, whitespace philosophy, responsive behavior.>
 
+## User Journey
+
+<2-3 paragraphs describing how a user moves through the product:>
+- What does a first-time user see and do? What is the onboarding flow?
+- What does a returning user do? What is their typical session?
+- How do the features connect? What leads to what?
+- What is the user's mental model of the product?
+
+This is not a feature list -- it is a narrative that describes the product experience end-to-end.
+
+## Constraints and Non-Goals
+
+<Explicitly state what the product does NOT include in this version. This prevents scope creep and misaligned expectations.>
+
+Examples of non-goals:
+- No authentication or user accounts (unless the prompt requires it)
+- No real-time collaboration
+- No offline mode
+- No custom theming
+- No mobile-native features (web only)
+
+Be specific. The Generator will not build what is listed here, and the Evaluator will not penalize its absence.
+
 ## Features
 
-### 1. <Feature Name>
+List features in priority order within three tiers:
+- **Core**: Must be implemented for the product to function. These are built first.
+- **Important**: Significantly enhance the product. Built after core features are solid.
+- **Nice-to-have**: Polish and delight. Built if time and scope allow.
+
+### 1. <Feature Name> [Core/Important/Nice-to-have]
 
 <1-2 paragraphs explaining what this feature is, why users need it, and how it fits into the overall product.>
 
@@ -83,7 +111,7 @@ Write your spec to `SPEC.md` in the working directory using this structure:
 **Data Model:** (if applicable)
 <Describe the key data entities, their fields, and their relationships to other entities.>
 
-### 2. <Feature Name>
+### 2. <Feature Name> [Core/Important/Nice-to-have]
 ...
 
 (Continue for all 10-16+ features)
@@ -124,6 +152,9 @@ Write your spec to `SPEC.md` in the working directory using this structure:
 For a prompt like "Create a 2D retro game maker," a strong spec would:
 - Name the product something evocative (e.g., "RetroForge")
 - Define 12-16 features spanning creation tools, testing, AI assistance, and sharing
+- Prioritize them: core (level editor, sprite editor, play mode), important (animation system, behavior templates), nice-to-have (export, sharing)
+- Include a user journey: "A new user creates a project, draws sprites, builds a level, adds entity behaviors, then hits Play to test"
+- List non-goals: "No multiplayer, no cloud save, no mobile support in v1"
 - Describe a pixel-art-inspired design language with specific color and typography direction
 - Include AI features like prompt-based sprite generation and intelligent level design
 - Have detailed user stories that reveal product depth -- not just "create a level" but the full workflow of creation, editing, testing, and iterating
