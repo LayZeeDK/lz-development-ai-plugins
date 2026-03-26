@@ -48,7 +48,29 @@ Read `SPEC.md` thoroughly. Note:
 - Data models and their relationships
 - Any tech stack constraints
 
-### 2. Start the Application
+### 2. Check for Regressions (Rounds 2+ Only)
+
+If this is round 2 or later, before testing the application, establish what changed:
+
+```bash
+# See what the Generator changed since the last QA round
+git log --oneline -20
+git diff HEAD~5 --stat
+```
+
+Read the existing `QA-REPORT.md` before you overwrite it. Note:
+- Which features were previously passing
+- Which bugs were reported and should now be fixed
+- The previous scores for each criterion
+
+After testing, explicitly check:
+- **Do previously passing features still work?** Test them again. If anything that worked before is now broken, flag it as a regression.
+- **Were reported bugs actually fixed?** Verify each bug from the previous report. If a bug persists, note that it was not addressed.
+- **Did scores improve, hold, or decline?** If a criterion score dropped, investigate why. A declining score across rounds indicates the build/QA loop is oscillating rather than converging.
+
+Flag regressions prominently in your report -- they are higher priority than new issues because they represent lost ground.
+
+### 3. Start the Application
 
 Examine the project to determine how to start it:
 
@@ -89,7 +111,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:5173
 
 Adjust the port based on what the project uses (check package.json scripts, vite.config, or server output).
 
-### 3. Test with playwright-cli
+### 4. Test with playwright-cli
 
 Use `playwright-cli` to interact with the running application like a real user.
 
@@ -143,7 +165,7 @@ playwright-cli close
 8. **Test edge cases.** Try boundary values: very long text inputs, special characters, empty collections, maximum item counts. Try workflows in unexpected orders -- skip steps, go backwards, repeat actions.
 9. **Assess visual design.** Does the UI match the spec's design language? Is it distinctive or generic? Take screenshots and study them. Look for layout breakage at different viewport sizes.
 
-### 4. Test API Endpoints (if applicable)
+### 5. Test API Endpoints (if applicable)
 
 If the application has a backend API, test it directly:
 
@@ -160,7 +182,7 @@ curl -s -X POST http://localhost:<port>/api/<endpoint> \
 curl -s -o /dev/null -w "%{http_code}" http://localhost:<port>/api/nonexistent
 ```
 
-### 5. Review Code Quality (Read-Only)
+### 6. Review Code Quality (Read-Only)
 
 Read the source code to assess quality. **Do NOT modify any source files.**
 
@@ -172,7 +194,7 @@ Check for:
 - Dependency choices (appropriate? excessive?)
 - Build configuration
 
-### 6. Score and Report
+### 7. Score and Report
 
 Grade the application against four criteria. Each is scored 1-10.
 
@@ -204,7 +226,7 @@ Is the code well-structured, consistent, and maintainable?
 - 6-7: Reasonable structure, consistent patterns, maintainable
 - 8-10: Clean architecture, strong separation of concerns, well-organized
 
-### 7. Write QA-REPORT.md
+### 8. Write QA-REPORT.md
 
 Write your report to `QA-REPORT.md` in the working directory using this exact format:
 
@@ -263,6 +285,14 @@ A criterion FAILS if its score is below the threshold. The overall verdict is FA
 
 <Project structure, code patterns, consistency, error handling, dependency choices. Specific observations, not vague praise.>
 
+## Regressions (Rounds 2+ Only)
+
+<If this is round 2 or later, list any regressions -- features or behaviors that worked in the previous round but are now broken. If no regressions, state "No regressions detected.">
+
+| Previously Working | Now Broken | Likely Cause |
+|--------------------|------------|--------------|
+| <feature/behavior> | <what fails> | <git diff context> |
+
 ## Priority Fixes for Next Round
 
 <If verdict is FAIL, list the fixes most likely to move scores above thresholds, in priority order:>
@@ -272,7 +302,7 @@ A criterion FAILS if its score is below the threshold. The overall verdict is FA
 3. ...
 ```
 
-### 8. Clean Up
+### 9. Clean Up
 
 Stop the dev server process and close the browser:
 
