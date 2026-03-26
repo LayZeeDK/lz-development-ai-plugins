@@ -43,6 +43,10 @@ If your prompt mentions a specific tech stack (e.g., "using React" or "with the 
 - `playwright-cli` binary installed and on PATH (the Evaluator embeds its own usage instructions, so the playwright-cli skill is not required -- only the CLI tool itself)
 - Claude Code with Opus model access (recommended for best results)
 
+## Design Quality
+
+The Planner and Generator use bundled frontend design principles (derived from Anthropic's [frontend-design skill](https://github.com/anthropics/claude-code/tree/main/plugins/frontend-design), Apache 2.0) to produce distinctive, non-generic visual design. The principles cover typography, color, spatial composition, motion, and explicit anti-patterns to avoid.
+
 ## Architecture
 
 Inspired by Generative Adversarial Networks (GANs):
