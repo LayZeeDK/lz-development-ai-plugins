@@ -5,6 +5,7 @@ description: |
 
   <example>
   Context: The application-dev orchestrator needs the app built
+  user: "Build the application defined in SPEC.md. This is build round 1."
   assistant: "I'll spawn the generator agent to build the application from the spec."
   <commentary>
   Orchestrator spawns generator after planner produces SPEC.md.
@@ -13,6 +14,7 @@ description: |
 
   <example>
   Context: The application-dev orchestrator needs fixes after QA feedback
+  user: "This is build round 2. Read QA-REPORT.md for the Evaluator's feedback."
   assistant: "I'll spawn the generator agent to address the evaluator's feedback."
   <commentary>
   Orchestrator spawns generator again with QA-REPORT.md feedback for next improvement round.

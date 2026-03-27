@@ -1,9 +1,17 @@
 ---
 name: browser-prompt-api
 description: >
-  Skill for using the browser's LanguageModel Prompt API (Chrome/Edge) for
-  on-device LLM prompting, streaming, structured output, tool use, and session
-  management. Aligned with the W3C WebML Prompt API spec.
+  This skill should be used when the Generator agent needs to implement on-device
+  LLM features using the browser's built-in LanguageModel Prompt API (Gemini Nano
+  on Chrome 138+, Phi-4-mini on Edge). Covers feature detection, availability
+  checks, session creation, single and streaming prompts, structured output via
+  responseConstraint (JSON Schema, boolean, RegExp), tool use, multimodal input,
+  context management, and graceful degradation. Aligned with the W3C WebML Prompt
+  API spec. Trigger when: SPEC.md references the Prompt API, on-device LLM,
+  Gemini Nano, LanguageModel, browser-built-in AI, or local inference using the
+  browser's native model. Do NOT trigger when the app needs to select from
+  multiple LLM architectures (use browser-webllm) or for non-LLM neural network
+  inference (use browser-webnn).
 ---
 
 # Browser Prompt API Skill

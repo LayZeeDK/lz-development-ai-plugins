@@ -5,6 +5,7 @@ description: |
 
   <example>
   Context: The application-dev orchestrator needs QA after a build round
+  user: "Evaluate the application against SPEC.md. This is QA round 1."
   assistant: "I'll spawn the evaluator agent to test the application."
   <commentary>
   Orchestrator spawns evaluator after generator completes a build round.
