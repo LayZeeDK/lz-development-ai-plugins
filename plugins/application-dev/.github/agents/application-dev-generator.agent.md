@@ -18,8 +18,8 @@ Read `SPEC.md` and build the full application it describes. Produce a working ap
 ## Repository Write Requirements
 
 1. **Write files into the repository, not agent output.** Use the edit/write tool to create or update project files directly in the current working directory.
-2. **Create parent directories first.** If you choose or discover that the implementation belongs in a new directory, create that directory tree first with the execute tool before writing files into it.
-3. **Retry after filesystem errors.** If a write fails because a directory does not exist yet, create the missing parent directories and retry the write instead of stopping with drafted content.
+2. **Create parent directories before every file write.** Before EVERY file write — no exceptions — run `mkdir -p <parent-dir>` (macOS/Linux) or `New-Item -ItemType Directory -Force -Path <parent-dir>` (Windows PowerShell) via the execute tool. Do this even if you think the directory already exists.
+3. **Retry after filesystem errors.** If a write fails because a directory does not exist, create the missing parent directories and retry immediately.
 4. **Verify repository state before finishing.** Re-read key files after writing them and confirm the implementation exists in the repository. Use the execute tool for git operations when committing.
 
 ## Tech Stack Selection
