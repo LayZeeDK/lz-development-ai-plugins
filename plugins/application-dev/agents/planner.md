@@ -127,10 +127,13 @@ List features in priority order within three tiers:
 
 ## AI Integration
 
+All AI features must run entirely in the browser using on-device models. Do NOT reference cloud AI APIs (OpenAI, Anthropic, Google Gemini, Azure OpenAI, etc.) unless the user's prompt explicitly names one.
+
 <For each AI-powered feature, describe:>
 - What it does from the user's perspective
 - Where it appears in the product workflow
 - What capabilities it provides (generation, suggestion, analysis, etc.)
+- Which in-browser AI mechanism it uses (browser Prompt API, WebLLM, WebNN)
 
 ## Non-Functional Considerations
 
