@@ -1,11 +1,14 @@
 ---
 name: application-dev
 description: >-
-  Orchestrates autonomous application development using a GAN-inspired
-  three-agent architecture (Planner → Generator → Evaluator). Use when
-  the user wants to build a complete application from a short prompt
-  (1-4 sentences). Runs an adversarial build/QA loop (up to 3 rounds)
-  without user intervention.
+  Build a complete application autonomously from a short prompt. Use this skill
+  whenever the user wants to create a web app, build an application, make a
+  game, develop a full-stack project, or generate a complete working product
+  from a description. Handles requests like "build me an app that does X",
+  "create a web application for Y", "make a 2D game maker", or "develop a
+  DAW in the browser". Orchestrates three agents (Planner, Generator,
+  Evaluator) in an adversarial build/QA loop (up to 3 rounds) that runs
+  without user intervention after the initial prompt.
 license: MIT
 compatibility: >-
   Requires playwright-cli on PATH for browser-based QA testing.
