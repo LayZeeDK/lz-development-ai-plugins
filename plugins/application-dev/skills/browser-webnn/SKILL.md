@@ -1,15 +1,18 @@
 ---
 name: browser-webnn
-title: "Web Neural Network (WebNN) Skill for WebLLM Agents"
 version: "1.0.0"
-description: >
-  Provides WebLLM agents with spec‑compliant reasoning, code generation, and
-  ecosystem knowledge for the W3C Web Neural Network API (WebNN). Ensures
-  correct use of navigator.ml, MLContext, MLGraphBuilder, and MLTensor for
-  on‑device, hardware‑accelerated inference in the browser.
+description: >-
+  This skill should be used when the Generator agent needs to implement
+  on-device neural network inference using the W3C WebNN API. Covers
+  navigator.ml feature detection, MLContext creation with NPU/GPU/CPU device
+  hints, MLGraphBuilder graph construction, MLTensor dispatch, ONNX-to-WebNN
+  operator mapping, and browser compatibility. Trigger when: SPEC.md references
+  WebNN, neural network inference, on-device ML, image classification, audio
+  processing, NPU acceleration, or ONNX models in the browser. Do NOT trigger
+  for LLM chat or text generation (use browser-prompt-api or browser-webllm),
+  or for non-browser environments (WebNN is browser-only, inference-only).
 tags:
   - webnn
-  - webml
   - on-device-ai
   - browser
   - hardware-acceleration
@@ -18,52 +21,42 @@ tags:
 license: "CC0-1.0"
 ---
 
-# 1. Purpose
+# Browser WebNN Skill
 
-This skill enables WebLLM agents to:
+Spec: https://www.w3.org/TR/webnn/ (W3C Candidate Recommendation Draft)
 
-- Detect and use the **Web Neural Network API (WebNN)** in browsers.
-- Generate **spec‑compliant** JavaScript for on‑device inference.
-- Build and execute neural network graphs using `MLGraphBuilder` and `MLContext`.
-- Reason about **browser support**, **permissions**, **origin trials**, and **hardware backends** (NPU, GPU, CPU).
-- Reference canonical **spec**, **docs**, **GitHub repos**, and **samples**.
-- Provide safe, privacy‑preserving guidance for deploying models in the browser.
+This skill provides the Generator agent with spec-compliant guidance for the
+W3C Web Neural Network API (WebNN) -- on-device, hardware-accelerated neural
+network inference in the browser.
 
-Aligned with the **W3C WebNN Candidate Recommendation Draft**.
+- Detect and use `navigator.ml` for creating inference contexts
+- Build and execute neural network graphs using `MLGraphBuilder` and `MLContext`
+- Target **NPU**, **GPU**, or **CPU** backends (NPU acceleration is unique among web APIs)
+- Reference canonical spec, docs, and samples
 
-# 2. When This Skill Should Trigger
+---
 
-Trigger this skill when the user:
+## 1. Environment and Prerequisites
 
-- Asks about **WebNN API**, operators, semantics, or types.
-- Requests **browser‑based, on‑device inference**.
-- Mentions **navigator.ml**, **MLContext**, **MLGraphBuilder**, or **MLTensor**.
-- Requests **WebNN code snippets**, validation, or troubleshooting.
-- Asks about **model conversion** (e.g., ONNX → WebNN).
-- Requests **spec references**, **docs**, **GitHub paths**, or **samples**.
-- Asks about **browser support**, **origin trials**, or **testing** (WPT).
-
-Do **not** trigger when:
-- The environment is **non‑browser** (Node.js, server‑side).
-- The user wants **training or fine‑tuning** (WebNN is inference‑only).
-
-# 3. Environment & Prerequisites
-
-- WebNN is available only in **secure contexts (HTTPS)**.
-- Entry point is always:
+- WebNN is available only in **secure contexts (HTTPS)**
+- Entry point:
 
 ```js
 if (!('ml' in navigator)) {
-  throw new Error('WebNN is not supported in this browser.');
+  // WebNN is not supported in this browser
+  // Disable ML features or fall back to another approach
 }
 ```
 
-- Browser may override device hints for privacy.
-- Cross‑origin iframes require the **Permissions Policy**: `allow="ml"`.
+- Browser may override device hints for privacy
+- Cross-origin iframes require the Permissions Policy: `allow="ml"`
+- WebNN is **inference-only** -- no training or fine-tuning
 
-# 4. WebNN Programming Model (Spec‑Compliant)
+---
 
-## 4.1 Create a Context
+## 2. Programming Model
+
+### 2.1 Create a Context
 
 ```js
 const context = await navigator.ml.createContext({
@@ -72,7 +65,7 @@ const context = await navigator.ml.createContext({
 });
 ```
 
-## 4.2 Build a Graph
+### 2.2 Build a Graph
 
 ```js
 const builder = new MLGraphBuilder(context);
@@ -87,12 +80,13 @@ const weights = builder.constant(
   weightsBuffer,
 );
 
+// conv2d with default padding (none) and stride (1)
 const conv = builder.conv2d(input, weights);
 
 const graph = await builder.build({ output: conv });
 ```
 
-## 4.3 Create Tensors & Run Inference
+### 2.3 Create Tensors and Run Inference
 
 ```js
 const inputTensor = await context.createTensor({
@@ -112,10 +106,11 @@ await context.dispatch(
   { output: outputTensor },
 );
 
-const outputData = await context.readTensor(outputTensor);
+// readTensor returns an ArrayBuffer -- wrap in the appropriate typed array
+const outputData = new Float32Array(await context.readTensor(outputTensor));
 ```
 
-## 4.4 Cleanup
+### 2.4 Cleanup
 
 ```js
 outputTensor.destroy();
@@ -124,102 +119,82 @@ graph.destroy();
 context.destroy();
 ```
 
-# 5. Core WebNN Interfaces (Normative)
+---
 
-### `navigator.ml`
-- Entry point to WebNN.
-- `createContext(options): Promise<MLContext>`.
+## 3. Core Interfaces
 
-### `MLContext`
-- Methods:
-  - `dispatch(graph, inputs, outputs)`
-  - `createTensor(descriptor)`
-  - `createConstantTensor(descriptor)`
-  - `readTensor(tensor)`
-  - `writeTensor(tensor, data)`
-  - `opSupportLimits()`
-  - `destroy()`
+### navigator.ml
+- Entry point to WebNN
+- `createContext(options): Promise<MLContext>`
 
-### `MLGraphBuilder`
-- Graph construction.
-- Operators include:
+### MLContext
+- `dispatch(graph, inputs, outputs)` -- run inference
+- `createTensor(descriptor)` -- create runtime tensor
+- `createConstantTensor(descriptor)` -- create constant tensor
+- `readTensor(tensor)` -- read tensor data (returns `ArrayBuffer`)
+- `writeTensor(tensor, data)` -- write data to tensor
+- `opSupportLimits()` -- query device-dependent operator support
+- `destroy()` -- free resources
+
+### MLGraphBuilder
+- Graph construction via operator methods:
   - `matmul`, `conv2d`, `relu`, `softmax`, `gelu`
-  - pooling ops
-  - `layerNormalization`
-  - `concat`
+  - Pooling: `averagePool2d`, `maxPool2d`
+  - `layerNormalization`, `batchNormalization`
+  - `concat`, `reshape`, `transpose`
   - `gather`, `scatter`
   - RNN/LSTM/GRU ops
 
-### `MLTensor`
-- Runtime tensor for inputs/outputs.
-- Supports buffer sharing.
+### MLTensor
+- Runtime tensor for inputs and outputs
+- Supports buffer sharing
 
-# 6. Hardware Acceleration & Backends
+---
+
+## 4. Hardware Acceleration
 
 WebNN supports:
 
-- **NPU acceleration** (unique among web APIs)
-- **GPU acceleration**
-- **CPU fallback**
+- **NPU acceleration** -- unique among web APIs, ideal for sustained inference
+- **GPU acceleration** -- high throughput for parallel workloads
+- **CPU fallback** -- always available
 
-Backend availability depends on browser implementation (e.g., DirectML on Windows).
+Backend availability depends on browser implementation (e.g., DirectML on Windows, CoreML on macOS).
 
-# 7. Safety, Privacy & Ethical Constraints
+---
 
-Agents must:
+## 5. Best Practices
 
-- Prefer **on‑device inference**; avoid suggesting remote upload of sensitive data.
-- Never bypass browser security or permissions policy.
-- Avoid patterns enabling fingerprinting or timing attacks.
-- Encourage transparency for sensitive use cases (face recognition, biometrics).
-- Warn that WebNN is **experimental** and browser support varies.
+- Always feature-detect WebNN before using it
+- Use `async/await` for all WebNN operations
+- Build graphs **once** and reuse them for multiple inferences
+- Separate model loading from graph construction
+- Use `opSupportLimits()` to check device-dependent operator support
+- Clean up all tensors, graphs, and contexts in `finally` blocks
+- Prefer on-device inference; avoid suggesting remote upload of sensitive data
+- Warn users that WebNN is experimental and browser support varies
 
-# 8. Best Practices for Generated Code
+---
 
-- Always feature‑detect WebNN.
-- Use `async/await`.
-- Build graphs **once** and reuse them.
-- Separate model loading from graph construction.
-- Use `opSupportLimits()` for device‑dependent ops.
-- Clean up all tensors, graphs, and contexts.
+## 6. ONNX-to-WebNN Migration
 
-# 9. Developer Workflows & Ecosystem Guidance
+- Map ONNX operators to WebNN equivalents
+- Use converters in the `webnn-docs` repo
+- Run numeric equivalence tests between ONNX and WebNN outputs
+- Check `opSupportLimits()` for device-specific operator coverage
 
-Agents should provide:
+---
 
-### 9.1 Spec‑aligned explanations
-- Cite the W3C WebNN spec for normative behavior.
+## 7. Safety and Privacy
 
-### 9.2 Migration guidance (e.g., ONNX → WebNN)
-- Map ONNX ops to WebNN ops.
-- Use converters in `webnn-docs` repo.
-- Recommend numeric equivalence tests.
+- Never bypass browser security or permissions policy
+- Avoid patterns enabling fingerprinting or timing attacks
+- Encourage transparency for sensitive use cases (face recognition, biometrics)
+- Disclose that inference happens on-device
 
-### 9.3 Browser support & compatibility
-- Mention origin trials, flags, or experimental status.
-- Note operator coverage differences across browsers.
+---
 
-### 9.4 Testing
-- Recommend Web Platform Tests (WPT).
-- Suggest unit tests for shape/dtype correctness.
-
-# 10. Actionable Checklists
-
-## Validate a WebNN snippet
-- Confirm secure context.
-- Check required flags/origin trials.
-- Run small inference test.
-- Test across target browsers/devices.
-- Review privacy implications.
-
-## Implement ONNX → WebNN operator mapping
-- Identify ONNX op and WebNN equivalent.
-- Check `webnn-docs` for examples.
-- Add conversion logic with dtype/shape tests.
-- Run numeric equivalence tests.
-- Open PR to `webnn-docs`.
-
-# 11. Example Minimal End‑to‑End Snippet
+## 8. End-to-End Example
 
 ```js
 async function runWebNNExample(inputData, weightData) {
@@ -267,21 +242,19 @@ async function runWebNNExample(inputData, weightData) {
       { output: outputTensor },
     );
 
-    return await context.readTensor(outputTensor);
+    return new Float32Array(await context.readTensor(outputTensor));
   } finally {
     context.destroy();
   }
 }
 ```
 
-# 12. References (Canonical)
+---
 
-- **WebNN Spec (W3C):** [https://www.w3.org/TR/webnn/](https://www.w3.org/TR/webnn/)  
-- **Official Docs:** [https://webnn.io/en](https://webnn.io/en)  
-- **WebNN Developer Docs:** `https://github.com/webmachinelearning/webnn-docs` [(github.com in Bing)](https://www.bing.com/search?q="https%3A%2F%2Fgithub.com%2Fwebmachinelearning%2Fwebnn-docs")  
-- **WebNN Samples:** `https://github.com/webmachinelearning/webnn-samples` [(github.com in Bing)](https://www.bing.com/search?q="https%3A%2F%2Fgithub.com%2Fwebmachinelearning%2Fwebnn-samples")  
-- **Core Repo:** `https://github.com/webmachinelearning/webnn` [(github.com in Bing)](https://www.bing.com/search?q="https%3A%2F%2Fgithub.com%2Fwebmachinelearning%2Fwebnn")  
+## 9. References
 
-# 13. Confidence
-
-`high` — All normative statements align with the W3C WebNN spec and official documentation.
+- **WebNN Spec (W3C):** https://www.w3.org/TR/webnn/
+- **Official Docs:** https://webnn.io/en
+- **WebNN Developer Docs:** https://github.com/webmachinelearning/webnn-docs
+- **WebNN Samples:** https://github.com/webmachinelearning/webnn-samples
+- **Core Repo:** https://github.com/webmachinelearning/webnn
