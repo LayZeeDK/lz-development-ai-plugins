@@ -106,45 +106,45 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ORCH-01 | Phase ? | Pending |
-| ORCH-02 | Phase ? | Pending |
-| ORCH-03 | Phase ? | Pending |
-| ORCH-04 | Phase ? | Pending |
-| ORCH-05 | Phase ? | Pending |
-| ORCH-06 | Phase ? | Pending |
-| ORCH-07 | Phase ? | Pending |
-| GIT-01 | Phase ? | Pending |
-| GIT-02 | Phase ? | Pending |
-| GIT-03 | Phase ? | Pending |
-| GIT-04 | Phase ? | Pending |
-| GIT-05 | Phase ? | Pending |
-| LOOP-01 | Phase ? | Pending |
-| LOOP-02 | Phase ? | Pending |
-| LOOP-03 | Phase ? | Pending |
-| LOOP-04 | Phase ? | Pending |
-| LOOP-05 | Phase ? | Pending |
-| LOOP-06 | Phase ? | Pending |
-| LOOP-07 | Phase ? | Pending |
-| LOOP-08 | Phase ? | Pending |
-| LOOP-09 | Phase ? | Pending |
-| EVAL-01 | Phase ? | Pending |
-| EVAL-02 | Phase ? | Pending |
-| EVAL-03 | Phase ? | Pending |
-| EVAL-04 | Phase ? | Pending |
-| EVAL-05 | Phase ? | Pending |
-| GEN-01 | Phase ? | Pending |
-| GEN-02 | Phase ? | Pending |
-| GEN-03 | Phase ? | Pending |
-| GEN-04 | Phase ? | Pending |
-| GEN-05 | Phase ? | Pending |
-| GEN-06 | Phase ? | Pending |
-| SKILL-01 | Phase ? | Pending |
+| ORCH-01 | Phase 1 | Pending |
+| ORCH-02 | Phase 1 | Pending |
+| ORCH-03 | Phase 1 | Pending |
+| ORCH-04 | Phase 1 | Pending |
+| ORCH-05 | Phase 1 | Pending |
+| ORCH-06 | Phase 1 | Pending |
+| ORCH-07 | Phase 1 | Pending |
+| GIT-01 | Phase 2 | Pending |
+| GIT-02 | Phase 2 | Pending |
+| GIT-03 | Phase 2 | Pending |
+| GIT-04 | Phase 2 | Pending |
+| GIT-05 | Phase 2 | Pending |
+| LOOP-01 | Phase 2 | Pending |
+| LOOP-02 | Phase 2 | Pending |
+| LOOP-03 | Phase 2 | Pending |
+| LOOP-04 | Phase 2 | Pending |
+| LOOP-05 | Phase 2 | Pending |
+| LOOP-06 | Phase 2 | Pending |
+| LOOP-07 | Phase 2 | Pending |
+| LOOP-08 | Phase 2 | Pending |
+| LOOP-09 | Phase 2 | Pending |
+| EVAL-01 | Phase 3 | Pending |
+| EVAL-02 | Phase 3 | Pending |
+| EVAL-03 | Phase 3 | Pending |
+| EVAL-04 | Phase 3 | Pending |
+| EVAL-05 | Phase 3 | Pending |
+| GEN-01 | Phase 4 | Pending |
+| GEN-02 | Phase 4 | Pending |
+| GEN-03 | Phase 4 | Pending |
+| GEN-04 | Phase 4 | Pending |
+| GEN-05 | Phase 4 | Pending |
+| GEN-06 | Phase 4 | Pending |
+| SKILL-01 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 33 total
-- Mapped to phases: 0
-- Unmapped: 33 (pending roadmap creation)
+- Mapped to phases: 33
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after initial definition*
+*Last updated: 2026-03-27 after roadmap creation*
