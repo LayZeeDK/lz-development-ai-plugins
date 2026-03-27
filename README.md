@@ -1,48 +1,44 @@
-# lz-development-ai-plugins
+# LZ Development AI Plugins
 
-Reusable AI plugin assets for local development workflows, including the `application-dev` plugin for Claude Code and GitHub Copilot CLI.
+A Claude Code plugin marketplace for development workflows.
 
-## Clone this repository
+## Installation
 
-```powershell
-git clone https://github.com/LayZeeDK/lz-development-ai-plugins.git
-Set-Location .\lz-development-ai-plugins
+Add this marketplace to Claude Code:
+
+```
+claude plugins add-marketplace https://github.com/LayZeeDK/lz-development-ai-plugins
 ```
 
-## Use with GitHub Copilot CLI
+Then enable a plugin:
 
-The `application-dev` plugin bundles:
-
-- the skill and command files under `plugins\application-dev`
-- Copilot custom agents under `plugins\application-dev\.github\agents`
-
-Run Copilot CLI from the repository root and point it at the plugin directory:
-
-```powershell
-copilot --plugin-dir .\plugins\application-dev
+```
+claude plugins enable application-dev
 ```
 
-If you want to use this plugin from another working directory, pass the full path to the cloned plugin directory instead:
+## Available Plugins
 
-```powershell
-copilot --plugin-dir C:\path\to\lz-development-ai-plugins\plugins\application-dev
+### [application-dev](plugins/application-dev/)
+
+Autonomous application development from a short prompt (1-4 sentences). Uses a GAN-inspired three-agent architecture:
+
+- **Planner** -- expands your prompt into an ambitious product spec
+- **Generator** -- builds the full application
+- **Evaluator** -- QAs the running app via playwright-cli with adversarial skepticism
+
+Up to 3 build/QA rounds run autonomously without user intervention.
+
+```
+/application-dev Create a 2D retro game maker with a level editor, sprite editor, entity behaviors, and a playable test mode.
 ```
 
-## Example prompts
+See [plugins/application-dev/README.md](plugins/application-dev/README.md) for full documentation.
 
-Inside Copilot CLI, you can use the application development workflow like this:
+## Prerequisites
 
-```text
-/application-dev Build a fully featured DAW in the browser using the Web Audio API.
-```
+- Claude Code
+- `playwright-cli` on PATH (for the Evaluator agent's browser-based QA)
 
-The browser-local AI skill is also available through the same plugin directory:
+## License
 
-```text
-/application-dev:browser-local-llm
-```
-
-## Notes
-
-- `playwright-cli` must be available on `PATH` for the application evaluator workflow.
-- The Generator guidance is intentionally in-browser only for AI features, using the browser Prompt API first and considering `WebLLM` or `WebNN` when needed.
+MIT
