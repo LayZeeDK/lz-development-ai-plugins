@@ -1,16 +1,17 @@
 ---
 name: browser-webnn
-version: "1.0.0"
+version: "1.1.0"
 description: >-
   This skill should be used when the Generator agent needs to implement
   on-device neural network inference using the W3C WebNN API. Covers
-  navigator.ml feature detection, MLContext creation with NPU/GPU/CPU device
-  hints, MLGraphBuilder graph construction, MLTensor dispatch, ONNX-to-WebNN
-  operator mapping, and browser compatibility. Trigger when: SPEC.md references
-  WebNN, neural network inference, on-device ML, image classification, audio
-  processing, NPU acceleration, or ONNX models in the browser. Do NOT trigger
-  for LLM chat or text generation (use browser-prompt-api or browser-webllm),
-  or for non-browser environments (WebNN is browser-only, inference-only).
+  navigator.ml feature detection, MLContext creation with powerPreference
+  and accelerated options, MLGraphBuilder graph construction, MLTensor
+  dispatch, ONNX-to-WebNN operator mapping, and browser compatibility.
+  Trigger when: SPEC.md references WebNN, neural network inference, on-device
+  ML, image classification, audio processing, NPU acceleration, or ONNX models
+  in the browser. Do NOT trigger for LLM chat or text generation (use
+  browser-prompt-api or browser-webllm), or for non-browser environments
+  (WebNN is browser-only, inference-only).
 tags:
   - webnn
   - on-device-ai
@@ -31,7 +32,7 @@ network inference in the browser.
 
 - Detect and use `navigator.ml` for creating inference contexts
 - Build and execute neural network graphs using `MLGraphBuilder` and `MLContext`
-- Target **NPU**, **GPU**, or **CPU** backends (NPU acceleration is unique among web APIs)
+- Target **NPU**, **GPU**, or **CPU** backends via `powerPreference` and `accelerated`
 - Reference canonical spec, docs, and samples
 
 ---
@@ -48,8 +49,8 @@ if (!('ml' in navigator)) {
 }
 ```
 
-- Browser may override device hints for privacy
-- Cross-origin iframes require the Permissions Policy: `allow="ml"`
+- Browser may override device selection for privacy
+- Cross-origin iframes require the Permissions Policy: `allow="webnn"`
 - WebNN is **inference-only** -- no training or fine-tuning
 
 ---
@@ -60,10 +61,15 @@ if (!('ml' in navigator)) {
 
 ```js
 const context = await navigator.ml.createContext({
-  deviceTypeHint: 'gpu',        // 'npu' | 'gpu' | 'cpu'
-  powerPreference: 'default',   // 'default' | 'high-performance' | 'low-power'
+  powerPreference: 'high-performance', // 'default' | 'high-performance' | 'low-power'
+  accelerated: true,                   // true (GPU/NPU) | false (CPU)
 });
 ```
+
+Device selection uses `powerPreference` and `accelerated` -- there is no
+`deviceType` or `deviceTypeHint` option. `powerPreference: 'low-power'` hints
+toward NPU, `'high-performance'` hints toward GPU. The browser decides the
+actual backend.
 
 ### 2.2 Build a Graph
 
@@ -72,12 +78,12 @@ const builder = new MLGraphBuilder(context);
 
 const input = builder.input('input', {
   dataType: 'float32',
-  dimensions: [1, 3, 224, 224],
+  shape: [1, 3, 224, 224],
 });
 
 const weights = builder.constant(
-  { dataType: 'float32', dimensions: [3, 3, 3, 3] },
-  weightsBuffer,
+  { dataType: 'float32', shape: [3, 3, 3, 3] },
+  weightsBuffer, // ArrayBufferView with the weight data
 );
 
 // conv2d with default padding (none) and stride (1)
@@ -86,29 +92,42 @@ const conv = builder.conv2d(input, weights);
 const graph = await builder.build({ output: conv });
 ```
 
+Note: `MLOperandDescriptor` uses `shape` (not `dimensions`).
+
 ### 2.3 Create Tensors and Run Inference
 
 ```js
+// Create writable input tensor, then write data into it
 const inputTensor = await context.createTensor({
   dataType: 'float32',
-  dimensions: [1, 3, 224, 224],
-  data: inputData,
+  shape: [1, 3, 224, 224],
+  writable: true,
 });
+context.writeTensor(inputTensor, inputData);
 
+// Create readable output tensor
 const outputTensor = await context.createTensor({
   dataType: 'float32',
-  dimensions: [1, 3, 222, 222],
+  shape: [1, 3, 222, 222],
+  readable: true,
 });
 
-await context.dispatch(
+// dispatch() is synchronous (returns undefined) -- it queues the operation
+context.dispatch(
   graph,
   { input: inputTensor },
   { output: outputTensor },
 );
 
-// readTensor returns an ArrayBuffer -- wrap in the appropriate typed array
+// readTensor returns a Promise<ArrayBuffer> -- wrap in the appropriate typed array
 const outputData = new Float32Array(await context.readTensor(outputTensor));
 ```
+
+Key points:
+- `createTensor` does NOT accept a `data` property -- use `writeTensor()` after creation
+- Input tensors need `writable: true`, output tensors need `readable: true`
+- `dispatch()` returns `undefined` (not a Promise) -- it queues work on the timeline
+- `readTensor()` returns `Promise<ArrayBuffer>` -- the await happens here
 
 ### 2.4 Cleanup
 
@@ -128,11 +147,11 @@ context.destroy();
 - `createContext(options): Promise<MLContext>`
 
 ### MLContext
-- `dispatch(graph, inputs, outputs)` -- run inference
-- `createTensor(descriptor)` -- create runtime tensor
-- `createConstantTensor(descriptor)` -- create constant tensor
-- `readTensor(tensor)` -- read tensor data (returns `ArrayBuffer`)
-- `writeTensor(tensor, data)` -- write data to tensor
+- `dispatch(graph, inputs, outputs)` -- queue inference (returns `undefined`)
+- `createTensor(descriptor)` -- create tensor with `readable`/`writable` flags
+- `createConstantTensor(descriptor, inputData)` -- create constant tensor with data
+- `readTensor(tensor)` -- read tensor data (returns `Promise<ArrayBuffer>`)
+- `writeTensor(tensor, data)` -- write data to tensor (returns `undefined`)
 - `opSupportLimits()` -- query device-dependent operator support
 - `destroy()` -- free resources
 
@@ -142,11 +161,12 @@ context.destroy();
   - Pooling: `averagePool2d`, `maxPool2d`
   - `layerNormalization`, `batchNormalization`
   - `concat`, `reshape`, `transpose`
-  - `gather`, `scatter`
+  - `gather`, `scatterElements`, `scatterND`
   - RNN/LSTM/GRU ops
 
 ### MLTensor
 - Runtime tensor for inputs and outputs
+- Created with `readable` and/or `writable` flags
 - Supports buffer sharing
 
 ---
@@ -155,21 +175,23 @@ context.destroy();
 
 WebNN supports:
 
-- **NPU acceleration** -- unique among web APIs, ideal for sustained inference
-- **GPU acceleration** -- high throughput for parallel workloads
-- **CPU fallback** -- always available
+- **NPU acceleration** -- unique among web APIs, ideal for sustained inference. Hint with `powerPreference: 'low-power'`
+- **GPU acceleration** -- high throughput for parallel workloads. Hint with `powerPreference: 'high-performance'`
+- **CPU fallback** -- use `accelerated: false`
 
-Backend availability depends on browser implementation (e.g., DirectML on Windows, CoreML on macOS).
+Backend availability depends on browser implementation (e.g., DirectML on Windows, CoreML on macOS). The browser makes the final device decision.
 
 ---
 
 ## 5. Best Practices
 
-- Always feature-detect WebNN before using it
-- Use `async/await` for all WebNN operations
+- Always feature-detect WebNN before using it (`'ml' in navigator`)
+- Use `async/await` for `createContext`, `createTensor`, `readTensor`, and `build`
+- `dispatch()` is synchronous -- do not await it, await `readTensor()` instead
 - Build graphs **once** and reuse them for multiple inferences
 - Separate model loading from graph construction
 - Use `opSupportLimits()` to check device-dependent operator support
+- Set `readable: true` on output tensors, `writable: true` on input tensors
 - Clean up all tensors, graphs, and contexts in `finally` blocks
 - Prefer on-device inference; avoid suggesting remote upload of sensitive data
 - Warn users that WebNN is experimental and browser support varies
@@ -203,7 +225,6 @@ async function runWebNNExample(inputData, weightData) {
   }
 
   const context = await navigator.ml.createContext({
-    deviceTypeHint: 'gpu',
     powerPreference: 'high-performance',
   });
 
@@ -212,11 +233,11 @@ async function runWebNNExample(inputData, weightData) {
 
     const input = builder.input('input', {
       dataType: 'float32',
-      dimensions: [1, 4],
+      shape: [1, 4],
     });
 
     const weights = builder.constant(
-      { dataType: 'float32', dimensions: [4, 3] },
+      { dataType: 'float32', shape: [4, 3] },
       weightData,
     );
 
@@ -227,16 +248,18 @@ async function runWebNNExample(inputData, weightData) {
 
     const inputTensor = await context.createTensor({
       dataType: 'float32',
-      dimensions: [1, 4],
-      data: inputData,
+      shape: [1, 4],
+      writable: true,
     });
+    context.writeTensor(inputTensor, inputData);
 
     const outputTensor = await context.createTensor({
       dataType: 'float32',
-      dimensions: [1, 3],
+      shape: [1, 3],
+      readable: true,
     });
 
-    await context.dispatch(
+    context.dispatch(
       graph,
       { input: inputTensor },
       { output: outputTensor },
