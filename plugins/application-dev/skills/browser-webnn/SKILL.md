@@ -5,8 +5,8 @@ description: >-
   This skill should be used when the Generator agent needs to implement
   on-device neural network inference using the W3C WebNN API. Covers
   navigator.ml feature detection, MLContext creation with powerPreference
-  and accelerated options, MLGraphBuilder graph construction, MLTensor
-  dispatch, ONNX-to-WebNN operator mapping, and browser compatibility.
+  and accelerated options, MLGraphBuilder graph construction, MLContext
+  dispatch with MLTensor inputs/outputs, and browser compatibility.
   Trigger when: SPEC.md references WebNN, neural network inference, on-device
   ML, image classification, audio processing, NPU acceleration, or ONNX models
   in the browser. Do NOT trigger for LLM chat or text generation (use
@@ -103,7 +103,7 @@ const inputTensor = await context.createTensor({
   shape: [1, 3, 224, 224],
   writable: true,
 });
-context.writeTensor(inputTensor, inputData);
+context.writeTensor(inputTensor, inputData); // writeTensor is synchronous
 
 // Create readable output tensor
 const outputTensor = await context.createTensor({
@@ -228,6 +228,8 @@ async function runWebNNExample(inputData, weightData) {
     powerPreference: 'high-performance',
   });
 
+  let graph, inputTensor, outputTensor;
+
   try {
     const builder = new MLGraphBuilder(context);
 
@@ -244,16 +246,16 @@ async function runWebNNExample(inputData, weightData) {
     const logits = builder.matmul(input, weights);
     const probs = builder.softmax(logits);
 
-    const graph = await builder.build({ output: probs });
+    graph = await builder.build({ output: probs });
 
-    const inputTensor = await context.createTensor({
+    inputTensor = await context.createTensor({
       dataType: 'float32',
       shape: [1, 4],
       writable: true,
     });
-    context.writeTensor(inputTensor, inputData);
+    context.writeTensor(inputTensor, inputData); // writeTensor is synchronous
 
-    const outputTensor = await context.createTensor({
+    outputTensor = await context.createTensor({
       dataType: 'float32',
       shape: [1, 3],
       readable: true,
@@ -267,6 +269,10 @@ async function runWebNNExample(inputData, weightData) {
 
     return new Float32Array(await context.readTensor(outputTensor));
   } finally {
+    // Clean up all resources
+    outputTensor?.destroy();
+    inputTensor?.destroy();
+    graph?.destroy();
     context.destroy();
   }
 }
