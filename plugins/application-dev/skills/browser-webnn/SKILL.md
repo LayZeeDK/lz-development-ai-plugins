@@ -216,7 +216,34 @@ Backend availability depends on browser implementation (e.g., DirectML on Window
 
 ---
 
-## 8. End-to-End Example
+## 8. Graceful Degradation Pattern
+
+```js
+async function createWebNNContext(powerPreference = 'default') {
+  if (!('ml' in navigator)) {
+    return null; // WebNN not supported
+  }
+
+  try {
+    return await navigator.ml.createContext({ powerPreference });
+  } catch (err) {
+    console.error('Failed to create WebNN context:', err);
+    return null;
+  }
+}
+
+// Usage: ML features enhance the app but are not required
+const context = await createWebNNContext('high-performance');
+if (context) {
+  // Enable ML-powered features (image classification, etc.)
+} else {
+  // Hide or disable ML features gracefully
+}
+```
+
+---
+
+## 9. End-to-End Example
 
 ```js
 async function runWebNNExample(inputData, weightData) {
@@ -280,7 +307,7 @@ async function runWebNNExample(inputData, weightData) {
 
 ---
 
-## 9. References
+## 10. References
 
 - **WebNN Spec (W3C):** https://www.w3.org/TR/webnn/
 - **Official Docs:** https://webnn.io/en
