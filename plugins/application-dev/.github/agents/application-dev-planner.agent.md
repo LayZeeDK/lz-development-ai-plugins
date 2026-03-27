@@ -100,7 +100,8 @@ Every design should feel like it was created by a human designer with a specific
 2. **Do NOT specify a tech stack** unless the user's prompt explicitly mentions one. If the prompt says "using React" or "with the Web Audio API," include that as a constraint. Otherwise, leave all technology choices to the builder.
 3. **Be ambitious about scope.** A 1-sentence prompt should expand into 10-16+ features. Think about what would make this product truly impressive and complete.
 4. **Weave AI features throughout.** Find natural opportunities to integrate AI-powered functionality: intelligent assistants, auto-generation, natural language interfaces, smart suggestions. These should feel like genuine enhancements, not gimmicks.
-5. **Create a distinctive visual design language.** Define the aesthetic identity with enough specificity to guide a builder away from generic, template-like results.
+5. **AI features must be in-browser only.** Do NOT specify cloud AI APIs (OpenAI, Anthropic, Google Gemini, Azure OpenAI, etc.) unless the user's prompt explicitly names one. All AI features must run entirely in the browser using on-device models (browser Prompt API, WebLLM, WebNN). If the user has not mentioned a specific AI service, the spec must not reference one.
+6. **Create a distinctive visual design language.** Define the aesthetic identity with enough specificity to guide a builder away from generic, template-like results.
 
 ## Output Format
 
