@@ -139,6 +139,10 @@ const session = await LanguageModel.create({
 - If combined prompts exceed the context window, rejects with `QuotaExceededError`
 - The system prompt is never evicted on context overflow
 
+**Note:** `topK` and `temperature` on `create()` are deprecated and only
+honored in Chrome Extension contexts. In web page contexts they are silently
+ignored.
+
 ---
 
 ## 5. Prompting
@@ -243,37 +247,13 @@ Errors:
 
 ## 7. Tool use
 
-```js
-const session = await LanguageModel.create({
-  initialPrompts: [{ role: 'system', content: 'You are a helpful assistant.' }],
-  expectedInputs: [
-    { type: 'text', languages: ['en'] },
-    { type: 'tool-response' },
-  ],
-  expectedOutputs: [
-    { type: 'text', languages: ['en'] },
-    { type: 'tool-call' },
-  ],
-  tools: [{
-    name: 'getWeather',
-    description: 'Get the weather in a location.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        location: { type: 'string', description: 'City name.' },
-      },
-      required: ['location'],
-    },
-    async execute({ location }) {
-      const res = await fetch(`https://api.example.com/weather?city=${location}`);
-      return JSON.stringify(await res.json());
-    },
-  }],
-});
+The Prompt API supports tool calling where the browser automatically invokes
+`execute()` callbacks when the model requests a tool. Define tools in the
+`create()` options with `name`, `description`, `inputSchema`, and an async
+`execute` function. Include `'tool-response'` in `expectedInputs` and
+`'tool-call'` in `expectedOutputs`.
 
-const result = await session.prompt('What is the weather in Seattle?');
-// Browser calls execute() automatically; multiple tools may run concurrently
-```
+See `examples/tool-use.js` for a complete working example with multiple tools.
 
 ---
 
@@ -328,15 +308,7 @@ const response = await session.prompt([{
 
 ---
 
-## 11. Sampling parameters (extensions only)
-
-`topK` and `temperature` on `LanguageModel.create()` are **deprecated** and
-**only honored in Chrome Extension contexts**. `LanguageModel.params()` is also
-extension-only. In web page contexts, these are silently ignored.
-
----
-
-## 12. Permissions policy
+## 11. Permissions policy
 
 ```html
 <!-- Delegate to cross-origin iframe -->
@@ -347,49 +319,17 @@ Default allowlist is `'self'` -- same-origin access works without configuration.
 
 ---
 
-## 13. Graceful degradation pattern
+## 12. Graceful degradation pattern
 
-Use this pattern for AI features that enhance but are not required:
+For AI features that enhance the app but are not required, use the
+`createAISession()` wrapper that returns a session or `null`.
 
-```js
-async function createAISession(systemPrompt) {
-  if (typeof LanguageModel === 'undefined') {
-    return null;
-  }
-
-  const availability = await LanguageModel.availability({
-    expectedInputs: [{ type: 'text', languages: ['en'] }],
-    expectedOutputs: [{ type: 'text', languages: ['en'] }],
-  });
-
-  if (availability === 'unavailable') {
-    return null;
-  }
-
-  return LanguageModel.create({
-    initialPrompts: [{ role: 'system', content: systemPrompt }],
-    expectedInputs: [{ type: 'text', languages: ['en'] }],
-    expectedOutputs: [{ type: 'text', languages: ['en'] }],
-    monitor(m) {
-      m.addEventListener('downloadprogress', (e) => {
-        console.log(`Model download: ${Math.round(e.loaded * 100)}%`);
-      });
-    },
-  });
-}
-
-// Usage: AI features enhance the app but are not required
-const ai = await createAISession('You are a helpful assistant.');
-if (ai) {
-  // Enable AI-powered features
-} else {
-  // Hide or disable AI features gracefully
-}
-```
+Read `references/graceful-degradation.md` for the complete pattern with
+download progress handling and usage examples.
 
 ---
 
-## 14. Best practices
+## 13. Best practices
 
 ### Prompting
 - Always set a clear system prompt for role and style
