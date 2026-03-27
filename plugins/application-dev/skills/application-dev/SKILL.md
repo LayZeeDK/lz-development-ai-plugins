@@ -12,33 +12,16 @@ description: >-
 license: MIT
 compatibility: >-
   Requires playwright-cli on PATH for browser-based QA testing.
-  Claude Code: sub-agents loaded from the plugin's agents/ directory.
-  GitHub Copilot CLI: when loaded with --plugin-dir, agents are bundled under
-  .github/agents/ inside this plugin; for other projects, copy
-  plugins/application-dev/.github/agents/*.agent.md to .github/agents/.
+  Sub-agents loaded from the plugin's agents/ directory.
 metadata:
   author: Lars Gyrup Brink Nielsen
-allowed-tools: Agent agent Read
+allowed-tools: Agent Read
 ---
 
 # Autonomous Application Development
 
 Build a complete application from the user's prompt using three specialized
 agents in an adversarial loop inspired by GANs.
-
-## Platform note
-
-**Claude Code:** This skill spawns agents from the plugin's `agents/` directory:
-- `application-dev:planner`, `application-dev:generator`, `application-dev:evaluator`
-
-**GitHub Copilot CLI:** This skill delegates to custom agents via the `agent`/`task`
-delegation tools:
-- `@application-dev-planner`, `@application-dev-generator`, `@application-dev-evaluator`
-
-Agents are bundled in `plugins/application-dev/.github/agents/` of this repo.
-When using Copilot CLI with `--plugin-dir ./plugins/application-dev`, they are
-picked up alongside the skill. For other projects, copy
-`plugins/application-dev/.github/agents/*.agent.md` to `.github/agents/`.
 
 ## Architecture
 
@@ -54,10 +37,11 @@ Execute these steps in order. Do not deviate from this sequence.
 
 ### Step 1: Plan
 
-Invoke the planner sub-agent with the user's prompt verbatim.
+Spawn the Planner agent with the user's prompt verbatim:
 
-- Claude Code: `Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim>")`
-- Copilot CLI: delegate to `@application-dev-planner` via the `agent` tool with an explicit operational note to create or overwrite `SPEC.md` in the current working directory using its edit/write tool, not return the spec only as agent output, and re-read `SPEC.md` before finishing.
+```
+Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim>")
+```
 
 The Planner writes `SPEC.md` to the working directory. After it completes, read `SPEC.md` and verify it contains:
 - A product name and overview
@@ -68,7 +52,7 @@ The Planner writes `SPEC.md` to the working directory. After it completes, read 
 - AI feature integration points
 - If the user's prompt specified a tech stack, verify the spec preserves that constraint
 
-If `SPEC.md` is missing or incomplete, re-invoke the planner with an explicit note about what is missing and a reminder that it must write the file into the repository rather than leaving the spec in agent output.
+If `SPEC.md` is missing or incomplete, re-spawn the Planner with an explicit note about what is missing.
 
 ### Step 2: Build/QA Loop
 
@@ -76,23 +60,27 @@ Run up to 3 rounds. Each round consists of a Build phase followed by an Evaluate
 
 #### Build Phase
 
-Invoke the generator sub-agent.
+Spawn the Generator agent.
 
-- Claude Code: `Agent(subagent_type: "application-dev:generator", prompt: "Build the application defined in SPEC.md. This is build round 1 -- there is no prior QA feedback.")`
-- Copilot CLI: delegate to `@application-dev-generator` via the `agent` tool with an explicit operational note to write files directly into the current working directory, create missing parent directories with the execute tool before writing nested files, and verify the repository files exist before finishing.
+Round 1:
+```
+Agent(subagent_type: "application-dev:generator", prompt: "Build the application defined in SPEC.md. This is build round 1 -- there is no prior QA feedback.")
+```
 
-Rounds 2+ should pass `QA-REPORT.md` to the generator so it can fix issues.
-
-If the generator reports drafted files without repository writes, or reports that parent directories do not exist, re-invoke it with the same QA context plus an explicit reminder to create the missing directories first and retry the file writes in-repo.
+Rounds 2+:
+```
+Agent(subagent_type: "application-dev:generator", prompt: "This is build round <N>. Read QA-REPORT.md for the Evaluator's feedback from the previous round. Fix the issues found and improve the application.")
+```
 
 #### Evaluate Phase
 
-Invoke the evaluator sub-agent.
+Spawn the Evaluator agent:
 
-- Claude Code: `Agent(subagent_type: "application-dev:evaluator", prompt: "Evaluate the application against SPEC.md. This is QA round <N>. Write your report to QA-REPORT.md.")`
-- Copilot CLI: delegate to `@application-dev-evaluator` via the `agent` tool
+```
+Agent(subagent_type: "application-dev:evaluator", prompt: "Evaluate the application against SPEC.md. This is QA round <N>. Write your report to QA-REPORT.md.")
+```
 
-After the Evaluator completes, read `QA-REPORT.md` and verify it contains a Verdict, Scores table, and Priority Fixes section. If the report is missing or malformed, re-invoke the evaluator with a note to regenerate the full report.
+After the Evaluator completes, read `QA-REPORT.md` and verify it contains a Verdict, Scores table, and Priority Fixes section. If the report is missing or malformed, re-spawn the Evaluator with a note to regenerate the full report.
 
 Check the overall verdict:
 - **PASS**: Stop the loop. Proceed to Step 3.
