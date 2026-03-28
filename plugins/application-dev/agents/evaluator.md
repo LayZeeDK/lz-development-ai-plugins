@@ -242,83 +242,9 @@ Is the code well-structured, consistent, and maintainable?
 
 Write your report to `evaluation/round-N/EVALUATION.md` where N is the current evaluation round number (derive from the prompt, e.g., "This is evaluation round 2" means write to `evaluation/round-2/EVALUATION.md`). Also save screenshots to `evaluation/round-N/screenshots/`.
 
-Use this exact format:
-
-```
-# Evaluation Report -- <Product Name>
-
-## Generation Round: <N>
-
-## Verdict: <PASS or FAIL>
-
-A criterion FAILS if its score is below the threshold. The overall verdict is FAIL if ANY criterion fails.
-
-## Scores
-
-| Criterion | Score | Threshold | Status |
-|-----------|-------|-----------|--------|
-| Product Depth | X/10 | 7 | PASS/FAIL |
-| Functionality | X/10 | 7 | PASS/FAIL |
-| Visual Design | X/10 | 6 | PASS/FAIL |
-| Code Quality | X/10 | 6 | PASS/FAIL |
-
-## Product Depth Assessment
-
-<For each feature in the spec, state its status:>
-
-| # | Feature | Status | Notes |
-|---|---------|--------|-------|
-| 1 | Feature Name | Implemented / Partial / Missing / Broken | Brief explanation |
-| 2 | Feature Name | ... | ... |
-| ... | ... | ... | ... |
-
-**Scoring "Partial" strictly:** Partial is not a safe middle ground. If the missing part of a feature is essential to its purpose, treat it as Broken. A form that submits but does not validate is Broken, not Partial. A dashboard missing one optional widget is Partial. Ask: "Can a user accomplish the feature's core purpose?" If no, it is Broken.
-
-<Detailed commentary on feature coverage. What is missing? What is superficial?>
-
-## Functionality Assessment
-
-<Describe what you tested and exactly what happened. Be specific about failures.>
-
-### Bugs Found
-
-1. **<Bug title>**
-   - **Steps to reproduce:** <exact steps>
-   - **Expected:** <what should happen>
-   - **Actual:** <what actually happens>
-   - **Severity:** Critical / Major / Minor
-
-2. **<Bug title>**
-   - ...
-
-(List ALL bugs found, not just a few examples.)
-
-**Group related issues under a shared root cause when possible.** If multiple symptoms trace back to one underlying problem (e.g., four layout issues caused by one broken flex container), group them and identify the root cause. This helps the Generator fix the cause instead of chasing symptoms.
-
-## Visual Design Assessment
-
-<Does the design match the spec's design language? Is it distinctive or generic? Specific observations about color, typography, layout, spacing, and overall identity. Note any AI-slop patterns: purple gradients on white cards, generic hero sections, excessive shadows, default component library look.>
-
-## Code Quality Assessment
-
-<Project structure, code patterns, consistency, error handling, dependency choices. Specific observations, not vague praise.>
-
-## Regressions (Rounds 2+ Only)
-
-<If this is round 2 or later, list any regressions -- features or behaviors that worked in the previous round but are now broken. If no regressions, state "No regressions detected.">
-
-| Previously Working | Now Broken | Likely Cause |
-|--------------------|------------|--------------|
-| <feature/behavior> | <what fails> | <git diff context> |
-
-## Priority Fixes for Next Round
-
-<If verdict is FAIL, list the fixes most likely to move scores above thresholds, in priority order:>
-
-1. **<Highest priority fix>** -- <which criterion it improves and why>
-2. **<Next priority fix>** -- ...
-3. ...
-```
+Read the evaluation template at `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/EVALUATION-TEMPLATE.md`.
+Follow the template structure exactly. Do not rename sections or change the Scores table format --
+the orchestrator's CLI parses specific patterns from this file.
 
 ### 8.5. Commit Evaluation Artifacts
 
@@ -356,8 +282,8 @@ kill %1 2>/dev/null
 
 Before completing, re-read `evaluation/round-N/EVALUATION.md` and verify it contains all of the following:
 
-1. **Verdict line** -- `## Verdict: PASS` or `## Verdict: FAIL` present in the report
-2. **Scores table** -- a table with all four criteria (Product Depth, Functionality, Visual Design, Code Quality) including scores, thresholds, and PASS/FAIL status for each
+1. **Verdict line** -- `## Verdict: PASS` or `## Verdict: FAIL` present as defined in the template
+2. **Scores table** -- all four criteria from the template (Product Depth, Functionality, Visual Design, Code Quality) with scores, thresholds, and PASS/FAIL status
 3. **Priority Fixes section** -- a `## Priority Fixes for Next Round` section. If the verdict is PASS, include the section with the text "No priority fixes -- all criteria met." If the verdict is FAIL, list the fixes most likely to move scores above thresholds in priority order.
 
 If any of these are missing or incomplete, fix the file before completing. This is your inner quality gate -- do not hand off a report with gaps.

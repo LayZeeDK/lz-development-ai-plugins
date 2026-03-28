@@ -50,95 +50,10 @@ Transform a brief user prompt into a detailed product spec that will guide an au
 
 ## Output Format
 
-Create or overwrite `SPEC.md` in the working directory using this structure:
-
-```
-# <Product Name> -- <Tagline>
-
-## Overview
-
-<2-3 paragraphs describing:>
-- What the product is and what problem it solves
-- Who the target audience is and what they care about
-- What makes this product distinctive
-- The key modules or areas of the product
-
-## Visual Design Language
-
-### Aesthetic Direction
-<Describe the overall mood, visual identity, and design philosophy. Reference concrete aesthetic traditions -- e.g., "pixel-art retro computing," "Swiss minimalist design," "dark-mode IDE aesthetic." Avoid vague platitudes like "clean and modern.">
-
-### Color Palette
-<Define a cohesive color philosophy -- not hex codes, but the character of the palette. E.g., "warm earth tones with a single vibrant accent color for interactive elements" or "high-contrast dark theme with neon highlights inspired by retro arcade cabinets.">
-
-### Typography
-<Describe the typographic approach -- hierarchy, personality, readability priorities.>
-
-### Layout Principles
-<Describe spatial organization, density, whitespace philosophy, responsive behavior.>
-
-## User Journey
-
-<2-3 paragraphs describing how a user moves through the product:>
-- What does a first-time user see and do? What is the onboarding flow?
-- What does a returning user do? What is their typical session?
-- How do the features connect? What leads to what?
-- What is the user's mental model of the product?
-
-This is not a feature list -- it is a narrative that describes the product experience end-to-end.
-
-## Constraints and Non-Goals
-
-<Explicitly state what the product does NOT include in this version. This prevents scope creep and misaligned expectations.>
-
-Examples of non-goals:
-- No authentication or user accounts (unless the prompt requires it)
-- No real-time collaboration
-- No offline mode
-- No custom theming
-- No mobile-native features (web only)
-
-Be specific. The Generator will not build what is listed here, and the Evaluator will not penalize its absence.
-
-## Features
-
-List features in priority order within three tiers:
-- **Core**: Must be implemented for the product to function. These are built first.
-- **Important**: Significantly enhance the product. Built after core features are solid.
-- **Nice-to-have**: Polish and delight. Built if time and scope allow.
-
-### 1. <Feature Name> [Core/Important/Nice-to-have]
-
-<1-2 paragraphs explaining what this feature is, why users need it, and how it fits into the overall product.>
-
-**User Stories:**
-- As a user, I want to <action>, so that <benefit>
-- As a user, I want to <action>, so that <benefit>
-- As a user, I want to <action>, so that <benefit>
-- ...
-
-**Data Model:** (if applicable)
-<Describe the key data entities, their fields, and their relationships to other entities.>
-
-### 2. <Feature Name> [Core/Important/Nice-to-have]
-...
-
-(Continue for all 10-16+ features)
-
-## AI Integration
-
-<For each AI-powered feature, describe:>
-- What it does from the user's perspective
-- Where it appears in the product workflow
-- What capabilities it provides (generation, suggestion, analysis, etc.)
-
-## Non-Functional Considerations
-
-- Performance expectations
-- Accessibility considerations
-- Data persistence approach (local storage, database, file system, etc.)
-- Any platform constraints from the user's prompt
-```
+Read the SPEC template at `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/SPEC-TEMPLATE.md`.
+Create or overwrite `SPEC.md` in the working directory following the template structure exactly.
+Do not add, remove, or rename top-level sections -- the template defines the canonical format.
+Fill in each section with content appropriate to the user's prompt.
 
 ## Guidelines for Feature Design
 
@@ -174,7 +89,7 @@ For a prompt like "Create a 2D retro game maker," a strong spec would:
 Before completing, re-read `SPEC.md` and verify it contains all of the following:
 
 1. **Product name and overview** -- a named product with 2-3 paragraphs describing what it is, who it is for, and what makes it distinctive
-2. **Features section** -- a `## Features` section with 10 or more numbered features, each assigned a priority tier (Core, Important, or Nice-to-have)
+2. **Features section** -- a `## Features` section with 10 or more numbered features, each assigned a priority tier (Core, Important, or Nice-to-have), following the template structure
 3. **User journey narrative** -- a `## User Journey` section describing how a user moves through the product end-to-end
 4. **Constraints and non-goals** -- a `## Constraints and Non-Goals` section explicitly stating what the product does NOT include
 5. **Visual design language** -- a `## Visual Design Language` section with aesthetic direction, color palette, typography, and layout principles
