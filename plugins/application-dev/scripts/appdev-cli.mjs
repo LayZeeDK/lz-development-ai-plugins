@@ -8,7 +8,6 @@ const STATE_FILE = join(process.cwd(), ".appdev-state.json");
 const VALID_STEPS = ["plan", "generate", "evaluate", "summary", "complete"];
 const VALID_STATUSES = ["in_progress", "error", "complete"];
 const VALID_EXIT_CONDITIONS = ["PASS", "PLATEAU", "REGRESSION", "SAFETY_CAP"];
-const VALID_VERDICTS = ["PASS", "FAIL"];
 
 function fail(message) {
   process.stderr.write(JSON.stringify({ error: message }) + "\n");
