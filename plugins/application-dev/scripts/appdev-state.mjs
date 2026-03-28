@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-"use strict";
 
-const fs = require("fs");
-const path = require("path");
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
 
-const STATE_FILE = path.join(process.cwd(), ".appdev-state.json");
+const STATE_FILE = join(process.cwd(), ".appdev-state.json");
 
 const VALID_STEPS = ["plan", "generate", "evaluate", "summary", "complete"];
 const VALID_STATUSES = ["in_progress", "error", "complete"];
@@ -21,19 +20,19 @@ function output(data) {
 }
 
 function readState() {
-  if (!fs.existsSync(STATE_FILE)) {
+  if (!existsSync(STATE_FILE)) {
     fail("State file does not exist. Run 'init' first.");
   }
 
   try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+    return JSON.parse(readFileSync(STATE_FILE, "utf8"));
   } catch (err) {
     fail("Failed to parse state file: " + err.message);
   }
 }
 
 function writeState(state) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + "\n", "utf8");
+  writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + "\n", "utf8");
 }
 
 function parseArgs(argv) {
@@ -85,7 +84,7 @@ function cmdInit(argv) {
     fail("Missing required argument: --prompt <text>");
   }
 
-  if (fs.existsSync(STATE_FILE)) {
+  if (existsSync(STATE_FILE)) {
     fail("State file already exists. Delete it first or use 'delete' subcommand.");
   }
 
@@ -251,15 +250,15 @@ function cmdComplete(argv) {
 }
 
 function cmdDelete() {
-  if (fs.existsSync(STATE_FILE)) {
-    fs.unlinkSync(STATE_FILE);
+  if (existsSync(STATE_FILE)) {
+    unlinkSync(STATE_FILE);
   }
 
   output({ deleted: true });
 }
 
 function cmdExists() {
-  output({ exists: fs.existsSync(STATE_FILE) });
+  output({ exists: existsSync(STATE_FILE) });
 }
 
 // --- Main ---
