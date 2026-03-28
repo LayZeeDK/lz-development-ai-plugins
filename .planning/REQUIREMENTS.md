@@ -20,9 +20,9 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 ### Git Workflow
 
 - [ ] **GIT-01**: Planner commits SPEC.md to git after generating it
-- [ ] **GIT-02**: Generator commits frequently throughout its build (feature-by-feature), not just at round end
-- [ ] **GIT-03**: Generator adds/updates .gitignore with node_modules/, build output folder, and .playwright-cli/
-- [ ] **GIT-04**: Evaluator commits QA report and related artifacts into qa/round-N/ folder per round
+- [x] **GIT-02**: Generator commits frequently throughout its build (feature-by-feature), not just at round end
+- [x] **GIT-03**: Generator adds/updates .gitignore with node_modules/, build output folder, and .playwright-cli/
+- [x] **GIT-04**: Evaluator commits QA report and related artifacts into qa/round-N/ folder per round
 - [ ] **GIT-05**: Milestone git tags at key points: after planning, after each build/QA round, after final result
 
 ### Loop Control
@@ -32,9 +32,9 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 - [ ] **LOOP-03**: Wrap-up phase when safety cap is hit -- Generator consolidates into working state, Evaluator produces final report documenting remaining gaps (Ralph Loop influence)
 - [x] **LOOP-04**: Four exit conditions ordered by priority: PASS (all criteria meet thresholds), PLATEAU (scores converged), REGRESSION (2 consecutive total-score declines), SAFETY CAP (10 rounds reached)
 - [x] **LOOP-05**: Escalation vocabulary (E-0 Normal through E-IV Catastrophic) structures orchestrator exit decisions into a named, debuggable framework
-- [ ] **LOOP-06**: Feature count watchdog in orchestrator -- detect when Generator games scores by removing hard-to-implement features between rounds
-- [ ] **LOOP-07**: Generator scope constraint in rounds 2+ (cybernetics damping principle) -- fix only what the Evaluator flagged, do not add new features or refactor working code
-- [ ] **LOOP-08**: Context loading order optimization -- present QA-REPORT.md before SPEC.md to Generator in rounds 2+ to prime fixing behavior over building behavior
+- [x] **LOOP-06**: Feature count watchdog in orchestrator -- detect when Generator games scores by removing hard-to-implement features between rounds
+- [x] **LOOP-07**: Generator scope constraint in rounds 2+ (cybernetics damping principle) -- fix only what the Evaluator flagged, do not add new features or refactor working code
+- [x] **LOOP-08**: Context loading order optimization -- present QA-REPORT.md before SPEC.md to Generator in rounds 2+ to prime fixing behavior over building behavior
 - [x] **LOOP-09**: Score trajectory tracking across rounds in a progress file that survives context compaction
 
 ### Evaluator Quality
@@ -114,18 +114,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ORCH-06 | Phase 1 | Complete |
 | ORCH-07 | Phase 1 | Complete |
 | GIT-01 | Phase 2 | Pending |
-| GIT-02 | Phase 2 | Pending |
-| GIT-03 | Phase 2 | Pending |
-| GIT-04 | Phase 2 | Pending |
+| GIT-02 | Phase 2 | Complete |
+| GIT-03 | Phase 2 | Complete |
+| GIT-04 | Phase 2 | Complete |
 | GIT-05 | Phase 2 | Pending |
 | LOOP-01 | Phase 2 | Complete |
 | LOOP-02 | Phase 2 | Pending |
 | LOOP-03 | Phase 2 | Pending |
 | LOOP-04 | Phase 2 | Complete |
 | LOOP-05 | Phase 2 | Complete |
-| LOOP-06 | Phase 2 | Pending |
-| LOOP-07 | Phase 2 | Pending |
-| LOOP-08 | Phase 2 | Pending |
+| LOOP-06 | Phase 2 | Complete |
+| LOOP-07 | Phase 2 | Complete |
+| LOOP-08 | Phase 2 | Complete |
 | LOOP-09 | Phase 2 | Complete |
 | EVAL-01 | Phase 3 | Pending |
 | EVAL-02 | Phase 3 | Pending |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-28T10:55:05.034Z"
-last_activity: 2026-03-28 -- Completed 02-01 (CLI rename and convergence engine)
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-28T11:02:41.227Z"
+last_activity: 2026-03-28 -- Completed 02-02 (Agent definition updates with GAN language and git workflow)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 ## Current Position
 
 Phase: 2 of 4 (Git Workflow and Loop Control)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-28 -- Completed 02-01 (CLI rename and convergence engine)
+Last activity: 2026-03-28 -- Completed 02-02 (Agent definition updates with GAN language and git workflow)
 
-Progress: [######....] 60%
+Progress: [########..] 80%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [######....] 60%
 
 *Updated after each plan completion*
 | Phase 02 P01 | 3min | 2 tasks | 1 files |
+| Phase 02 P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 02]: Bundled get-trajectory into main rewrite commit as single coherent CLI extension
 - [Phase 02]: round-complete error output uses stdout JSON with exit code 1 for JSON protocol consistency
 - [Phase 02]: Rounds array sorted by round number after upsert to handle out-of-order round-complete calls
+- [Phase 02]: Generator reads evaluation/round-{N-1}/EVALUATION.md before SPEC.md in rounds 2+ -- primes for fixing not building
+- [Phase 02]: Fix-only mode framed as cybernetics damping principle -- unconstrained changes cause oscillation
+- [Phase 02]: All playwright-cli references updated to npx playwright-cli -- project devDependency not system PATH
 
 ### Pending Todos
 
@@ -86,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T10:55:05.032Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-28T11:02:41.225Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
