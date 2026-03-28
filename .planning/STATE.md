@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-03-28T11:13:23.595Z"
-last_activity: 2026-03-28 -- Completed 02-03 (Orchestrator SKILL.md rewrite and ARCHITECTURE.md)
+stopped_at: Completed 02.1-01-PLAN.md
+last_updated: "2026-03-28T11:49:19.170Z"
+last_activity: 2026-03-28 -- Completed 02.1-01 (Extract inline formats into template reference files)
 progress:
-  total_phases: 4
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 6
+  completed_plans: 6
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application. Working application with real assets, real AI features, quality driven by adversarial iteration.
-**Current focus:** Phase 2: Git Workflow and Loop Control (complete)
+**Current focus:** Phase 02.1: Use Templates for SPEC.md and EVALUATION.md (complete)
 
 ## Current Position
 
-Phase: 2 of 4 (Git Workflow and Loop Control) -- COMPLETE
-Plan: 3 of 3 in current phase
+Phase: 02.1 of 4 (Use Templates for SPEC.md and EVALUATION.md) -- COMPLETE
+Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-03-28 -- Completed 02-03 (Orchestrator SKILL.md rewrite and ARCHITECTURE.md)
+Last activity: 2026-03-28 -- Completed 02.1-01 (Extract inline formats into template reference files)
 
 Progress: [##########] 100%
 
@@ -53,6 +53,7 @@ Progress: [##########] 100%
 | Phase 02 P01 | 3min | 2 tasks | 1 files |
 | Phase 02 P02 | 4min | 2 tasks | 3 files |
 | Phase 02 P03 | 3min | 2 tasks | 2 files |
+| Phase 02.1 P01 | 3min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,13 @@ Recent decisions affecting current work:
 - [Phase 02]: allowed-tools expanded with specific per-command git/npm patterns, not broad Bash(git *)
 - [Phase 02]: SAFETY_CAP wrap-up is round 11 in numbering with its own tag and evaluation folder
 - [Phase 02]: Separate Bash calls for each git command -- shell operators break allowed-tools pattern matching
+- [Phase 02.1]: Structural guidance in templates; behavioral guidance stays in agent definitions
+- [Phase 02.1]: HTML comments mark regex-sensitive sections in EVALUATION-TEMPLATE.md for maintainability
+- [Phase 02.1]: Self-verification checklists reference templates rather than restating format details
+
+### Roadmap Evolution
+
+- Phase 02.1 inserted after Phase 2: Use templates for SPEC.md and EVALUATION.md (URGENT)
 
 ### Pending Todos
 
@@ -95,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T11:07:04.813Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-03-28T11:49:19.168Z
+Stopped at: Completed 02.1-01-PLAN.md
 Resume file: None

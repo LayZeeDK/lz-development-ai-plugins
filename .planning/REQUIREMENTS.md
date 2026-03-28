@@ -39,11 +39,11 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 
 ### Template Extraction (Phase 02.1 -- INSERTED)
 
-- [ ] **TPL-01**: SPEC-TEMPLATE.md exists in references/ with all canonical section headings extracted from planner.md's inline format specification
-- [ ] **TPL-02**: EVALUATION-TEMPLATE.md exists in references/ with scores table format matching the appdev-cli.mjs extractScores() regex contract, and WARNING comments marking parsed sections
-- [ ] **TPL-03**: appdev-cli.mjs extractScores() regex is unchanged -- the template preserves the exact parse contract (criterion names, score format, verdict heading)
-- [ ] **TPL-04**: planner.md references SPEC-TEMPLATE.md via `${CLAUDE_PLUGIN_ROOT}` path and no longer contains the inline format code block
-- [ ] **TPL-05**: evaluator.md references EVALUATION-TEMPLATE.md via `${CLAUDE_PLUGIN_ROOT}` path and no longer contains the inline format code block
+- [x] **TPL-01**: SPEC-TEMPLATE.md exists in references/ with all canonical section headings extracted from planner.md's inline format specification
+- [x] **TPL-02**: EVALUATION-TEMPLATE.md exists in references/ with scores table format matching the appdev-cli.mjs extractScores() regex contract, and WARNING comments marking parsed sections
+- [x] **TPL-03**: appdev-cli.mjs extractScores() regex is unchanged -- the template preserves the exact parse contract (criterion names, score format, verdict heading)
+- [x] **TPL-04**: planner.md references SPEC-TEMPLATE.md via `${CLAUDE_PLUGIN_ROOT}` path and no longer contains the inline format code block
+- [x] **TPL-05**: evaluator.md references EVALUATION-TEMPLATE.md via `${CLAUDE_PLUGIN_ROOT}` path and no longer contains the inline format code block
 
 ### Evaluator Quality
 
@@ -135,11 +135,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LOOP-07 | Phase 2 | Complete |
 | LOOP-08 | Phase 2 | Complete |
 | LOOP-09 | Phase 2 | Complete |
-| TPL-01 | Phase 02.1 | Pending |
-| TPL-02 | Phase 02.1 | Pending |
-| TPL-03 | Phase 02.1 | Pending |
-| TPL-04 | Phase 02.1 | Pending |
-| TPL-05 | Phase 02.1 | Pending |
+| TPL-01 | Phase 02.1 | Complete |
+| TPL-02 | Phase 02.1 | Complete |
+| TPL-03 | Phase 02.1 | Complete |
+| TPL-04 | Phase 02.1 | Complete |
+| TPL-05 | Phase 02.1 | Complete |
 | EVAL-01 | Phase 3 | Pending |
 | EVAL-02 | Phase 3 | Pending |
 | EVAL-03 | Phase 3 | Pending |

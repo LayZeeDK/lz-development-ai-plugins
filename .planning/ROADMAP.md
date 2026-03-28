@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, prompt guards, and delegation-only orchestrator behavior
 - [x] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
-- [ ] **Phase 02.1: Use templates for SPEC.md and EVALUATION.md** (INSERTED) - Extract inline format specs into canonical template files for structural consistency
+- [x] **Phase 02.1: Use templates for SPEC.md and EVALUATION.md** (INSERTED) - Extract inline format specs into canonical template files for structural consistency (completed 2026-03-28)
 - [ ] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring
 - [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
 
@@ -64,7 +64,7 @@ Plans:
   3. The Evaluator agent reads the evaluation template before producing EVALUATION.md
   4. Neither agent definition contains an inline format code block -- the templates are the single source of truth
   5. appdev-cli.mjs is completely unchanged -- the regex contract is preserved
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 02.1-01-PLAN.md -- Create template files and update agent definitions to reference them
@@ -109,6 +109,6 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Orchestrator Integrity | 2/2 | Complete | 2026-03-28 |
 | 2. Git Workflow and Loop Control | 3/3 | Complete | 2026-03-28 |
-| 02.1. Templates for SPEC/EVALUATION | 0/1 | Not started | - |
+| 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete   | 2026-03-28 |
 | 3. Evaluator Hardening | 0/2 | Not started | - |
 | 4. Generator Hardening and Skills | 0/2 | Not started | - |
