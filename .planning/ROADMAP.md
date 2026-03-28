@@ -26,7 +26,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Success Criteria** (what must be TRUE):
   1. When a user runs /application-dev and an agent spawn fails twice, the orchestrator errors out with a diagnostic message instead of attempting the agent's work
   2. Each agent (Planner, Generator, Evaluator) has a distinct tool allowlist that prevents cross-role tool usage -- Generator cannot use Evaluator tools and vice versa
-  3. Plugin-level hooks enforce tool boundaries as defense-in-depth on top of allowlist and prompt guards
+  3. Two-layer enforcement (tool allowlists + prompt guards) enforces role boundaries as defense-in-depth
   4. The orchestrator passes only the file protocol described in SKILL.md to agents -- no extra context leaks into agent prompts
   5. A workflow state file tracks current step and round number so the orchestrator can resume after interruptions
 **Plans**: 2 plans

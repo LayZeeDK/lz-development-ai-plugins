@@ -13,8 +13,8 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 - [ ] **ORCH-02**: When an agent spawn fails (API error, rate limit, timeout), orchestrator retries up to 2 times then errors out with diagnostic -- never falls back to doing the work itself
 - [ ] **ORCH-03**: Orchestrator only passes to agents what is described in SKILL.md -- no extra context leaking beyond the defined file protocol
 - [ ] **ORCH-04**: Tool allowlists audited and tightened per agent role based on GAN separation of concerns (Generator: build tools, Evaluator: read + QA write, Planner: read + spec write, Orchestrator: agent spawn + read)
-- [ ] **ORCH-05**: Plugin-level hooks (hooks/hooks.json) enforce GAN role boundaries as structural defense-in-depth on top of tool allowlists and prompt guards
-- [ ] **ORCH-06**: Belt-and-suspenders tool restriction: `tools` allowlist + `disallowedTools` denylist + prompt-level "you cannot use X" instructions + plugin-level hooks
+- [ ] **ORCH-05**: Two-layer enforcement model per agent: structural tool allowlists (`tools` frontmatter) plus behavioral prompt guards (output-domain constraints in agent instructions). Plugin hooks dropped -- hooks are session-wide and cannot distinguish between agents, making them unsuitable for per-role enforcement.
+- [ ] **ORCH-06**: Belt-and-suspenders tool restriction uses two layers: `tools` allowlist (structural, enforced by runtime) + prompt guards (behavioral, enforced by agent instructions). `disallowedTools` is not available on skills/agents; plugin hooks dropped (session-wide scope). The two layers provide defense-in-depth without the infeasible four-layer design.
 - [ ] **ORCH-07**: Orchestrator maintains workflow state in a file (current step, round number, agent status) so it can resume the correct workflow step after user interruptions, error recovery, or context compaction
 
 ### Git Workflow
