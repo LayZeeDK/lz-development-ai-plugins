@@ -12,7 +12,7 @@ This milestone hardens the application-dev plugin from a working-but-fragile pro
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, plugin hooks, and delegation-only orchestrator behavior
+- [ ] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, prompt guards, and delegation-only orchestrator behavior
 - [ ] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
 - [ ] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring
 - [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
@@ -29,11 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Plugin-level hooks enforce tool boundaries as defense-in-depth on top of allowlist and prompt guards
   4. The orchestrator passes only the file protocol described in SKILL.md to agents -- no extra context leaks into agent prompts
   5. A workflow state file tracks current step and round number so the orchestrator can resume after interruptions
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- State CLI script and agent definition hardening (tool allowlists, prompt guards, self-verification)
+- [ ] 01-02-PLAN.md -- Orchestrator SKILL.md rewrite (state management, error recovery, binary checks, delegation enforcement)
 
 ### Phase 2: Git Workflow and Loop Control
 **Goal**: Every agent commits its artifacts to git, and the orchestrator uses score-based convergence detection with named exit conditions to decide when to stop looping
