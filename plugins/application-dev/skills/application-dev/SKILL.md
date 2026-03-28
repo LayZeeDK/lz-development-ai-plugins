@@ -155,8 +155,17 @@ Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-state.mjs update --step generate 
 
 Spawn the Generator with the appropriate prompt:
 
-- Round 1: `"Build the application defined in SPEC.md. This is build round 1 -- there is no prior QA feedback."`
-- Round 2+: `"This is build round N. Read QA-REPORT.md for the Evaluator's feedback from the previous round. Fix the issues found and improve the application."`
+Round 1:
+
+```
+Agent(subagent_type: "application-dev:generator", prompt: "Build the application defined in SPEC.md. This is build round 1 -- there is no prior QA feedback.")
+```
+
+Round 2+:
+
+```
+Agent(subagent_type: "application-dev:generator", prompt: "This is build round N. Read QA-REPORT.md for the Evaluator's feedback from the previous round. Fix the issues found and improve the application.")
+```
 
 Apply the error recovery pattern.
 
