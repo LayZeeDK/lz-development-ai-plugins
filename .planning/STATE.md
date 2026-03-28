@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-28T01:55:59Z"
-last_activity: 2026-03-28 -- Completed 01-01 (State CLI and agent hardening)
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-28T02:03:22Z"
+last_activity: 2026-03-28 -- Completed 01-02 (Orchestrator SKILL.md rewrite)
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 9
-  completed_plans: 1
-  percent: 11
+  completed_plans: 2
+  percent: 22
 ---
 
 # Project State
@@ -21,33 +21,33 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application. Working application with real assets, real AI features, quality driven by adversarial iteration.
-**Current focus:** Phase 1: Orchestrator Integrity
+**Current focus:** Phase 2: Git Workflow and Loop Control
 
 ## Current Position
 
-Phase: 1 of 4 (Orchestrator Integrity)
-Plan: 1 of 2 in current phase
+Phase: 2 of 4 (Git Workflow and Loop Control)
+Plan: 0 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-28 -- Completed 01-01 (State CLI and agent hardening)
+Last activity: 2026-03-28 -- Completed 01-02 (Orchestrator SKILL.md rewrite)
 
-Progress: [#.........] 11%
+Progress: [##........] 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 4min
-- Total execution time: 0.07 hours
+- Total plans completed: 2
+- Average duration: 3min
+- Total execution time: 0.10 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-orchestrator-integrity | 1/2 | 4min | 4min |
+| 01-orchestrator-integrity | 2/2 | 6min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min)
-- Trend: baseline
+- Last 5 plans: 01-01 (4min), 01-02 (2min)
+- Trend: improving
 
 *Updated after each plan completion*
 
@@ -66,6 +66,10 @@ Recent decisions affecting current work:
 - [01-01]: Two-layer enforcement (tool allowlists + prompt guards) replaces infeasible four-layer/hooks design
 - [01-01]: State CLI uses zero-dependency CJS with JSON output protocol matching gsd-tools.cjs pattern
 - [01-01]: Self-verification is per-agent inner quality gate, not orchestrator-driven
+- [01-02]: AskUserQuestion omitted from allowed-tools (bug #29547) -- works via normal permission path
+- [01-02]: Binary-only completion checks after agents -- no qualitative assessment except verdict keyword match
+- [01-02]: Summary step is the ONE exception for reading agent output (presentation only)
+- [01-02]: SAFETY_CAP exit condition when 3 rounds exhausted with FAIL
 
 ### Pending Todos
 
@@ -78,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T01:55:59Z
-Stopped at: Completed 01-01-PLAN.md
-Resume file: .planning/phases/01-orchestrator-integrity/01-01-SUMMARY.md
+Last session: 2026-03-28T02:03:22Z
+Stopped at: Completed 01-02-PLAN.md
+Resume file: .planning/phases/01-orchestrator-integrity/01-02-SUMMARY.md

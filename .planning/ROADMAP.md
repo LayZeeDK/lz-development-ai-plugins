@@ -12,7 +12,7 @@ This milestone hardens the application-dev plugin from a working-but-fragile pro
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, prompt guards, and delegation-only orchestrator behavior
+- [x] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, prompt guards, and delegation-only orchestrator behavior
 - [ ] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
 - [ ] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring
 - [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
@@ -32,8 +32,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- State CLI script and agent definition hardening (tool allowlists, prompt guards, self-verification)
-- [ ] 01-02-PLAN.md -- Orchestrator SKILL.md rewrite (state management, error recovery, binary checks, delegation enforcement)
+- [x] 01-01-PLAN.md -- State CLI script and agent definition hardening (tool allowlists, prompt guards, self-verification)
+- [x] 01-02-PLAN.md -- Orchestrator SKILL.md rewrite (state management, error recovery, binary checks, delegation enforcement)
 
 ### Phase 2: Git Workflow and Loop Control
 **Goal**: Every agent commits its artifacts to git, and the orchestrator uses score-based convergence detection with named exit conditions to decide when to stop looping
@@ -90,7 +90,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Orchestrator Integrity | 0/2 | Not started | - |
+| 1. Orchestrator Integrity | 2/2 | Complete | 2026-03-28 |
 | 2. Git Workflow and Loop Control | 0/3 | Not started | - |
 | 3. Evaluator Hardening | 0/2 | Not started | - |
 | 4. Generator Hardening and Skills | 0/2 | Not started | - |
