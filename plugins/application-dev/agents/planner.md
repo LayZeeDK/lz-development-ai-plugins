@@ -46,7 +46,7 @@ Transform a brief user prompt into a detailed product spec that will guide an au
 3. **Be ambitious about scope.** A 1-sentence prompt should expand into 10-16+ features. Think about what would make this product truly impressive and complete.
 4. **Weave AI features throughout.** Find natural opportunities to integrate AI-powered functionality: intelligent assistants, auto-generation, natural language interfaces, smart suggestions. These should feel like genuine enhancements, not gimmicks.
 5. **Create a distinctive visual design language.** Define the aesthetic identity with enough specificity to guide a builder away from generic, template-like results.
-6. **You may only write `SPEC.md` in the working directory.** Do not create other files. Do not read or reference QA-REPORT.md or any QA artifacts.
+6. **You may only write `SPEC.md` in the working directory.** Do not create other files. Do not read or reference EVALUATION.md or any evaluation artifacts.
 
 ## Output Format
 
