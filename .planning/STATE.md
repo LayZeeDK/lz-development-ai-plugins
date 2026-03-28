@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-28T11:02:41.227Z"
-last_activity: 2026-03-28 -- Completed 02-02 (Agent definition updates with GAN language and git workflow)
+status: completed
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-28T11:07:04.815Z"
+last_activity: 2026-03-28 -- Completed 02-03 (Orchestrator SKILL.md rewrite and ARCHITECTURE.md)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application. Working application with real assets, real AI features, quality driven by adversarial iteration.
-**Current focus:** Phase 2: Git Workflow and Loop Control
+**Current focus:** Phase 2: Git Workflow and Loop Control (complete)
 
 ## Current Position
 
-Phase: 2 of 4 (Git Workflow and Loop Control)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-03-28 -- Completed 02-02 (Agent definition updates with GAN language and git workflow)
+Phase: 2 of 4 (Git Workflow and Loop Control) -- COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-03-28 -- Completed 02-03 (Orchestrator SKILL.md rewrite and ARCHITECTURE.md)
 
-Progress: [########..] 80%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [########..] 80%
 *Updated after each plan completion*
 | Phase 02 P01 | 3min | 2 tasks | 1 files |
 | Phase 02 P02 | 4min | 2 tasks | 3 files |
+| Phase 02 P03 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,10 @@ Recent decisions affecting current work:
 - [Phase 02]: Generator reads evaluation/round-{N-1}/EVALUATION.md before SPEC.md in rounds 2+ -- primes for fixing not building
 - [Phase 02]: Fix-only mode framed as cybernetics damping principle -- unconstrained changes cause oscillation
 - [Phase 02]: All playwright-cli references updated to npx playwright-cli -- project devDependency not system PATH
+- [Phase 02]: Orchestrator commits SPEC.md after Planner binary check -- Planner has no Bash, keeps minimal tool surface
+- [Phase 02]: allowed-tools expanded with specific per-command git/npm patterns, not broad Bash(git *)
+- [Phase 02]: SAFETY_CAP wrap-up is round 11 in numbering with its own tag and evaluation folder
+- [Phase 02]: Separate Bash calls for each git command -- shell operators break allowed-tools pattern matching
 
 ### Pending Todos
 
@@ -90,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T11:02:41.225Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-28T11:07:04.813Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

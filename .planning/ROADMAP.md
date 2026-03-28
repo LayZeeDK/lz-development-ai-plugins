@@ -13,7 +13,7 @@ This milestone hardens the application-dev plugin from a working-but-fragile pro
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, prompt guards, and delegation-only orchestrator behavior
-- [ ] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
+- [x] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
 - [ ] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring
 - [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
 
@@ -48,9 +48,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- CLI rename (appdev-state -> appdev-cli) and convergence engine (score extraction, escalation, exit conditions)
-- [ ] 02-02-PLAN.md -- Agent definitions update (git commits, GAN language rename, fix-only mode, evaluation paths)
-- [ ] 02-03-PLAN.md -- Orchestrator SKILL.md rewrite (git workspace, convergence loop, tagging, rollback) and docs/ARCHITECTURE.md
+- [x] 02-01-PLAN.md -- CLI rename (appdev-state -> appdev-cli) and convergence engine (score extraction, escalation, exit conditions)
+- [x] 02-02-PLAN.md -- Agent definitions update (git commits, GAN language rename, fix-only mode, evaluation paths)
+- [x] 02-03-PLAN.md -- Orchestrator SKILL.md rewrite (git workspace, convergence loop, tagging, rollback) and docs/ARCHITECTURE.md
 
 ### Phase 3: Evaluator Hardening
 **Goal**: The Evaluator catches the quality failures that slipped through in testing -- broken/stolen assets, canned AI responses, and lenient scoring
@@ -91,6 +91,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Orchestrator Integrity | 2/2 | Complete | 2026-03-28 |
-| 2. Git Workflow and Loop Control | 2/3 | In Progress|  |
+| 2. Git Workflow and Loop Control | 3/3 | Complete | 2026-03-28 |
 | 3. Evaluator Hardening | 0/2 | Not started | - |
 | 4. Generator Hardening and Skills | 0/2 | Not started | - |
