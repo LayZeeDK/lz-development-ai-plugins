@@ -40,21 +40,21 @@ Plans:
 **Depends on**: Phase 1 (agents need correct tool allowlists to use git; orchestrator must be delegation-only before adding loop logic)
 **Requirements**: GIT-01, GIT-02, GIT-03, GIT-04, GIT-05, LOOP-01, LOOP-02, LOOP-03, LOOP-04, LOOP-05, LOOP-06, LOOP-07, LOOP-08, LOOP-09
 **Success Criteria** (what must be TRUE):
-  1. After running /application-dev, git log shows: a SPEC.md commit from the Planner, feature-by-feature commits from the Generator, and qa/round-N/ commits from the Evaluator -- with milestone tags at planning completion, each round, and final result
-  2. The orchestrator stops looping when one of four named conditions fires: PASS (all criteria meet thresholds), PLATEAU (score improvement <=1 point over 3-round window), REGRESSION (2 consecutive total-score declines), or SAFETY CAP (10 rounds)
-  3. When the safety cap is hit, the Generator consolidates into a working state and the Evaluator produces a final report documenting remaining gaps
-  4. The orchestrator detects when the Generator removes features between rounds to game scores (feature count watchdog) and flags it in the exit decision
+  1. After running /application-dev, git log shows: a SPEC.md commit (orchestrator commits after Planner), feature-by-feature commits from the Generator, and evaluation/round-N/ commits from the Evaluator -- with milestone tags (appdev/planning-complete, appdev/round-N, appdev/final)
+  2. The orchestrator stops looping when one of four named conditions fires: PASS (all criteria meet thresholds), PLATEAU (score improvement <=1 point over 3-round window), REGRESSION (2 consecutive total-score declines), or SAFETY_CAP (10 rounds)
+  3. When the safety cap is hit, one extra wrap-up round (generation + evaluation) runs beyond the cap, then the orchestrator produces a final summary
+  4. LOOP-06 (feature count watchdog) is deferred to Phase 3 as an Evaluator responsibility -- the orchestrator does not parse feature tables
   5. In rounds 2+, the Generator fixes only what the Evaluator flagged -- it does not add new features or refactor working code
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01-PLAN.md -- CLI rename (appdev-state -> appdev-cli) and convergence engine (score extraction, escalation, exit conditions)
+- [ ] 02-02-PLAN.md -- Agent definitions update (git commits, GAN language rename, fix-only mode, evaluation paths)
+- [ ] 02-03-PLAN.md -- Orchestrator SKILL.md rewrite (git workspace, convergence loop, tagging, rollback) and docs/ARCHITECTURE.md
 
 ### Phase 3: Evaluator Hardening
 **Goal**: The Evaluator catches the quality failures that slipped through in testing -- broken/stolen assets, canned AI responses, and lenient scoring
-**Depends on**: Phase 2 (Evaluator needs qa/round-N/ folder structure from git workflow; score-based exit ensures enough rounds for adversarial testing to matter)
+**Depends on**: Phase 2 (Evaluator needs evaluation/round-N/ folder structure from git workflow; score-based exit ensures enough rounds for adversarial testing to matter)
 **Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05
 **Success Criteria** (what must be TRUE):
   1. The Evaluator's QA report flags broken images, CORS-blocked resources, placeholder content, and images used without attribution -- with specific URLs and failure reasons
