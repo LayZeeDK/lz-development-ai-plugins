@@ -14,6 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, prompt guards, and delegation-only orchestrator behavior
 - [x] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
+- [ ] **Phase 02.1: Use templates for SPEC.md and EVALUATION.md** (INSERTED) - Extract inline format specs into canonical template files for structural consistency
 - [ ] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring
 - [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
 
@@ -52,6 +53,22 @@ Plans:
 - [x] 02-02-PLAN.md -- Agent definitions update (git commits, GAN language rename, fix-only mode, evaluation paths)
 - [x] 02-03-PLAN.md -- Orchestrator SKILL.md rewrite (git workspace, convergence loop, tagging, rollback) and docs/ARCHITECTURE.md
 
+### Phase 02.1: Use templates for SPEC.md and EVALUATION.md (INSERTED)
+
+**Goal:** The Planner and Evaluator agents produce structurally consistent output by reading canonical template files instead of relying on inline format specifications that drift through paraphrasing
+**Depends on:** Phase 2
+**Requirements**: TPL-01, TPL-02, TPL-03, TPL-04, TPL-05
+**Success Criteria** (what must be TRUE):
+  1. SPEC-TEMPLATE.md exists in references/ and the Planner agent reads it before producing SPEC.md
+  2. EVALUATION-TEMPLATE.md exists in references/ with a scores table format that matches the appdev-cli.mjs regex contract
+  3. The Evaluator agent reads the evaluation template before producing EVALUATION.md
+  4. Neither agent definition contains an inline format code block -- the templates are the single source of truth
+  5. appdev-cli.mjs is completely unchanged -- the regex contract is preserved
+**Plans:** 1 plan
+
+Plans:
+- [ ] 02.1-01-PLAN.md -- Create template files and update agent definitions to reference them
+
 ### Phase 3: Evaluator Hardening
 **Goal**: The Evaluator catches the quality failures that slipped through in testing -- broken/stolen assets, canned AI responses, and lenient scoring
 **Depends on**: Phase 2 (Evaluator needs evaluation/round-N/ folder structure from git workflow; score-based exit ensures enough rounds for adversarial testing to matter)
@@ -86,11 +103,12 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4
+Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Orchestrator Integrity | 2/2 | Complete | 2026-03-28 |
 | 2. Git Workflow and Loop Control | 3/3 | Complete | 2026-03-28 |
+| 02.1. Templates for SPEC/EVALUATION | 0/1 | Not started | - |
 | 3. Evaluator Hardening | 0/2 | Not started | - |
 | 4. Generator Hardening and Skills | 0/2 | Not started | - |

@@ -37,6 +37,14 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 - [x] **LOOP-08**: Context loading order optimization -- present QA-REPORT.md before SPEC.md to Generator in rounds 2+ to prime fixing behavior over building behavior
 - [x] **LOOP-09**: Score trajectory tracking across rounds in a progress file that survives context compaction
 
+### Template Extraction (Phase 02.1 -- INSERTED)
+
+- [ ] **TPL-01**: SPEC-TEMPLATE.md exists in references/ with all canonical section headings extracted from planner.md's inline format specification
+- [ ] **TPL-02**: EVALUATION-TEMPLATE.md exists in references/ with scores table format matching the appdev-cli.mjs extractScores() regex contract, and WARNING comments marking parsed sections
+- [ ] **TPL-03**: appdev-cli.mjs extractScores() regex is unchanged -- the template preserves the exact parse contract (criterion names, score format, verdict heading)
+- [ ] **TPL-04**: planner.md references SPEC-TEMPLATE.md via `${CLAUDE_PLUGIN_ROOT}` path and no longer contains the inline format code block
+- [ ] **TPL-05**: evaluator.md references EVALUATION-TEMPLATE.md via `${CLAUDE_PLUGIN_ROOT}` path and no longer contains the inline format code block
+
 ### Evaluator Quality
 
 - [ ] **EVAL-01**: Evaluator validates assets: catches broken images, blocked cross-origin requests (CORS/CORP/COEP), placeholder content, and stolen/unattributed images
@@ -127,6 +135,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LOOP-07 | Phase 2 | Complete |
 | LOOP-08 | Phase 2 | Complete |
 | LOOP-09 | Phase 2 | Complete |
+| TPL-01 | Phase 02.1 | Pending |
+| TPL-02 | Phase 02.1 | Pending |
+| TPL-03 | Phase 02.1 | Pending |
+| TPL-04 | Phase 02.1 | Pending |
+| TPL-05 | Phase 02.1 | Pending |
 | EVAL-01 | Phase 3 | Pending |
 | EVAL-02 | Phase 3 | Pending |
 | EVAL-03 | Phase 3 | Pending |
@@ -141,10 +154,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SKILL-01 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 33 total
-- Mapped to phases: 33
+- v1 requirements: 38 total
+- Mapped to phases: 38
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-27 after roadmap creation*
+*Last updated: 2026-03-28 after Phase 02.1 planning*
