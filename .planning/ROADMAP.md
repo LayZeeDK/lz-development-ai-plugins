@@ -109,6 +109,6 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Orchestrator Integrity | 2/2 | Complete | 2026-03-28 |
 | 2. Git Workflow and Loop Control | 3/3 | Complete | 2026-03-28 |
-| 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete   | 2026-03-28 |
+| 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete    | 2026-03-28 |
 | 3. Evaluator Hardening | 0/2 | Not started | - |
 | 4. Generator Hardening and Skills | 0/2 | Not started | - |
