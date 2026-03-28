@@ -27,10 +27,10 @@ Enforce GAN role separation so the orchestrator never performs agent work, with 
 - Generator needs broad Bash access (any tech stack the Generator chooses)
 
 ### Tool allowlists per role
-- Orchestrator (skill): `Agent Read Write AskUserQuestion Bash(node *appdev-state*)`
+- Orchestrator (skill): `Agent Read Write Bash(node *appdev-state*)`
   - Write: workflow state file only (prompt-guarded)
-  - AskUserQuestion: resume/fresh prompt on startup, Retry/Resume/Abort on error
   - Bash: narrow pattern for state CLI script only
+  - AskUserQuestion: omitted from `allowed-tools` due to bug #29547 (skills cannot pre-approve AskUserQuestion via allowed-tools). It still works via the normal tool permission path when the orchestrator needs it for error recovery (Retry/Resume/Abort) and resume prompts.
 - Planner (agent): `Read, Write` -- reads user prompt, writes SPEC.md
 - Generator (agent): `Read, Write, Edit, Glob, Bash` -- broad access, tech-stack-agnostic
 - Evaluator (agent): `Read, Write, Glob, Bash` -- broad access, no Edit (read-only for source code)
@@ -144,7 +144,7 @@ Enforce GAN role separation so the orchestrator never performs agent work, with 
 
 ### Integration Points
 - SKILL.md: add state management, error recovery with AskUserQuestion, binary checks, progress output
-- SKILL.md allowed-tools: expand from `Agent Read` to `Agent Read Write AskUserQuestion Bash(node *appdev-state*)`
+- SKILL.md allowed-tools: expand from `Agent Read` to `Agent Read Write Bash(node *appdev-state*)`
 - Agent frontmatter: update tool lists and add prompt guards
 - New file: `scripts/appdev-state.cjs` for state CLI
 - Plugin directory: add `scripts/` folder
