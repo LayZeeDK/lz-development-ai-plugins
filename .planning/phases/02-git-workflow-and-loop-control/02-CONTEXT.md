@@ -104,12 +104,19 @@ Every agent commits its artifacts to git, and the orchestrator uses score-based 
 - No root-level EVALUATION.md copy -- Generator derives path: generation round N reads `evaluation/round-{N-1}/EVALUATION.md`
 - Git preserves all rounds as committed history
 
+### docs/ARCHITECTURE.md
+- Phase 2 deliverable (not deferred) -- the architectural concepts it documents are implemented in Phases 1-2
+- Location: `docs/ARCHITECTURE.md` at repo root (not distributed with the plugin)
+- Covers: GAN architecture rationale, cybernetics inspirations (escalation vocabulary, damping principle, Ralph Loop), Anthropic article alignment/divergences, key design decisions
+- Phase 2 is the right time: escalation vocabulary and convergence detection land in code here; Phases 3-4 extend the architecture but don't introduce new foundational concepts
+
 ### Claude's Discretion
 - appdev-cli subcommand interface details (exact flags, output format beyond documented schema)
 - Exact escalation level thresholds for E-IV (>50% drop is the starting point, can adjust)
 - Workspace setup ordering (npm init before/after git init)
 - Git tag message content (lightweight vs annotated tags)
 - Console/network log capture format in evaluation folders
+- docs/ARCHITECTURE.md structure and depth of coverage
 
 </decisions>
 
@@ -151,7 +158,6 @@ Every agent commits its artifacts to git, and the orchestrator uses score-based 
 <deferred>
 ## Deferred Ideas
 
-- **docs/ARCHITECTURE.md at repo root** -- architectural design document covering GAN architecture rationale, cybernetics inspirations (escalation vocabulary, damping principle, Ralph Loop), and key design decisions. Not distributed with the plugin.
 - **LOOP-06 feature watchdog** -- moved to Phase 3 as Evaluator responsibility. The Evaluator should check every spec feature and never give PASS with Core/Important features missing.
 - **Abort-with-git-rollback** -- from Phase 1 deferred ideas. Now possible with milestone tags from GIT-05.
 - `/application-dev:resume` and `/application-dev:pause` commands -- explicit entry points for state management, future enhancement.
