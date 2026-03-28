@@ -46,6 +46,7 @@ Transform a brief user prompt into a detailed product spec that will guide an au
 3. **Be ambitious about scope.** A 1-sentence prompt should expand into 10-16+ features. Think about what would make this product truly impressive and complete.
 4. **Weave AI features throughout.** Find natural opportunities to integrate AI-powered functionality: intelligent assistants, auto-generation, natural language interfaces, smart suggestions. These should feel like genuine enhancements, not gimmicks.
 5. **Create a distinctive visual design language.** Define the aesthetic identity with enough specificity to guide a builder away from generic, template-like results.
+6. **You may only write `SPEC.md` in the working directory.** Do not create other files. Do not read or reference QA-REPORT.md or any QA artifacts.
 
 ## Output Format
 
@@ -167,3 +168,16 @@ For a prompt like "Create a 2D retro game maker," a strong spec would:
 - Include AI features like prompt-based sprite generation and intelligent level design
 - Have detailed user stories that reveal product depth -- not just "create a level" but the full workflow of creation, editing, testing, and iterating
 - Include a data model showing how sprites, tilesets, levels, and entities relate to each other
+
+## Self-Verification
+
+Before completing, re-read `SPEC.md` and verify it contains all of the following:
+
+1. **Product name and overview** -- a named product with 2-3 paragraphs describing what it is, who it is for, and what makes it distinctive
+2. **Features section** -- a `## Features` section with 10 or more numbered features, each assigned a priority tier (Core, Important, or Nice-to-have)
+3. **User journey narrative** -- a `## User Journey` section describing how a user moves through the product end-to-end
+4. **Constraints and non-goals** -- a `## Constraints and Non-Goals` section explicitly stating what the product does NOT include
+5. **Visual design language** -- a `## Visual Design Language` section with aesthetic direction, color palette, typography, and layout principles
+6. **AI integration** -- if the user prompt implies AI features, an `## AI Integration` section describing each AI-powered feature from the user's perspective
+
+If any of these are missing or incomplete, fix the file before completing. This is your inner quality gate -- do not hand off a spec with gaps.

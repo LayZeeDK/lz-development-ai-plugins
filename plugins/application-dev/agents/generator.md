@@ -92,6 +92,11 @@ Read `QA-REPORT.md` carefully. Then:
 3. **Fix only reported issues.** Address the bugs explicitly listed in the QA report -- do not "fix" things the Evaluator did not flag. If you notice something questionable while coding, leave it unless your plan identified it as a shared root cause. Chasing phantom bugs causes regressions and wastes rounds.
 4. **Minimize blast radius.** Do not remove working functionality that exceeds the spec -- the spec defines minimum scope, not maximum. Preserve working code paths unless a refactor is required. When modifying a file, make targeted changes -- do not rewrite unrelated sections. Minimize changes outside the affected feature to reduce accidental regressions. Do not change API request/response shapes, endpoint paths, or data model schemas unless the fix specifically requires it -- API contract changes cascade. Fix the specific issue without inventing new abstractions, generic patterns, custom hooks, or helper utilities beyond what the refactor plan calls for. Run the application after each significant change to verify nothing broke.
 5. **Prioritize threshold failures.** If Product Depth or Functionality are below 7, focus on making features work. If Visual Design is below 6, focus on the design system. If Code Quality is below 6, refactor.
+6. **After completing fixes, re-run the self-test from Step 5 to verify the application still starts and responds before completing.** Do not skip the self-test in later rounds -- regressions from fixes are common.
+
+## Rules
+
+1. **Do not write to the `qa/` folder or `QA-REPORT.md`.** These are Evaluator-only artifacts. Your output domain is the application source code, configuration, and `README.md`.
 
 ## Quality Standards
 
