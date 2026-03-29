@@ -106,17 +106,54 @@ Tracked but not in current roadmap. Require empirical data from 3+ test runs.
 
 ## Traceability
 
-Populated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | | |
+| SCORE-01 | Phase 7 | Pending |
+| SCORE-02 | Phase 7 | Pending |
+| SCORE-03 | Phase 7 | Pending |
+| SCORE-04 | Phase 7 | Pending |
+| SCORE-05 | Phase 7 | Pending |
+| BARRIER-01 | Phase 7 | Pending |
+| BARRIER-02 | Phase 7 | Pending |
+| BARRIER-03 | Phase 7 | Pending |
+| BARRIER-04 | Phase 7 | Pending |
+| VERDICT-01 | Phase 7 | Pending |
+| VERDICT-02 | Phase 7 | Pending |
+| VERDICT-03 | Phase 7 | Pending |
+| VERDICT-04 | Phase 7 | Pending |
+| VERDICT-05 | Phase 7 | Pending |
+| VERDICT-06 | Phase 7 | Pending |
+| CONV-01 | Phase 7 | Pending |
+| CONV-02 | Phase 7 | Pending |
+| CONV-03 | Phase 7 | Pending |
+| CONV-04 | Phase 7 | Pending |
+| CONV-05 | Phase 7 | Pending |
+| ATP-01 | Phase 8 | Pending |
+| ATP-02 | Phase 8 | Pending |
+| ATP-03 | Phase 8 | Pending |
+| ATP-04 | Phase 8 | Pending |
+| ATP-05 | Phase 8 | Pending |
+| PLAN-01 | Phase 8 | Pending |
+| PLAN-02 | Phase 8 | Pending |
+| PLAN-03 | Phase 8 | Pending |
+| PLAN-04 | Phase 8 | Pending |
+| EVAL-01 | Phase 8 | Pending |
+| EVAL-02 | Phase 8 | Pending |
+| EVAL-03 | Phase 8 | Pending |
+| GEN-01 | Phase 9 | Pending |
+| GEN-02 | Phase 9 | Pending |
+| GEN-03 | Phase 9 | Pending |
+| GEN-04 | Phase 9 | Pending |
+| GEN-05 | Phase 9 | Pending |
+| ORCH-01 | Phase 9 | Pending |
+| ORCH-02 | Phase 9 | Pending |
+| DOCS-01 | Phase 9 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 30 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 30
+- v1.1 requirements: 40 total
+- Mapped to phases: 40
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-29*
-*Last updated: 2026-03-29 after initial definition*
+*Last updated: 2026-03-29 after roadmap creation*
