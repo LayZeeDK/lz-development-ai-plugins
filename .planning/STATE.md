@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 02.1-01-PLAN.md
-last_updated: "2026-03-28T11:53:53.633Z"
-last_activity: 2026-03-28 -- Completed 02.1-01 (Extract inline formats into template reference files)
+status: executing
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-29T09:22:43.173Z"
+last_activity: "2026-03-29 -- Completed 03-01 (Evaluator reference files: scoring calibration, AI probing, template extension)"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_plans: 8
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application. Working application with real assets, real AI features, quality driven by adversarial iteration.
-**Current focus:** Phase 02.1: Use Templates for SPEC.md and EVALUATION.md (complete)
+**Current focus:** Phase 03: Evaluator Hardening (in progress)
 
 ## Current Position
 
-Phase: 02.1 of 4 (Use Templates for SPEC.md and EVALUATION.md) -- COMPLETE
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-03-28 -- Completed 02.1-01 (Extract inline formats into template reference files)
+Phase: 03 of 5 (Evaluator Hardening)
+Plan: 1 of 2 in current phase -- COMPLETE
+Status: In progress
+Last activity: 2026-03-29 -- Completed 03-01 (Evaluator reference files: scoring calibration, AI probing, template extension)
 
-Progress: [##########] 100%
+Progress: [########--] 88%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [##########] 100%
 | Phase 02 P02 | 4min | 2 tasks | 3 files |
 | Phase 02 P03 | 3min | 2 tasks | 2 files |
 | Phase 02.1 P01 | 3min | 2 tasks | 4 files |
+| Phase 03 P01 | 9min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 02.1]: Structural guidance in templates; behavioral guidance stays in agent definitions
 - [Phase 02.1]: HTML comments mark regex-sensitive sections in EVALUATION-TEMPLATE.md for maintainability
 - [Phase 02.1]: Self-verification checklists reference templates rather than restating format details
+- [Phase 03]: Calibration scenarios use realistic app states with score + rationale + boundary explanation
+- [Phase 03]: AI probing strategies describe WHAT to test, not exact inputs (Goodhart's Law protection)
+- [Phase 03]: All 10 Turing test concepts in AI-PROBING-REFERENCE.md; ELIZA effect noted as evaluator.md-only
 
 ### Roadmap Evolution
 
@@ -104,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T11:49:19.168Z
-Stopped at: Completed 02.1-01-PLAN.md
+Last session: 2026-03-29T09:22:43.170Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

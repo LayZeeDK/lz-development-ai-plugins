@@ -47,11 +47,11 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 
 ### Evaluator Quality
 
-- [ ] **EVAL-01**: Evaluator validates assets: catches broken images, blocked cross-origin requests (CORS/CORP/COEP), placeholder content, and stolen/unattributed images
-- [ ] **EVAL-02**: Evaluator probes AI features adversarially: sends varied inputs, nonsense queries, semantic rephrasings to detect keyword-triggered canned responses vs real AI inference
-- [ ] **EVAL-03**: Evaluator scoring calibration -- anti-leniency phrasing, mandatory bug-finding before scoring, score anchoring to rubric descriptors with few-shot calibration examples
-- [ ] **EVAL-04**: Evaluator checks for broken links and blocked asset/document/XHR requests
-- [ ] **EVAL-05**: Evaluator verifies images are not all placeholders -- visual-heavy sites must have real visual content
+- [x] **EVAL-01**: Evaluator validates assets: catches broken images, blocked cross-origin requests (CORS/CORP/COEP), placeholder content, and stolen/unattributed images
+- [x] **EVAL-02**: Evaluator probes AI features adversarially: sends varied inputs, nonsense queries, semantic rephrasings to detect keyword-triggered canned responses vs real AI inference
+- [x] **EVAL-03**: Evaluator scoring calibration -- anti-leniency phrasing, mandatory bug-finding before scoring, score anchoring to rubric descriptors with few-shot calibration examples
+- [x] **EVAL-04**: Evaluator checks for broken links and blocked asset/document/XHR requests
+- [x] **EVAL-05**: Evaluator verifies images are not all placeholders -- visual-heavy sites must have real visual content
 
 ### Generator Quality
 
@@ -140,11 +140,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TPL-03 | Phase 02.1 | Complete |
 | TPL-04 | Phase 02.1 | Complete |
 | TPL-05 | Phase 02.1 | Complete |
-| EVAL-01 | Phase 3 | Pending |
-| EVAL-02 | Phase 3 | Pending |
-| EVAL-03 | Phase 3 | Pending |
-| EVAL-04 | Phase 3 | Pending |
-| EVAL-05 | Phase 3 | Pending |
+| EVAL-01 | Phase 3 | Complete |
+| EVAL-02 | Phase 3 | Complete |
+| EVAL-03 | Phase 3 | Complete |
+| EVAL-04 | Phase 3 | Complete |
+| EVAL-05 | Phase 3 | Complete |
 | GEN-01 | Phase 4 | Pending |
 | GEN-02 | Phase 4 | Pending |
 | GEN-03 | Phase 4 | Pending |
