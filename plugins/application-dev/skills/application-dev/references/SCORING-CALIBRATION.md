@@ -1,0 +1,231 @@
+# Scoring Calibration Reference
+
+**Loaded at:** Step 12 (Read Calibration + Score) of the evaluation workflow.
+
+**Purpose:** This file anchors scores to concrete scenarios and enforces mechanical ceiling rules. It contains structural/mechanical scoring guidance only -- behavioral guidance ("how to think about scoring") stays in evaluator.md.
+
+Read this file AFTER listing all findings (Step 11). Score against these rules, not against gut feeling.
+
+---
+
+## Hard Score Ceiling Rules
+
+When a condition is met, the score for that criterion CANNOT exceed the ceiling. When multiple ceilings apply to the same criterion, use the LOWEST ceiling.
+
+### Functionality
+
+| Condition | Ceiling |
+|-----------|---------|
+| Any Critical bug | max 5 |
+| 3+ Major bugs | max 6 |
+| Core workflow broken | max 4 |
+
+### Product Depth
+
+| Condition | Ceiling |
+|-----------|---------|
+| >50% features Missing/Broken | max 5 |
+| Any Core feature missing | max 6 |
+| All features stubbed | max 3 |
+| Canned AI feature | max 5 |
+
+### Visual Design
+
+| Condition | Ceiling |
+|-----------|---------|
+| All images placeholder | max 3 |
+| No design language match | max 5 |
+| Layout broken on mobile | max 5 |
+
+### Code Quality
+
+| Condition | Ceiling |
+|-----------|---------|
+| Security vulnerability | max 4 |
+| No error handling anywhere | max 5 |
+| Dead code >30% of codebase | max 5 |
+
+### Browser AI Degradation (Cross-Criterion)
+
+| Condition | Ceiling |
+|-----------|---------|
+| App non-functional without browser AI APIs | Functionality max 4 |
+| AI features show broken UI without APIs | Functionality max 6 |
+
+### Applying Multiple Ceilings
+
+When multiple ceilings apply to the same criterion, the LOWEST ceiling wins.
+
+Example: An app with 1 Critical bug (max 5) and 4 Major bugs (max 6) receives Functionality max 5 (the lower ceiling).
+
+---
+
+## Conflict Resolution Rules
+
+### Criteria Are Independent
+
+Each criterion is scored on its own merits. Great code does not compensate for broken features.
+
+Example: An app with elegant architecture but a broken core workflow scores Code Quality 7, Functionality 3. The scores are NOT averaged.
+
+### Cross-Criterion Propagation (One Direction Only)
+
+A defect that affects multiple criteria lowers ALL affected scores. But quality in one criterion does NOT raise another.
+
+- A bug that ALSO breaks the visual layout lowers BOTH Functionality and Visual Design.
+- Good code quality does NOT raise Functionality.
+- Clean design does NOT raise Code Quality.
+
+### No Averaging or Trading
+
+Criteria do not compensate each other. The overall verdict is FAIL if ANY criterion scores below its threshold:
+- Product Depth: 7
+- Functionality: 7
+- Visual Design: 6
+- Code Quality: 6
+
+---
+
+## Score-Against-the-Spec Rule
+
+The spec (SPEC.md) is the contract. Score against what the spec requires, not against what the application happens to do well.
+
+- A beautiful design in the wrong theme = low Visual Design (spec mismatch).
+- Extra features not in the spec do NOT count for Product Depth (off-spec).
+- Missing a spec-required feature = Product Depth impact regardless of other feature quality.
+- A feature that works differently from what the spec describes = Broken, not Partial.
+
+---
+
+## Round-Independent Scoring
+
+Scores are absolute, not relative. A 5 in round 1 means the same quality level as a 5 in round 5.
+
+- Do NOT compare to the previous round's scores.
+- Do NOT give higher scores because "it improved since last round."
+- Compare every round to the spec and the calibration scenarios below.
+- The only valid comparison basis is the spec and these calibration anchors.
+
+---
+
+## Mandatory Score Justifications
+
+Each score in the Scores table must cite specific findings from the evaluation. Scores without evidence are invalid.
+
+**Format:** `<Criterion>: <score>/10 -- <cite specific findings>`
+
+**Examples:**
+- "Functionality: 5/10 -- 2 Critical bugs (#3, #7), 3 Major bugs, core search broken"
+- "Product Depth: 7/10 -- 8/10 features implemented, 1 Partial (filtering lacks sort), 1 Missing (export)"
+- "Visual Design: 4/10 -- all images are placeholders, generic purple gradient hero, no typography customization"
+- "Code Quality: 8/10 -- clean component architecture, proper error handling, one minor XSS concern in user input rendering"
+
+---
+
+## Calibration Scenarios
+
+Each scenario below provides a concrete application state, the correct score, the rationale, and a boundary explanation that distinguishes it from adjacent scores. Use these to anchor your scoring -- if the application you are evaluating matches a scenario, it should receive a similar score.
+
+### Product Depth
+
+**Below Threshold: 5/10**
+
+A task management app (SPEC.md lists 8 features: create task, edit task, delete task, mark complete, filter by status, search, due dates, categories). The app renders a task list and allows creating tasks with a title. Edit opens a modal but does not save changes. Delete button exists but throws a console error. No filtering, search, due dates, or categories are present. 3 of 8 features work (create, list, mark complete), 2 are broken (edit, delete), 3 are missing entirely.
+
+Score: 5/10 -- Over 50% of features are Missing or Broken. The app delivers a fraction of the spec. Ceiling rule applies: >50% features Missing/Broken = max 5.
+
+Not 6 because: A 6 would require more than half the features to be at least Partial. Here the majority are Missing or Broken with no workaround.
+
+**At Threshold: 7/10**
+
+The same task management app has all 8 features present. Create, edit, delete, mark complete, and due dates work correctly. Search finds tasks by title but not by description (Partial). Filter works for status but not for categories (Partial). Categories can be assigned but not created or edited (Partial). No features are Missing or Broken.
+
+Score: 7/10 -- All features are at minimum Partial. Core features work. The gaps are in secondary functionality (search scope, filter completeness, category management). The spec contract is substantially met.
+
+Not 8 because: An 8 requires nearly all features fully implemented with only minor gaps. Three Partial features represent meaningful missing functionality.
+
+**Above Threshold: 9/10**
+
+All 8 features work as specified. Search finds tasks by title and description with instant results. Filters combine status and category. Due dates show overdue indicators. Categories support full CRUD. The only gap: the export button (not in spec) does not exist -- but since it is not in the spec, this is not a gap. One minor refinement opportunity: drag-to-reorder is mentioned in the spec but only works within the same category, not across categories.
+
+Score: 9/10 -- Spec is nearly fully delivered. A single minor Partial feature (drag reorder across categories) prevents a perfect 10. All core and secondary features work as described.
+
+Not 10 because: A 10 means the spec is completely delivered with no gaps. The cross-category drag limitation is a real spec gap, however minor.
+
+### Functionality
+
+**Below Threshold: 5/10**
+
+An e-commerce app where the shopping cart loses items on page refresh (Critical bug -- data loss). The checkout form submits but silently fails to create an order (Critical bug -- core workflow broken). Product search returns results but clicking a product sometimes loads the wrong detail page (Major bug). Three other pages have JavaScript errors that block interaction (Major bugs). The happy path is unreliable.
+
+Score: 5/10 -- 2 Critical bugs trigger the ceiling (any Critical bug = max 5). Core workflow (browse -> cart -> checkout) is broken at multiple points.
+
+Not 6 because: A 6 requires zero Critical bugs (ceiling: any Critical = max 5). The data loss and silent checkout failure are both Critical severity.
+
+**At Threshold: 7/10**
+
+The same e-commerce app with no Critical bugs. The cart persists across refresh. Checkout creates orders correctly. Product search works. Two Major bugs remain: (1) applying a discount code returns a generic error instead of the actual validation message, (2) the order history page shows orders in random order instead of chronological. One Minor bug: the quantity selector allows negative numbers but the cart clamps to 1.
+
+Score: 7/10 -- No Critical bugs. Two Major bugs exist but they are in secondary workflows (discount codes, order history display), not core purchase flow. The app is usable for its primary purpose.
+
+Not 8 because: An 8 requires at most 1 Major bug. Two Major bugs, even in secondary workflows, represent real functionality gaps.
+
+**Above Threshold: 9/10**
+
+All features work as specified. The cart is persistent, checkout completes, search is fast and accurate, order history is correct, discount codes validate properly. One Minor bug: the mobile hamburger menu requires a double-tap to close on iOS Safari. All core and secondary workflows complete successfully. Edge cases (empty cart checkout, expired discount codes) return appropriate error messages.
+
+Score: 9/10 -- Near-flawless execution. The one Minor bug is platform-specific and does not impede functionality. Error handling is comprehensive.
+
+Not 10 because: A 10 means zero bugs found during thorough testing. The iOS menu bug, while Minor, is a real defect.
+
+### Visual Design
+
+**Below Threshold: 4/10**
+
+A music streaming app specified with a "dark, immersive, neon-accented" design language. The app uses a white background with default Material UI components. Typography is Roboto at default sizes. No custom color palette -- the primary color is Material UI's default blue (#1976d2). Cards have default border-radius and box-shadow. The hero section has a stock gradient. No visual connection to the music/streaming domain. Layout is a generic 3-column card grid.
+
+Score: 4/10 -- No design language match with the spec (ceiling: max 5 for no match, but the score is below the ceiling). AI-slop patterns dominate: default framework styling, generic fonts, no domain identity. The design communicates nothing about music or streaming.
+
+Not 5 because: A 5 would show some attempt at customization even if the overall direction is wrong. This is entirely default framework output with no evidence of intentional design decisions.
+
+**At Threshold: 6/10**
+
+The same music app uses a dark background with a custom neon-green accent color. Typography uses a display font for headings (Orbitron) paired with a readable body font. The color palette is cohesive but limited -- neon green on dark gray with no secondary accents. Layout uses a sidebar navigation with album art grid. The design clearly targets the music domain. However: all album images are placeholders (solid color squares), hover states are basic opacity changes, and the player controls at the bottom use default browser audio elements with no custom styling.
+
+Score: 6/10 -- The design direction matches the spec. There is intentionality in font and color choices. The domain identity is present. But placeholder images (cosmetic impact since the app is music-focused), unstyled audio controls, and limited interaction design prevent a higher score.
+
+Not 7 because: A 7 requires the design to feel cohesive and complete. Placeholder images in a music app, unstyled core UI (the player), and limited color depth leave visible gaps.
+
+**Above Threshold: 8/10**
+
+The music app has a fully realized dark theme with neon-green and electric-purple accents. Custom typography with an angular display font and clean sans-serif body. Album art displays with custom hover animations (scale + glow effect). The player is fully custom-styled with a waveform visualizer. Navigation uses smooth transitions. The color palette has 4 intentional accent colors used consistently. Responsive design works across breakpoints. One gap: the settings page reverts to a generic form layout that does not match the immersive feel of the rest of the app.
+
+Score: 8/10 -- Strong design identity that clearly matches the spec's "dark, immersive, neon-accented" direction. Intentional typography, color, and interaction design. The inconsistent settings page is the only notable gap.
+
+Not 9 because: A 9 requires design excellence throughout. The settings page breaking the design language shows incomplete execution, even though all other pages are strong.
+
+### Code Quality
+
+**Below Threshold: 4/10**
+
+A React application with no error handling anywhere -- API calls use bare `.then()` with no `.catch()`, no try/catch blocks, no error boundaries. A stored XSS vulnerability exists in the user profile name field (renders unsanitized HTML via dangerouslySetInnerHTML). Console shows 12 unhandled promise rejections on the home page alone. No TypeScript or prop validation. Inline styles mixed with CSS modules with no consistency.
+
+Score: 4/10 -- Security vulnerability triggers the ceiling (max 4). Even without the XSS, no error handling anywhere would cap at max 5. The codebase has fundamental safety and reliability gaps.
+
+Not 5 because: A 5 without the security vulnerability would still require some error handling. The XSS pushes the ceiling to max 4, and the complete absence of error handling confirms the score is at that ceiling.
+
+**At Threshold: 6/10**
+
+The same React app with the XSS fixed (user input is sanitized), basic error boundaries at the route level, and try/catch around API calls. TypeScript is used but loosely -- 15% of types are `any`. The component structure is reasonable (features grouped by domain). Some dead code exists (2 unused utility files, ~5% of codebase). One API endpoint accepts user input without validation (missing input sanitization, not XSS but a data integrity concern).
+
+Score: 6/10 -- No security vulnerabilities. Error handling exists at boundaries. The codebase is maintainable if imperfect. Loose typing and minor dead code are quality gaps but not critical. The missing input validation is a concern but scoped.
+
+Not 7 because: A 7 requires consistent code quality. 15% `any` types, dead code, and missing input validation show inconsistent discipline across the codebase.
+
+**Above Threshold: 8/10**
+
+TypeScript strict mode with zero `any` types. Clean component architecture with separation of concerns (data fetching hooks, UI components, utility functions). Error boundaries at route and feature levels. All API calls use a centralized error handling wrapper. Input validation on both client and server. Dependencies are current (no deprecated packages). ESLint and Prettier configuration present. One observation: some components have 200+ lines that could be decomposed further, but the code within them is clean and well-organized.
+
+Score: 8/10 -- Strong code quality with consistent patterns, proper error handling, type safety, and input validation. The long components are a maintainability observation, not a defect.
+
+Not 9 because: A 9 requires code that demonstrates mastery -- comprehensive test coverage, elegant abstractions, excellent documentation. Large components without decomposition show room for improvement in structure.
