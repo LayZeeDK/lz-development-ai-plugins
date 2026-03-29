@@ -104,8 +104,8 @@ Probe 9 empirically validated: Chrome LanguageModel configured for English-only 
 
 | Modality | Probe Strategy |
 |----------|---------------|
-| Text -> Text | 10-probe battery + Winograd schema probes |
-| Text -> Image | Vision verification of prompt match, nonsense prompts |
+| Text -> Text | 10-probe battery + Winograd schema + Grice's specificity + compression round-trip + complexity scaling + Theory of Mind |
+| Text -> Image | Vision verification via Visual Turing Test (binary questions per prompt element), nonsense prompts |
 | Image -> Text | Canvas-generated test images, graduated difficulty |
 | Image -> Image | Input sensitivity, vision comparison |
 | Text -> Audio | Duration correlation, unusual input ("florbigax"), API mocking |
@@ -120,10 +120,18 @@ Probe 9 empirically validated: Chrome LanguageModel configured for English-only 
 **Goodhart's Law protection**: AI-PROBING-REFERENCE.md describes probe STRATEGIES, not fixed scripts. The Evaluator generates domain-appropriate probe inputs on the fly. This prevents the Generator from pre-computing responses to known probes.
 
 **Turing test concepts incorporated**:
-- ELIZA effect warning in evaluator.md: "First impressions of intelligence are unreliable"
-- Winograd Schema probes in Text->Text battery (ambiguity resolution requiring reasoning)
-- Total Turing Test principle: test every claimed modality independently
+- ELIZA effect warning in evaluator.md: "First impressions of intelligence are unreliable." Extra skepticism for emotionally engaging AI domains (therapy, coaching, companionship) where the ELIZA effect is strongest and canned responses most harmful.
+- Winograd Schema probes: ambiguity resolution requiring reasoning ("The trophy doesn't fit because IT is too big")
+- Total Turing Test: test every claimed modality independently
 - Functional Turing Test: non-conversational AI tested by function, not conversation
+- Chinese Room (Searle): probes test semantics (understanding), not syntax (well-formed responses). Theoretical basis for behavioral probing.
+- Grice's specificity probe: ask narrow factual questions ("What year was Vermeer born?"). Real AI gives direct answers; canned gives broad keyword-triggered responses. Tests Quantity and Relation maxims.
+- Compression round-trip: "Summarize in one sentence" then "Expand back to a paragraph." Tests understanding via information preservation through compress/decompress cycle.
+- Complexity scaling (Kolmogorov): give inputs of varying complexity, check if response complexity scales proportionally. Canned systems produce constant-complexity responses regardless of input.
+- Theory of Mind probes: "I believe the museum closes at 5pm. If it actually closes at 6pm, what would you tell me?" Tests whether AI can model the user's mental state.
+- Visual Turing Test (Geman et al.): for Text->Image, structure verification as binary questions per prompt element ("Does this contain a red car?" "Is it on a beach?"). Hit rate measures prompt-image alignment.
+- Probe ordering: start with baseline probes (domain, variability), escalate to adversarial (nonsense, negation, reasoning). Prevents habituation from masking baseline failures.
+- Subject Matter Expert judge: Evaluator reads SPEC.md before probing, becoming a domain expert. Domain-expert judges catch canned responses that fool naive judges.
 
 **Off-spec features** (GAN precision principle + YAGNI):
 - Product Depth: penalized (off-spec outputs, misallocated effort, GAN precision)
@@ -290,6 +298,11 @@ Workflow stays in evaluator.md. Reference files loaded on demand at appropriate 
 - Goodhart's Law protection: describe probe strategies, not fixed scripts, so the Generator can't pre-compute responses
 - The French prompt test (2026-03-29): empirically validated that Chrome LanguageModel configured for English-only produces coherent French. The `languages` parameter is a hint. This makes the language probe a valid canned-detection signal.
 - "Find everything, score by impact, never self-censor" as the Evaluator's adversarial principle
+- Chinese Room framing: "Probes test semantics, not syntax" as the theoretical foundation for all behavioral probing
+- Grice's maxims as a formal framework for detecting over-broad keyword-triggered responses
+- Compression round-trip as an information-theoretic test of understanding (from Mahoney/Hutter Prize lineage)
+- Theory of Mind as the most advanced probe: "If I believe X, and X is wrong, what do you tell me?"
+- Visual Turing Test binary questions: structured image verification framework from Geman et al.
 - GAN precision principle for off-spec features: conditional GANs weight spec adherence ~100x over unconstrained quality (pix2pix L1 lambda=100)
 - Asset manifest (SBOM for all static assets) -- Generator produces ASSETS.md in Phase 4, Evaluator gains manifest cross-referencing (new EVAL-06 in Phase 4)
 - Generator using Claude visual inspection for self-assessment before handoff -- Phase 4 idea
