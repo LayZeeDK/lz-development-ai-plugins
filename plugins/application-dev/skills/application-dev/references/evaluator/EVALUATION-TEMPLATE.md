@@ -32,12 +32,14 @@ A criterion FAILS if its score is below the threshold. The overall verdict is FA
 
 Each score must cite specific findings from this report. Scores without evidence are invalid.
 
+<!-- NOT regex-parsed: use prose format (not N/10) to avoid colliding with extractScores() -->
+
 | Criterion | Justification |
 |-----------|---------------|
-| Product Depth | <score>/10 -- <cite specific feature statuses, missing features, stubbed features> |
-| Functionality | <score>/10 -- <cite specific bug counts by severity, broken workflows> |
-| Visual Design | <score>/10 -- <cite specific design observations, spec match/mismatch> |
-| Code Quality | <score>/10 -- <cite specific code issues, patterns, security concerns> |
+| Product Depth | (<score> of 10) -- <cite specific feature statuses, missing features, stubbed features> |
+| Functionality | (<score> of 10) -- <cite specific bug counts by severity, broken workflows> |
+| Visual Design | (<score> of 10) -- <cite specific design observations, spec match/mismatch> |
+| Code Quality | (<score> of 10) -- <cite specific code issues, patterns, security concerns> |
 
 ## Product Depth Assessment
 

@@ -39,7 +39,7 @@ patterns-established:
   - "Bug-first workflow: Steps 5-10 find issues, Step 11 lists findings, Step 12 reads calibration then scores"
   - "Feature watchdog checks 7-10 in self-verification prevent Generator from gaming scores"
 
-requirements-completed: [EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05]
+requirements-completed: [EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05, LOOP-06]
 
 # Metrics
 duration: 18min

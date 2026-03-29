@@ -18,7 +18,7 @@ compatibility: >-
   Sub-agents loaded from the plugin's agents/ directory.
 metadata:
   author: Lars Gyrup Brink Nielsen
-allowed-tools: Agent Read Write Bash(node *appdev-cli*) Bash(git init*) Bash(git rev-parse *) Bash(git add *) Bash(git commit *) Bash(git tag *) Bash(git reset *) Bash(npm init*) Bash(npm install*)
+allowed-tools: Agent Read Write Bash(node *appdev-cli*) Bash(git init*) Bash(git rev-parse *) Bash(git add *) Bash(git commit *) Bash(git tag *) Bash(git reset *) Bash(npm init*) Bash(npm install*) Bash(ls *)
 ---
 
 # Autonomous Application Development
@@ -77,10 +77,16 @@ Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs exists)
 Initialize the workspace for version-controlled development (skip if resuming
 past this step):
 
-Check for existing git repo:
+Check for existing git repo. If none, initialize one:
 
 ```
-Bash(git rev-parse --git-dir 2>/dev/null || git init)
+Bash(git rev-parse --git-dir)
+```
+
+If that fails (exit code non-zero), initialize:
+
+```
+Bash(git init)
 ```
 
 Initialize package.json:
