@@ -442,20 +442,22 @@ Based on Anthropic's official prompting docs:
 
 ## Open Questions
 
-1. **Bug #25834 resolution timeline**
-   - What we know: Plugin agent `skills:` frontmatter silently fails to inject skill content. Workaround: dual mechanism (frontmatter for future + Read fallback for now).
-   - What's unclear: When this will be fixed. If fixed, Read fallback instructions can be removed from agent definitions, saving ~10-15 lines each.
-   - Recommendation: Keep the dual mechanism. Remove fallback when bug is confirmed fixed.
+1. **Bug #25834 resolution timeline** -- UPDATED by marketplace research
+   - What we know: Bug was marked COMPLETED on 2026-02-17. However, related issue #24780 (skills loading failure) was closed NOT_PLANNED on 2026-03-13, suggesting unresolved edge cases.
+   - New finding: The Read fallback pattern is actually SUPERIOR for our use case because it enables selective loading (~2-3k tokens on demand vs ~15k tokens upfront if all 6 skills were injected). The dual mechanism should be maintained not as a bug workaround but as a design choice.
+   - Recommendation: Keep `skills:` frontmatter for documentation and future compatibility. Keep Read instructions as the primary mechanism. Shorten the bug #25834 note in generator.md to one line.
+   - Source: `research/marketplace-plugin-patterns.md` Section 2.
 
 2. **Actual token savings vs behavioral quality tradeoff**
    - What we know: Progressive disclosure reduces context usage. Behavioral quality is the primary goal.
    - What's unclear: Whether the Read overhead (file loading latency + tokens) offsets the context savings for files under 50 lines.
    - Recommendation: Only extract sections that meet the 30-line + single-step-relevance threshold. Small sections (<30 lines) that are referenced frequently should stay inline.
 
-3. **SKILL.md token loading behavior (Issue #14882)**
-   - What we know: Skills consume full token count at startup, not just metadata. This is confirmed behavior as of Claude Code 2.0.76+.
-   - What's unclear: Whether this has been fixed in current versions or remains a known issue.
-   - Recommendation: This affects the orchestrator SKILL.md (461 lines = ~4-5k tokens). Optimizing SKILL.md size reduces startup context cost directly. But this is a side effect of behavioral optimization, not the primary goal.
+3. **SKILL.md token loading behavior (Issue #14882)** -- CLARIFIED by marketplace research
+   - What we know: At startup, only metadata (name + description, ~100 tokens) is loaded. SKILL.md body is loaded when the skill triggers. This is the documented behavior per Anthropic's official best practices page (March 2026).
+   - The original concern (issue #14882, full tokens at startup) appears to have been resolved in current versions. The official docs now explicitly describe the three-level progressive disclosure model.
+   - Recommendation: SKILL.md optimization for tokens is a secondary benefit. The ~4-5k token cost is paid once per session activation, not per agent spawn.
+   - Source: `research/marketplace-plugin-patterns.md` Section 1.
 
 ## Validation Architecture
 
@@ -488,26 +490,109 @@ Phase 5 requirements are TBD in REQUIREMENTS.md. Based on the research, the foll
 ### Wave 0 Gaps
 None -- no new test infrastructure needed. Verification is manual structural inspection.
 
+## Marketplace Distribution Considerations
+
+Supplemental research on marketplace-specific distribution patterns for the application-dev
+plugin. Full findings documented in `research/marketplace-plugin-patterns.md`.
+
+### Token Cost Model
+
+Claude Code uses three-level progressive disclosure that significantly reduces runtime costs:
+1. **Metadata always loaded** (~100 tokens per skill, ~700 total for our 7 skills)
+2. **SKILL.md body on activation** (orchestrator: ~4-5k tokens when user triggers the skill)
+3. **References on-demand** (loaded by agents during execution, per-subagent-context)
+
+Each agent runs in its own context window. Reference files loaded by the evaluator do not consume
+generator tokens. Subagent isolation is token-efficient by design.
+
+**Key implication for Phase 5:** Reducing evaluator.md from 465 to ~370 lines saves ~1,000 tokens
+per spawn x up to 10 rounds = ~10,000 tokens over a full run. SKILL.md optimization yields
+~500-1,000 token savings at activation. Both worthwhile but behavioral quality remains the
+primary driver.
+
+### Agent-Invoked Skills (skills: Frontmatter)
+
+Bug #25834 (plugin agent skills frontmatter silently fails) was marked COMPLETED 2026-02-17.
+However, related issue #24780 was closed NOT_PLANNED (2026-03-13), creating uncertainty.
+
+**Recommendation: Keep the dual mechanism (frontmatter + Read fallback) but reframe the
+justification.** The Read fallback is actually superior for our use case because it enables
+selective loading -- the generator reads only skills relevant to the current app (~2-3k tokens)
+rather than injecting all 6 skills upfront (~15k tokens). The `skills:` frontmatter should be
+kept for documentation and future compatibility, but the Read instructions are the primary
+mechanism by design, not just a bug workaround.
+
+The note about bug #25834 in the generator can be shortened to one line.
+
+### Multi-Model Compatibility (model: inherit)
+
+Our agents use `model: inherit`, running on whatever model the user's session uses. Per
+Anthropic's guidance: "Test your Skill with all the models you plan to use it with."
+
+**Strategy:** Calibrate for Opus 4.6 (primary target), verify with Sonnet 4.6 (experimental).
+Sonnet 4.6 delivers ~98% of Opus coding performance, so well-structured instructions work for
+both. Reduce MUST/NEVER/CRITICAL (causes Opus overtriggering). Keep WHY-based rationale (works
+across all models). Preserve strong language only for output-domain safety constraints.
+
+### Emphasis Patterns
+
+Convergent evidence from Anthropic's skill-creator, plugin-dev, and official docs:
+
+| Source | Guidance |
+|--------|----------|
+| Skill-creator SKILL.md | "Heavy-handed musty MUSTs" are a yellow flag |
+| Plugin-dev skill-development | "Explain to the model why things are important" |
+| Anthropic prompting docs | Opus 4.6 overtriggers on emphasis from older models |
+| Anthropic skill authoring | "Only add context Claude doesn't already have" |
+
+**None of Anthropic's own marketplace plugins use ALL-CAPS emphasis.** They use normal bold,
+clear heading structure, and WHY-based explanations.
+
+### Plugin Security Restrictions
+
+Plugin subagents cannot use `hooks`, `mcpServers`, or `permissionMode` frontmatter fields
+(ignored at runtime). Our agents do not use these, so no impact.
+
+### Writing Style Difference: Agents vs Skills
+
+- **Agent definitions:** Second person ("You are a rigorous critic...") per system-prompt-design.md
+- **Skill SKILL.md:** Imperative/infinitive form ("Execute these steps...") per skill-development
+- Our SKILL.md uses a mix; the imperative form should be preferred per official guidance
+
+### Full Research
+
+See `research/marketplace-plugin-patterns.md` for complete findings including:
+- Detailed token cost analysis per file
+- Bug #25834 full timeline and assessment
+- Frontmatter field reference table
+- Reference file organization patterns
+- Distribution size analysis
+
 ## Sources
 
 ### Primary (HIGH confidence)
 - [Anthropic Prompting Best Practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) -- Instruction ordering (30% improvement for queries at end), XML tags, role setting, Opus 4.6 over-prompting warnings, emphasis patterns
-- [Anthropic Skill Authoring Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) -- 500-line limit, progressive disclosure patterns, conciseness principle, "avoid duplication", reference file organization, one-level-deep references
+- [Anthropic Skill Authoring Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) -- 500-line limit, progressive disclosure patterns, conciseness principle, "avoid duplication", reference file organization, one-level-deep references, multi-model testing guidance
+- [Claude Code Sub-agents Documentation](https://code.claude.com/docs/en/sub-agents) -- Complete frontmatter reference, skills injection docs, model resolution order, plugin security restrictions
 - [Plugin-dev skill-development SKILL.md](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/skill-development/SKILL.md) -- 1,500-2,000 word SKILL.md target, three-level progressive disclosure, imperative writing style, "explain why not just what"
 - [Plugin-dev agent-development SKILL.md](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/agent-development/SKILL.md) -- Agent structure (role + responsibilities + process + output), 500-3,000 character prompt, second-person "You are..." for agents
+- [Plugin-dev plugin-structure SKILL.md](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/plugin-structure/SKILL.md) -- Plugin directory layout, auto-discovery, ${CLAUDE_PLUGIN_ROOT}, naming conventions, security restrictions
 - [Anthropic Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) -- Evaluator-optimizer pattern, tool engineering, simplicity principle, ACI design
 
 ### Secondary (MEDIUM confidence)
 - [Anthropic Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system) -- Delegation instruction design, effort scaling, search strategy, subagent orchestration patterns
 - [Skill-creator issue #202](https://github.com/anthropics/skills/issues/202) -- Excessive verbosity critique, move 60-70% to references/, imperative vs educational tone, "don't re-teach Claude"
-- [Skill-creator SKILL.md](https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md) -- Progressive disclosure three-level loading, domain-specific reference organization
-- [Claude Code Issue #14882](https://github.com/anthropics/claude-code/issues/14882) -- Skills consume full tokens at startup (confirmed behavior), impacts SKILL.md sizing decisions
+- [Skill-creator SKILL.md](https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md) -- "Heavy-handed musty MUSTs" warning, WHY-over-emphasis principle, progressive disclosure
+- [Bug #25834](https://github.com/anthropics/claude-code/issues/25834) -- Plugin agent skills frontmatter injection failure, marked COMPLETED 2026-02-17
+- [Issue #24780](https://github.com/anthropics/claude-code/issues/24780) -- Skills loading failure, CLOSED as NOT_PLANNED 2026-03-13
+- [Claude Code Issue #14882](https://github.com/anthropics/claude-code/issues/14882) -- Skills consume full tokens at startup (confirmed behavior), may be resolved in current versions
 - [Progressive Disclosure blog post](https://alexop.dev/posts/stop-bloating-your-claude-md-progressive-disclosure-ai-coding-tools/) -- Three-tier architecture, extraction criteria, "if a tool can enforce it, don't write prose"
 
 ### Tertiary (LOW confidence)
 - [Prompt Repetition paper (arxiv 2512.14982)](https://arxiv.org/abs/2512.14982) -- Repeating entire input prompt helps; within-prompt duplication not specifically studied. LOW confidence for the deduplication recommendation (supported primarily by Anthropic's "avoid duplication" best practice, not by experimental evidence on within-prompt section duplication)
 - [Prompt Builder Claude Best Practices 2026](https://promptbuilder.cc/blog/claude-prompt-engineering-best-practices-2026) -- Four-block pattern, contract-style format, section markers. Community source, consistent with official docs.
 - [Angular-developer skill pattern](https://angular.love/implementing-the-official-angular-claude-skills/) -- Meta-skill routing pattern with 30+ reference files. Referenced in Phase 4 context but specific implementation not directly verified from source.
+- [Issue #26179](https://github.com/anthropics/claude-code/issues/26179) -- Request for agents to default to Sonnet, user audit showing 0/62 agents needed Opus
 
 ## Metadata
 
@@ -517,6 +602,7 @@ None -- no new test infrastructure needed. Verification is manual structural ins
 - Pitfalls: HIGH -- Derived from established project decisions (Phase 1 minimal orchestrator, Phase 02.1 template extraction) and official warnings (Opus 4.6 overtriggering)
 - Research questions: HIGH for Q1-Q6 -- All answered with multiple supporting sources
 - Deduplication recommendation: MEDIUM -- Anthropic best practice says "avoid duplication" but no experimental evidence specifically for within-prompt section duplication in system prompts
+- Marketplace distribution: HIGH -- Primary sources are official Claude Code docs, plugin-dev plugin, and Anthropic skill authoring best practices
 
 **Research date:** 2026-03-29
 **Valid until:** 2026-04-28 (30 days -- stable domain, Anthropic patterns are well-established)
