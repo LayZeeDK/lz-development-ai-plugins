@@ -19,7 +19,7 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 
 ### Git Workflow
 
-- [x] **GIT-01**: Planner commits SPEC.md to git after generating it
+- [x] **GIT-01**: SPEC.md is committed to git after the Planner generates it (orchestrator commits on Planner's behalf since Planner has no Bash tool)
 - [x] **GIT-02**: Generator commits frequently throughout its build (feature-by-feature), not just at round end
 - [x] **GIT-03**: Generator adds/updates .gitignore with node_modules/, build output folder, and .playwright-cli/
 - [x] **GIT-04**: Evaluator commits QA report and related artifacts into qa/round-N/ folder per round
@@ -32,7 +32,7 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 - [x] **LOOP-03**: Wrap-up phase when safety cap is hit -- Generator consolidates into working state, Evaluator produces final report documenting remaining gaps (Ralph Loop influence)
 - [x] **LOOP-04**: Four exit conditions ordered by priority: PASS (all criteria meet thresholds), PLATEAU (scores converged), REGRESSION (2 consecutive total-score declines), SAFETY CAP (10 rounds reached)
 - [x] **LOOP-05**: Escalation vocabulary (E-0 Normal through E-IV Catastrophic) structures orchestrator exit decisions into a named, debuggable framework
-- [x] **LOOP-06**: Feature count watchdog in orchestrator -- detect when Generator games scores by removing hard-to-implement features between rounds
+- [x] **LOOP-06**: Feature count watchdog -- detect when Generator games scores by removing hard-to-implement features between rounds (Evaluator performs the check; results feed into orchestrator's convergence loop)
 - [x] **LOOP-07**: Generator scope constraint in rounds 2+ (cybernetics damping principle) -- fix only what the Evaluator flagged, do not add new features or refactor working code
 - [x] **LOOP-08**: Context loading order optimization -- present QA-REPORT.md before SPEC.md to Generator in rounds 2+ to prime fixing behavior over building behavior
 - [x] **LOOP-09**: Score trajectory tracking across rounds in a progress file that survives context compaction

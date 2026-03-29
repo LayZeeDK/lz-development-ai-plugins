@@ -259,6 +259,10 @@ Act on the JSON response:
 
 **If `exit_condition` is `"REGRESSION"`:**
 - Output: `[2/3] Evaluating (round N)... Verdict: FAIL (Regression -- rolling back to round {best_round})`
+- Tag the round before rollback:
+  ```
+  Bash(git tag -a appdev/round-N -m "Round N complete: REGRESSION")
+  ```
 - Rollback to the best round:
   ```
   Bash(git reset --hard appdev/round-{best_round})
