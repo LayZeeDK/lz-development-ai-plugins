@@ -67,7 +67,7 @@ Plans:
 **Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 02.1-01-PLAN.md -- Create template files and update agent definitions to reference them
+- [x] 02.1-01-PLAN.md -- Create template files and update agent definitions to reference them
 
 ### Phase 3: Evaluator Hardening
 **Goal**: The Evaluator catches the quality failures that slipped through in testing -- broken/stolen assets, canned AI responses, and lenient scoring
