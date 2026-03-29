@@ -1,388 +1,619 @@
-# Architecture Patterns
+# Architecture Patterns: v1.1 Integration Analysis
 
-**Domain:** GAN-inspired multi-agent application development harness (Claude Code plugin)
-**Researched:** 2026-03-27
+**Domain:** GAN-inspired autonomous application development plugin -- hardening after first real-world test
+**Researched:** 2026-03-29
+**Confidence:** HIGH (based on direct codebase analysis of all 8 core plugin files)
 
-## Recommended Architecture
+## Executive Summary
 
-The system is a three-component adversarial loop orchestrated by a skill, implemented entirely within Claude Code's plugin system (no external SDK, no custom runtime). The architecture maps GAN principles onto the software development lifecycle:
+The v1.1 features fall into five integration categories: (1) SPEC-TEMPLATE.md extension for acceptance test plan, (2) verdict computation migration from Evaluator to CLI, (3) scoring dimension restructuring in EVALUATION-TEMPLATE.md and SCORING-CALIBRATION.md, (4) CLI subcommand changes for new data flow, and (5) Evaluator information barrier enforcement. Each category has a different blast radius -- from template-only changes (low risk) to data flow restructuring (medium risk). The critical dependency chain is: scoring dimensions first (changes the regex contract), then CLI verdict computation (depends on new dimensions), then template updates (propagate new contract), then agent updates (consume new templates).
+
+All v1.1 changes are modifications to existing files. No new files are created. This is consistent with "hardening" -- the architecture is sound, the content needs refinement.
+
+---
+
+## Question 1: Where Does the Acceptance Test Plan Fit in SPEC-TEMPLATE.md?
+
+### Current State
+
+SPEC-TEMPLATE.md has these top-level sections (in order):
+1. Overview
+2. Visual Design Language
+3. User Journey
+4. Constraints and Non-Goals
+5. Features (with user stories and data models per feature)
+6. AI Integration
+7. Non-Functional Considerations
+
+The Evaluator currently derives its test oracle from SPEC.md: user stories, feature descriptions, and design language descriptions. There is no structured, machine-readable test plan -- the Evaluator invents its test strategy at runtime.
+
+### Recommended Integration Point
+
+**Add `## Acceptance Test Plan` as a new section between `## Features` and `## AI Integration`.**
+
+Rationale:
+- It depends on Features (tests verify features) so it must come after
+- It is independent of AI Integration (AI features are also features with their own test criteria)
+- Placing it before AI Integration keeps the "what to build" sections (Features) grouped before the "how to verify" section, then the "special implementation concerns" sections (AI, Non-Functional)
+
+### Section Structure
+
+The acceptance test plan should be Planner-authored, not Generator-authored. The Planner already understands the product domain and features. Acceptance criteria should be:
+- **Feature-level**: one test plan entry per numbered feature
+- **Behavioral**: describe what a user should be able to do, not implementation details
+- **Measurable**: each criterion has a binary pass/fail outcome
+- **Evaluator-consumable**: the Evaluator reads these as its structured test oracle instead of deriving tests ad hoc
+
+```
+## Acceptance Test Plan
+
+For each feature, the acceptance criteria define the minimum bar for "Implemented" status
+in the evaluation. A feature is Partial if some criteria pass but others fail. A feature
+is Broken if the core criterion fails.
+
+### 1. <Feature Name>
+
+**Core criterion:** <The one thing that must work for this feature to count as functional>
+**Additional criteria:**
+- <Measurable acceptance criterion>
+- <Measurable acceptance criterion>
+- ...
+```
+
+### Impact on Existing Components
+
+| Component | Change Type | Description |
+|-----------|-------------|-------------|
+| SPEC-TEMPLATE.md | **New section** | Add `## Acceptance Test Plan` section with per-feature structure |
+| planner.md | **Modify** | Add instruction to populate acceptance test plan; add to self-verification checklist |
+| evaluator.md | **Modify** | Step 1 (Understand the Spec): read acceptance test plan. Step 6 (Test Features): use acceptance criteria as structured test oracle |
+| EVALUATION-TEMPLATE.md | **Modify** (minor) | Feature status table could reference acceptance criteria pass/fail counts |
+| SKILL.md (orchestrator) | **No change** | Binary check ("SPEC.md contains `## Features`") does not need to check for test plan -- Planner self-verifies |
+
+### Dependency
+
+This is a **leaf change** -- it feeds into existing data flows but does not restructure them. Can be implemented independently of scoring or verdict changes.
+
+---
+
+## Question 2: How Does CLI Verdict Computation Change the Data Flow?
+
+### Current Data Flow (v1.0)
+
+```
+Evaluator writes EVALUATION.md
+  |-- Contains "## Verdict: PASS/FAIL" (Evaluator decides)
+  |-- Contains scores table with per-criterion PASS/FAIL status
+  '-- Evaluator computes verdict: FAIL if ANY criterion below threshold
+       |
+       v
+appdev-cli.mjs extractScores()
+  |-- Parses scores via regex: /\|\s*(Product Depth|...)\s*\|\s*(\d+)\/10/gi
+  |-- Parses verdict via regex: /##\s*Verdict:\s*(PASS|FAIL)/
+  '-- Returns { scores, verdict }
+       |
+       v
+appdev-cli.mjs cmdRoundComplete()
+  |-- Stores scores + verdict in state
+  |-- Computes escalation (E-0 through E-IV)
+  '-- Determines exit condition (PASS/PLATEAU/REGRESSION/SAFETY_CAP)
+```
+
+The problem: **The Evaluator decides its own verdict**, which is the fox guarding the henhouse. The Dutch art museum test showed the Evaluator passed at 28/40 (all 7s) after only 2 rounds. The Evaluator "anchored" scores to thresholds -- giving exactly 7/10 on each dimension to issue a PASS verdict.
+
+### Proposed Data Flow (v1.1)
+
+```
+Evaluator writes EVALUATION.md
+  |-- Contains scores table (Evaluator decides scores)
+  |-- Contains per-criterion assessment (Evaluator's analysis)
+  |-- Does NOT contain verdict (removed from Evaluator's responsibility)
+  '-- May contain a "recommended verdict" but this is advisory only
+       |
+       v
+appdev-cli.mjs extractScores()
+  |-- Parses scores via regex (UPDATED for new dimension names)
+  |-- Does NOT parse verdict from report
+  '-- Returns { scores } (no verdict field from report)
+       |
+       v
+appdev-cli.mjs cmdRoundComplete()
+  |-- COMPUTES verdict mechanically from scores vs thresholds
+  |-- Stores scores + computed verdict in state
+  |-- Computes escalation
+  '-- Determines exit condition
+```
+
+### Key Architectural Change
+
+The **verdict computation moves from Evaluator to CLI**. This is a GAN principle enforcement: the discriminator (Evaluator) provides signal (scores), but the convergence decision (verdict) is made by the orchestration layer. The Evaluator cannot game the verdict by anchoring scores to thresholds because the thresholds are enforced mechanically in the CLI.
+
+### Implementation Details
+
+**appdev-cli.mjs changes:**
+
+1. `extractScores()` -- Update regex pattern for new dimension names (see Question 3). Remove verdict parsing from this function. Return `{ scores }` only (no verdict).
+
+2. Add `computeVerdict(scores)` function:
+   ```javascript
+   function computeVerdict(scores) {
+     const thresholds = {
+       product_depth: 7,
+       functionality: 7,
+       visual_coherence: 6,  // renamed from visual_design
+       robustness: 6,        // renamed from code_quality
+     };
+
+     for (const [key, threshold] of Object.entries(thresholds)) {
+       if (scores[key] < threshold) {
+         return "FAIL";
+       }
+     }
+
+     return "PASS";
+   }
+   ```
+
+3. `cmdRoundComplete()` -- Use `computeVerdict(extracted.scores)` instead of `extracted.verdict`. The entry stored in `state.rounds[]` gets `verdict` from `computeVerdict()`, not from the report.
+
+4. `determineExit()` -- Already consumes `current.verdict` from the rounds array. No change needed here because `cmdRoundComplete()` populates the array with the computed verdict.
+
+**EVALUATION-TEMPLATE.md changes:**
+
+- Remove `## Verdict: <PASS or FAIL>` heading
+- Remove the `REGEX-SENSITIVE` comment about verdict parsing
+- Keep the scores table (still regex-parsed)
+- The `Status` column in the scores table (PASS/FAIL per criterion) remains -- this is informational for the Generator to know which dimensions need work
+
+**evaluator.md changes:**
+
+- Remove responsibility for computing overall verdict
+- Remove self-verification check #8 ("Verdict is FAIL if any Core feature Missing/Broken") -- this rule moves to CLI threshold logic
+- Remove self-verification check #9 ("Verdict is FAIL if >50% features Missing/Broken/Partial") -- this becomes a Product Depth ceiling rule in SCORING-CALIBRATION.md
+- Evaluator still computes per-criterion PASS/FAIL status in the table (score vs threshold comparison is trivial and useful for the Generator)
+
+**SKILL.md (orchestrator) changes:**
+
+- Binary check for EVALUATION.md: change from checking for `## Verdict` to checking for `## Scores`
+- No other orchestrator changes -- it already acts solely on CLI JSON output
+
+### Risk Assessment
+
+This is a **medium-risk structural change** because it modifies the data flow contract between Evaluator, CLI, and Orchestrator. However, the blast radius is contained: the Orchestrator already relies exclusively on CLI JSON (not the report), so removing the verdict from the report does not affect orchestration logic. The CLI simply computes what it previously read.
+
+### Dependency
+
+Depends on Question 3 (scoring dimension names must be finalized before regex patterns are updated in extractScores).
+
+---
+
+## Question 3: How Do New Scoring Dimensions Affect Templates and Calibration?
+
+### Current Dimensions (v1.0)
+
+| Dimension | Threshold | What It Measures |
+|-----------|-----------|------------------|
+| Product Depth | 7 | Feature completeness vs spec |
+| Functionality | 7 | Does the app work when used? |
+| Visual Design | 6 | Design identity matching spec |
+| Code Quality | 6 | Code structure, patterns, security |
+
+### Proposed Dimensions (v1.1)
+
+| Dimension | Threshold | What It Measures | Change Type |
+|-----------|-----------|------------------|-------------|
+| Product Depth | 7 | Feature completeness vs spec | **Unchanged** |
+| Functionality | 7 | Does the app work when used? | **Unchanged** |
+| Visual Coherence | 6 | Expanded: design identity + cross-page consistency + responsive coherence | **Renamed + expanded** |
+| Robustness | 6 | Replaces Code Quality: build stability, error handling, dependency health, test coverage | **Renamed + refocused** |
+
+### Changes to EVALUATION-TEMPLATE.md
+
+**Scores table:**
+```markdown
+| Criterion | Score | Threshold | Status |
+|-----------|-------|-----------|--------|
+| Product Depth | X/10 | 7 | PASS/FAIL |
+| Functionality | X/10 | 7 | PASS/FAIL |
+| Visual Coherence | X/10 | 6 | PASS/FAIL |
+| Robustness | X/10 | 6 | PASS/FAIL |
+```
+
+**REGEX-SENSITIVE comment update:**
+```
+<!-- REGEX-SENSITIVE: The following table is parsed by appdev-cli.mjs
+     using the pattern /\|\s*(Product Depth|Functionality|Visual Coherence|Robustness)\s*\|\s*(\d+)\/10/gi
+     Do not change the criterion names, column structure, or score format. -->
+```
+
+**Score Justifications table:** Update criterion names.
+
+**Section renaming:**
+- `## Visual Design Assessment` -> `## Visual Coherence Assessment`
+- `## Code Quality Assessment` -> `## Robustness Assessment`
+
+**New Visual Coherence Assessment scope:**
+- Cross-page design consistency (does navigation, typography, spacing stay consistent across pages?)
+- Responsive coherence (do breakpoints maintain design identity, not just layout?)
+- Design language match with spec (existing from Visual Design)
+- AI slop detection (existing)
+- Cross-feature visual interaction (do features visually coexist, or does each look like a different app?)
+
+**New Robustness Assessment scope:**
+- Build health (does it compile, does the dev server start?)
+- Error handling patterns (existing from Code Quality -- but assessed through behavioral observation)
+- Dependency freshness (are dependencies current and non-deprecated?)
+- Test coverage (does the Generator's test suite exist and pass?)
+- Console error count (existing from separate section, now also scored here)
+- Network error rate during normal usage
+- Note: project structure and code organization assessment drops out because the GAN information barrier (Question 5 / feature [G]) prevents the Evaluator from reading source code
+
+### Changes to SCORING-CALIBRATION.md
+
+**Ceiling rules -- Visual Coherence** (renamed from Visual Design):
+
+| Condition | Ceiling |
+|-----------|---------|
+| All images placeholder | max 3 |
+| No design language match | max 5 |
+| Layout broken on mobile | max 5 |
+| Cross-page style inconsistency (>3 pages differ) | max 5 (new) |
+| Responsive identity loss (design breaks at breakpoints) | max 5 (new) |
+
+**Ceiling rules -- Robustness** (renamed from Code Quality):
+
+| Condition | Ceiling |
+|-----------|---------|
+| Security vulnerability (observable: XSS, exposed secrets in network) | max 4 |
+| Build fails (app does not start) | max 3 (new) |
+| No test coverage at all | max 5 (new) |
+| No error handling anywhere (observable: crashes on invalid input) | max 5 |
+| >10 console errors on page load | max 5 (new) |
+| All dependencies deprecated (observable: npm audit output) | max 5 (new) |
+| Dead code >30% of codebase | REMOVED (requires source code reading, violates GAN barrier) |
+
+**Calibration scenarios:** Need new scenarios for both renamed dimensions. The existing 12 scenarios for Visual Design and Code Quality provide starting structure but names, focus areas, and observable evidence must shift. This is the heaviest single editing task in v1.1.
+
+### Changes to appdev-cli.mjs
+
+**extractScores() regex update:**
+```javascript
+const scorePattern = /\|\s*(Product Depth|Functionality|Visual Coherence|Robustness)\s*\|\s*(\d+)\/10/gi;
+```
+
+**Key normalization update:**
+```javascript
+const key = match[1].toLowerCase().replace(/\s+/g, "_");
+// Now produces: product_depth, functionality, visual_coherence, robustness
+```
+
+**Missing-dimension check update:**
+```javascript
+const expected = ["product_depth", "functionality", "visual_coherence", "robustness"];
+```
+
+**Total computation unchanged:** Still `scores.total = sum of 4 dimensions`.
+
+### Changes to evaluator.md
+
+- Step 12 rubric: rename dimension descriptions and expand scope
+- Product Depth and Functionality descriptors unchanged
+- Visual Coherence: expand descriptors to include cross-page consistency and responsive coherence
+- Robustness: refocus descriptors entirely on behaviorally observable signals (build, tests, errors, dependency health)
+- Remove all instructions that require reading Generator source code for Robustness scoring
+
+### Risk Assessment
+
+This is a **high-impact change** because it touches the regex parse contract (the most fragile part of the system). However, the change is mechanical -- regex pattern string update + key name update. The existing architecture (HTML comments marking regex-sensitive sections) makes this safe because the contract is explicitly documented inline and easy to find.
+
+### Dependency
+
+This is the **foundation change** -- verdict computation, evaluator scoring, and calibration all depend on the dimension names being finalized first.
+
+---
+
+## Question 4: What Changes to appdev-cli.mjs Subcommands Are Needed?
+
+### Current Subcommands (v1.0)
+
+| Subcommand | Purpose | Lines |
+|------------|---------|-------|
+| `init` | Create state file with prompt | 226-248 |
+| `get` | Read and output state | 250-253 |
+| `update` | Update step/round/status | 255-299 |
+| `round-complete` | Extract scores, compute escalation, determine exit | 301-388 |
+| `get-trajectory` | Output score trajectory | 390-417 |
+| `complete` | Mark workflow complete | 419-441 |
+| `delete` | Remove state file | 443-449 |
+| `exists` | Check if state file exists | 451-453 |
+| `check-assets` | Validate external asset URLs | 617-664 |
+
+### Required Changes
+
+#### `round-complete` (MODIFY -- major)
+
+This subcommand undergoes the largest change because verdict computation moves here.
+
+1. **Update `extractScores()`** -- New regex for dimension names (Visual Coherence, Robustness). Remove verdict extraction from report entirely.
+2. **Add `computeVerdict(scores)` function** -- Mechanical verdict computation from scores vs thresholds. Returns PASS/FAIL.
+3. **Update `cmdRoundComplete()`** -- Use `computeVerdict()` instead of `extracted.verdict`. Remove the error path for missing verdict in the report.
+4. **Update score validation** -- Check for 4 new expected dimension names.
+
+#### `init` (NO CHANGE for v1.1)
+
+The session resume issue ("Orchestrator failed to detect completed steps on session resume") is an orchestrator logic bug, not a CLI data model bug. Current state shape already contains enough information for resume:
+
+```json
+{
+  "prompt": "...",
+  "step": "evaluate",  // <-- tells orchestrator where it was
+  "round": 2,          // <-- tells orchestrator which round
+  "status": "in_progress",
+  "exit_condition": null,
+  "rounds": [...]      // <-- tells orchestrator what completed
+}
+```
+
+If `rounds` has N entries, rounds 1..N evaluation is complete. The `step` + `round` tells the orchestrator whether it was mid-generate or mid-evaluate when it crashed. The fix is in SKILL.md's Step 0 resume logic, not in the CLI.
+
+#### No New Subcommands Needed
+
+The existing subcommand surface is sufficient. The `round-complete` changes handle verdict computation. No new CLI capabilities are required.
+
+### Subcommands NOT Affected
+
+| Subcommand | Why Unchanged |
+|------------|---------------|
+| `get` | Reads state -- shape changes are backward-compatible (new dimension keys flow through automatically) |
+| `update` | Step/round/status update -- no scoring involvement |
+| `get-trajectory` | Reads from stored rounds -- new dimension names flow through automatically |
+| `complete` | Exit condition marking -- no change |
+| `delete` | File deletion -- no change |
+| `exists` | Boolean check -- no change |
+| `check-assets` | Asset URL validation -- no change |
+
+---
+
+## Question 5: Suggested Build Order Considering Dependencies
+
+### Dependency Graph
+
+```
+[A] Scoring Dimensions (EVALUATION-TEMPLATE.md, SCORING-CALIBRATION.md)
+  |
+  +--> [B] CLI Verdict Computation (appdev-cli.mjs extractScores + computeVerdict)
+  |      |
+  |      +--> [D] Orchestrator Verdict Flow (SKILL.md binary check update)
+  |      |
+  |      +--> [E] Evaluator Agent Update (evaluator.md -- remove verdict, use new dims)
+  |
+  +--> [C] Evaluator Scoring Rubric (evaluator.md Step 12 descriptors, new dim focus)
+
+[F] Acceptance Test Plan (SPEC-TEMPLATE.md + planner.md + evaluator.md test oracle)
+    |-- Independent of [A]-[E]
+    |-- Touches evaluator.md (Step 1 + Step 6) but different sections than [C]/[E]
+
+[G] GAN Information Barrier (evaluator.md -- remove Step 10 code review)
+    |-- Related to [C] (Robustness must be scorable without source code)
+    |-- Should be done in same phase as [C] and [E]
+
+[H] Session Resume Recovery (SKILL.md Step 0 logic)
+    |-- Independent of all others
+    |-- Touches SKILL.md but different section than [D]
+
+[I] Generator Improvements (Vite+, dependency freshness, browser-agnostic AI, test style)
+    |-- Independent of evaluation-side changes
+    |-- generator.md modifications only
+
+[J] Cross-Feature Interaction Testing (evaluator.md testing methodology)
+    |-- Independent of scoring changes
+    |-- Touches evaluator.md Step 6 but additive, not conflicting
+
+[K] Edge-First Browser (evaluator.md browser preference)
+    |-- Independent, tiny change
+    |-- Touches evaluator.md Step 4
+```
+
+### Suggested Build Order
+
+**Phase 1: Scoring Foundation** -- [A]
+- Rename dimensions in EVALUATION-TEMPLATE.md
+- Update regex-sensitive comments
+- Rewrite ceiling rules in SCORING-CALIBRATION.md (add new ceilings, remove dead-code ceiling)
+- Write new calibration scenarios for Visual Coherence and Robustness
+- **Rationale:** Everything else in the scoring pipeline depends on dimension names being stable
+
+**Phase 2: CLI Verdict Pipeline** -- [B] + [D]
+- Update `extractScores()` regex pattern and expected dimensions
+- Add `computeVerdict()` function with threshold table
+- Update `cmdRoundComplete()` to use computed verdict, remove verdict parsing from report
+- Update SKILL.md binary check from `## Verdict` to `## Scores`
+- **Rationale:** Depends on Phase 1 dimension names; [D] is small enough to bundle with [B]
+
+**Phase 3: Evaluator Overhaul** -- [C] + [E] + [G] + [J] + [K]
+- Update Step 12 rubric descriptors for Visual Coherence and Robustness
+- Remove verdict computation and associated self-verification checks
+- Restructure/remove Step 10 (code review) -- GAN information barrier
+- Refocus Robustness on behaviorally observable signals
+- Add cross-feature interaction testing to Step 6
+- Add Edge-first browser preference to Step 4
+- Expand Visual Coherence to include cross-page consistency testing
+- **Rationale:** All touch evaluator.md. Doing them together prevents 3-4 separate rewrites of a 392-line file. The GAN barrier and Robustness refocus are tightly coupled (Robustness must be scorable without source code).
+
+**Phase 4: Spec and Planner Enhancement** -- [F]
+- Add `## Acceptance Test Plan` section to SPEC-TEMPLATE.md
+- Update planner.md to generate acceptance criteria per feature
+- Update planner.md self-verification checklist
+- Update evaluator.md Steps 1 and 6 to consume structured test plan
+- **Rationale:** Independent leaf change. Evaluator.md touches are in different sections (Steps 1, 6) than Phase 3 changes (Steps 4, 6-methodology, 10, 12, 13, 14). The Step 6 overlap (testing methodology) can be managed by Phase 3 adding cross-feature interaction paragraphs and Phase 4 adding acceptance criteria consumption -- additive, not conflicting.
+
+**Phase 5: Generator Improvements** -- [I]
+- Stronger Vite+ adoption nudge
+- Dependency freshness instruction
+- Browser-agnostic LanguageModel API guidance (not Chrome-specific)
+- Test style improvements
+- **Rationale:** Generator is independent of evaluation pipeline changes
+
+**Phase 6: Orchestrator Recovery** -- [H]
+- Fix Step 0 resume logic in SKILL.md
+- Add crash detection (state says "evaluate round 2" but no evaluation/round-2/ exists)
+- Add step completion inference from filesystem state + rounds array
+- **Rationale:** Lowest dependency, lowest priority (UX polish, not quality gate)
+
+### Phase Dependency Graph
+
+```
+Phase 1 --> Phase 2 --> Phase 3
+                          |
+Phase 4 (independent) ----' (minor Step 6 coordination)
+Phase 5 (independent)
+Phase 6 (independent)
+```
+
+### Parallel Execution Options
+
+If parallelization is desired (config.json has `"parallelization": true`):
+
+```
+Track A (sequential): Phase 1 -> Phase 2 -> Phase 3
+Track B (parallel):   Phase 4 (after Phase 3 completes, or coordinate Step 6)
+Track C (parallel):   Phase 5 (anytime)
+Track D (parallel):   Phase 6 (anytime)
+```
+
+Tracks C and D can run fully in parallel with Track A. Track B can start anytime but should merge after Track A completes to avoid evaluator.md conflicts.
+
+---
+
+## Component Boundary Analysis
+
+### Files Modified (No Files Created)
+
+| File | Change Scope | Phases |
+|------|-------------|--------|
+| EVALUATION-TEMPLATE.md | Rename dimensions, remove verdict heading, update sections | 1, 2 |
+| SCORING-CALIBRATION.md | Rename dimensions, add/remove ceiling rules, new scenarios | 1 |
+| appdev-cli.mjs | Update regex, add computeVerdict(), update key names | 2 |
+| SKILL.md | Update binary check, fix resume logic | 2, 6 |
+| evaluator.md | Remove verdict, update rubric, add info barrier, update test oracle, add cross-feature testing | 3, 4 |
+| planner.md | Add acceptance test plan generation | 4 |
+| generator.md | Vite+ nudge, dependency freshness, browser-agnostic AI | 5 |
+| SPEC-TEMPLATE.md | Add Acceptance Test Plan section | 4 |
+
+### Cross-File Contract Changes
+
+| Contract | v1.0 | v1.1 | Files Affected |
+|----------|------|------|----------------|
+| Score dimension names | Product Depth, Functionality, Visual Design, Code Quality | Product Depth, Functionality, Visual Coherence, Robustness | EVALUATION-TEMPLATE.md, SCORING-CALIBRATION.md, appdev-cli.mjs, evaluator.md |
+| Verdict location | In EVALUATION.md (Evaluator writes) | In CLI (computed from scores) | EVALUATION-TEMPLATE.md, appdev-cli.mjs, evaluator.md, SKILL.md |
+| Orchestrator binary check | `## Verdict` in EVALUATION.md | `## Scores` in EVALUATION.md | SKILL.md |
+| Test oracle | Ad hoc from SPEC.md features/user stories | Structured acceptance criteria in SPEC.md | SPEC-TEMPLATE.md, planner.md, evaluator.md |
+| Evaluator code access | Reads source code (Step 10) | No source code access (GAN barrier) | evaluator.md |
+
+### Data Flow Diagram (v1.1)
 
 ```
 User Prompt
     |
     v
-+--------------------+
-|   Orchestrator     |  (application-dev SKILL.md)
-|   (Coordinator)    |  allowed-tools: Agent, Read
-+--------------------+
+Planner --> SPEC.md (now includes Acceptance Test Plan)
     |
-    | 1. Spawn Planner
     v
-+--------------------+
-|   Planner          |  (agents/planner.md)
-|   (Spec Writer)    |  tools: Read, Write
-+--------------------+
-    |
-    | Writes SPEC.md
-    | (+ git commit)
-    v
-+--------------------+      QA-REPORT.md       +--------------------+
-|   Generator        | <--------------------- |   Evaluator         |
-|   (GAN Generator)  |  feedback.md channel   |   (GAN Discriminator)|
-|   tools: Read,     |                        |   tools: Read, Write,|
-|   Write, Edit,     | --------------------> |   Glob, Bash         |
-|   Glob, Bash       |  Application code      |   (+ playwright-cli) |
-+--------------------+  via filesystem         +--------------------+
-         ^                                              |
-         |          Orchestrator Loop Control            |
-         +----------------------------------------------+
-              Round N+1 if FAIL && !converged && N < cap
+Generator (reads SPEC.md round 1, EVALUATION.md rounds 2+)
+    |-- Builds application
+    |-- Commits feature-by-feature
+    |-- Runs diagnostic battery
+    '-- Hands off to Evaluator
+         |
+         v
+Evaluator (reads SPEC.md + runs app via playwright-cli)
+    |-- NO source code access (GAN information barrier)
+    |-- Tests against acceptance criteria from SPEC.md
+    |-- Tests cross-feature interactions
+    |-- Scores: Product Depth, Functionality, Visual Coherence, Robustness
+    |-- Does NOT compute overall verdict
+    '-- Writes evaluation/round-N/EVALUATION.md (scores + assessment)
+         |
+         v
+appdev-cli.mjs round-complete
+    |-- Extracts scores (regex on new dimension names)
+    |-- COMPUTES verdict (scores vs thresholds -- mechanical)
+    |-- Computes escalation (E-0 through E-IV)
+    '-- Returns JSON to Orchestrator
+         |
+         v
+Orchestrator (SKILL.md)
+    |-- Acts on CLI JSON only (exit_condition, should_continue)
+    |-- Tags rounds
+    '-- Loops or exits to Summary
 ```
 
-### Key Architectural Principle: Separation Enforced Structurally
-
-The GAN analogy is not metaphorical -- it drives real architectural decisions. In a GAN, the generator cannot see the discriminator's internal weights, and the discriminator cannot modify the generator's output. This translates to:
-
-- **Generator cannot evaluate itself.** Self-evaluation leads to self-praise bias (documented in the Anthropic article and confirmed by community experience). The Generator runs CI checks as an inner feedback loop, but the quality judgment comes from the Evaluator.
-- **Evaluator cannot modify code.** It writes QA-REPORT.md only. If the Evaluator could fix bugs directly, the adversarial tension collapses -- you get a single-agent system with extra steps.
-- **Orchestrator cannot do agent work.** It spawns agents and reads their output files. If the orchestrator falls back to coding or testing when an agent fails, it violates the architecture. Error-out, not fall-back.
-- **Fresh context per agent spawn.** Each subagent gets a clean context window. The Generator does not see the Evaluator's reasoning process, only its structured output (QA-REPORT.md). The Evaluator does not see the Generator's struggle, only the running application. This prevents inherited blind spots -- the core insight from both the Anthropic article and the Claude Forge project.
-
-### Component Boundaries
-
-| Component | Responsibility | Communicates With | Cannot Do |
-|-----------|---------------|-------------------|-----------|
-| Orchestrator (SKILL.md) | Spawn agents in sequence, read output files, loop control, convergence detection, summary | Planner, Generator, Evaluator (via Agent tool) | Write code, test app, modify SPEC/QA-REPORT, make technical decisions |
-| Planner (agents/planner.md) | Expand 1-4 sentence prompt into ambitious SPEC.md | Orchestrator (via return), filesystem (SPEC.md) | Choose tech stack (unless user specified), write code, evaluate |
-| Generator (agents/generator.md) | Build/fix the application from SPEC.md and QA-REPORT.md | Orchestrator (via return), filesystem (all project files, QA-REPORT.md read, SPEC.md read) | Evaluate quality, write QA reports, approve own work |
-| Evaluator (agents/evaluator.md) | Test running app via Playwright, grade against criteria, write QA-REPORT.md | Orchestrator (via return), filesystem (QA-REPORT.md write, SPEC.md read, source read-only) | Modify application code, fix bugs, change project files |
-
-### Data Flow
-
-The system uses **file-based communication** exclusively. No data passes between agents through the orchestrator's prompt beyond operational instructions (round number, which file to read). This is both a design choice and a Claude Code constraint -- subagents cannot message each other directly.
-
-```
-Phase 1: Planning
-  User prompt --> Orchestrator --> Agent(planner, prompt=verbatim)
-  Planner reads: frontend-design-principles.md (reference)
-  Planner writes: SPEC.md
-  Planner commits: SPEC.md (v1 requirement)
-  Orchestrator reads: SPEC.md (validation check)
-
-Phase 2: Build/QA Loop (rounds 1..N)
-  Orchestrator --> Agent(generator, prompt="Round N. Read QA-REPORT.md")
-  Generator reads: SPEC.md, QA-REPORT.md (rounds 2+), browser-*/SKILL.md
-  Generator writes: Application files, .gitignore, README.md
-  Generator runs: npm install, npm run dev, CI checks (inner loop)
-  Generator commits: Feature-by-feature throughout build
-
-  Orchestrator --> Agent(evaluator, prompt="QA round N")
-  Evaluator reads: SPEC.md, source code (read-only), QA-REPORT.md (prev, rounds 2+)
-  Evaluator starts: Dev server (background)
-  Evaluator uses: playwright-cli (open, snapshot, click, fill, screenshot, etc.)
-  Evaluator writes: QA-REPORT.md, screenshots in qa/round-N/
-  Evaluator commits: qa/round-N/ artifacts (v1 requirement)
-
-  Orchestrator reads: QA-REPORT.md
-  Orchestrator decides: Continue (FAIL + !converged + round < cap) or Stop (PASS | converged | cap)
-
-Phase 3: Summary
-  Orchestrator reads: Final QA-REPORT.md, README.md
-  Orchestrator presents: Summary to user
-```
-
-### State Machine
-
-The orchestrator follows a deterministic state machine:
-
-```
-[INIT] --> [PLANNING] --> [BUILDING] --> [EVALUATING] --> [DECISION]
-                              ^                              |
-                              |   FAIL + !converged + N<cap  |
-                              +------------------------------+
-                              |
-                         [SUMMARY] <-- PASS | converged | N=cap
-```
-
-Decision logic at [DECISION]:
-
-1. **PASS**: All four criteria (Product Depth >= 7, Functionality >= 7, Visual Design >= 6, Code Quality >= 6) met. Stop.
-2. **Plateau detected**: Scores stopped improving (see convergence strategy below). Stop.
-3. **Round cap reached**: N equals maximum (10 in v1). Stop.
-4. **Otherwise**: Start next build round.
-
-## Tool Allowlists Per Agent Role
-
-Tool allowlists are the primary mechanism for enforcing GAN role separation. The principle: each agent gets the minimum tools needed for its role, and nothing more.
-
-### Current State (has gaps)
-
-| Agent | Current `tools` | Issues |
-|-------|-----------------|--------|
-| Orchestrator | `Agent Read` (in `allowed-tools`) | Should be `Agent, Read` only. Currently correct. |
-| Planner | `Read, Write` | Correct for spec writing. Missing git for commit requirement. |
-| Generator | `Read, Write, Edit, Glob, Bash` | Full write access is correct. Needs Bash for git, npm, dev server. |
-| Evaluator | `Read, Write, Glob, Bash` | Write is needed only for QA-REPORT.md. Bash needed for playwright-cli, dev server, git. |
-
-### Recommended State (v1 hardened)
-
-| Agent | Recommended `tools` | Rationale |
-|-------|---------------------|-----------|
-| Orchestrator (SKILL.md) | `allowed-tools: Agent, Read` | Coordinate and inspect only. No Write prevents orchestrator from doing agent work. |
-| Planner | `tools: Read, Write, Bash` | Read references, Write SPEC.md, Bash for `git add SPEC.md && git commit`. No Edit (writes fresh file, does not patch). No Glob (does not search project). |
-| Generator | `tools: Read, Write, Edit, Glob, Bash` | Full development toolkit. Bash for git, npm, dev server, CI checks. This is intentionally broad -- the Generator's job is to produce working code. |
-| Evaluator | `tools: Read, Write, Glob, Bash` | Read source (read-only by prompt instruction, not tool restriction -- there is no "read-only Write" tool variant). Write for QA-REPORT.md only (enforced by prompt). Bash for playwright-cli, dev server, curl, git. Glob for finding project files. No Edit (must not patch application code). |
-
-### Tool Restriction Limitations
-
-Claude Code's `tools` field is an allowlist, not a fine-grained permission system. The Evaluator having `Write` means it technically can write to any file. The enforcement that it only writes QA-REPORT.md comes from the prompt, not the tool system. For v1, prompt-based enforcement is sufficient. For v2, consider:
-
-- `PreToolUse` hooks to validate write targets (only allow `QA-REPORT.md` and `qa/` paths)
-- `disallowedTools` for explicit denials
-- Hooks to validate Bash commands (no `npm install`, no file modifications via sed/awk)
-
-## Patterns to Follow
-
-### Pattern 1: File-Based Agent Communication
-
-**What:** Agents communicate exclusively through files in the working directory. The orchestrator passes only operational context (round number, which files to read) in spawn prompts.
-
-**When:** Always. This is the foundational communication pattern.
-
-**Why:** Fresh context isolation. Each agent reads the other's output cold, without inheriting reasoning or blind spots. This is the core GAN insight -- the Evaluator judges the application without seeing the Generator's struggles, just as a GAN discriminator sees only the output image, not the generator's latent space.
-
-**Example files:**
-```
-SPEC.md           -- Planner output, Generator/Evaluator input
-QA-REPORT.md      -- Evaluator output, Generator input (rounds 2+)
-qa/round-N/       -- Screenshots, artifacts per round
-```
-
-### Pattern 2: Score-Based Exit with Plateau Detection
-
-**What:** The orchestrator tracks QA scores across rounds and stops when either all thresholds are met (PASS), scores plateau (no meaningful improvement), or the safety cap is reached.
-
-**When:** At the [DECISION] state after each evaluation round.
-
-**Implementation approach:**
-
-```
-scores_history = []  -- array of {depth, functionality, design, code} per round
-
-After each QA round:
-  Parse QA-REPORT.md for scores
-  Append to scores_history
-
-  If all scores >= thresholds:
-    EXIT: PASS
-
-  If len(scores_history) >= 3:
-    recent = scores_history[-3:]
-    total_improvement = sum(recent[-1]) - sum(recent[-3])
-    If total_improvement <= 1:  -- less than 1 point total over 3 rounds
-      EXIT: PLATEAU
-
-  If round >= cap (10):
-    EXIT: CAP
-```
-
-**Rationale:** Fixed round counts (the current 3-round limit) lead to either early stopping (issues remain) or wasted rounds (scores already plateaued). The GAN analogy: training stops at convergence, not at a fixed epoch count. The Anthropic article's v2 harness ran 3 rounds for the DAW example, but that was a specific run, not a prescribed limit. The article itself documented quality improvements across rounds.
-
-**Plateau window of 3 rounds** is recommended because:
-- 1 round is too noisy (single bad score does not mean plateau)
-- 2 rounds catches oscillation but not slow convergence
-- 3 rounds balances sensitivity with stability
-- Combined threshold of 1 point total improvement is strict enough to catch stagnation but loose enough to allow incremental progress
-
-### Pattern 3: Inner Feedback Loop (Generator Self-Check)
-
-**What:** Before handing off to the Evaluator, the Generator runs CI checks (typecheck, build, lint, test) as a fast inner feedback loop.
-
-**When:** After completing implementation work, before the Generator's subagent returns.
-
-**Why:** The outer GAN loop (Generator <-> Evaluator via Playwright) is expensive -- each Evaluator run takes 5-10 minutes. CI checks catch syntax errors, type errors, and build failures in seconds. This is analogous to a GAN generator checking that its output is a valid image before submitting it to the discriminator.
-
-**Boundary:** The inner loop catches mechanical failures (does it compile? does it build?). The outer loop catches quality failures (does it work? does it look good? does it match the spec?). The Generator must not skip the outer loop even if inner checks pass -- self-evaluation bias means the Generator will always think its code is good enough.
-
-### Pattern 4: Orchestrator as Pure Coordinator
-
-**What:** The orchestrator (SKILL.md) spawns agents, reads their output files, and makes loop control decisions. It never performs agent work itself.
-
-**When:** Always. This is a hard architectural constraint.
-
-**Why:** When the orchestrator falls back to doing agent work (observed in testing -- the orchestrator started writing code when the Generator hit API errors), it:
-1. Violates GAN separation (no adversarial feedback on orchestrator-written code)
-2. Produces lower quality (orchestrator prompt is not optimized for code generation)
-3. Creates a false sense of completeness (no QA on orchestrator-written features)
-
-**Enforcement:** The orchestrator's `allowed-tools: Agent, Read` prevents it from writing files or running Bash commands. If an agent fails (API error, timeout, malformed output), the orchestrator should retry the agent or report the failure to the user -- never attempt the work itself.
-
-### Pattern 5: Commit Strategy
-
-**What:** Git commits happen at defined points in the workflow, creating a recoverable timeline.
-
-**When:**
-- Planner: Commit SPEC.md after generating it
-- Generator: Commit feature-by-feature throughout build (not just at round end)
-- Evaluator: Commit QA report + artifacts into qa/round-N/
-- Orchestrator: Tag milestones (post-planning, post-round-N, post-final)
-
-**Why:** Testing revealed that without commits, there are no recovery points. A Generator regression in round 3 can destroy work from round 1 with no way to recover. Feature-by-feature commits also give the Evaluator (in rounds 2+) a `git log` to understand what changed.
-
-**Implementation note:** Planner and Evaluator need `Bash` in their tool lists to run git commands. The Generator already has it. The orchestrator cannot commit (no Bash tool) -- milestone tags must be handled by the last agent to run in each phase, or the orchestrator must spawn a brief agent specifically for tagging.
+---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Orchestrator Fallback to Agent Work
+### Anti-Pattern 1: Partial Regex Contract Migration
 
-**What:** When an agent fails (API error, rate limit, malformed output), the orchestrator attempts to do the agent's work itself.
-**Why bad:** Violates GAN separation. Unreviewed code enters the application. The orchestrator's prompt is not tuned for code generation or QA.
-**Instead:** Retry the agent (with a retry limit). If the agent consistently fails, report the error to the user with context about what happened. The orchestrator should error out, never fall back.
+**What:** Updating dimension names in EVALUATION-TEMPLATE.md but forgetting to update the regex in appdev-cli.mjs (or vice versa).
+**Why bad:** extractScores() returns `{ error: "Could not extract all 4 scores" }`, treated as Evaluator failure, triggers infinite retry loop.
+**Prevention:** Phase 1 and Phase 2 must be treated as an atomic contract change. Update template + regex + expected keys together. Test with a mock EVALUATION.md containing the new dimension names.
+**Detection:** Run appdev-cli.mjs unit tests (7 existing from v1.0 check-assets) -- add regression tests for extractScores() with new dimension names.
 
-### Anti-Pattern 2: Passing Agent Reasoning Through the Orchestrator
+### Anti-Pattern 2: Evaluator Still Computing Verdict
 
-**What:** The orchestrator reads an agent's full output and passes a summary to the next agent.
-**Why bad:** The orchestrator becomes a bottleneck that filters and distorts information. It also leaks context -- the Evaluator might receive the Generator's internal reasoning, reducing the "fresh eyes" effect.
-**Instead:** Agents communicate through files. The orchestrator passes only operational directives: "This is round 2. Read QA-REPORT.md." The agent reads the file directly and forms its own understanding.
+**What:** Removing the `## Verdict:` heading from the template but leaving verdict computation logic in evaluator.md self-verification.
+**Why bad:** Evaluator fails self-verification because it cannot write a verdict heading that no longer exists in the template. Or worse, Evaluator writes the heading anyway (ignoring the template) and CLI parses it, defeating the purpose.
+**Prevention:** Phase 3 removes verdict from evaluator.md self-verification checks entirely. The Evaluator should not reference overall verdict at all -- only per-criterion PASS/FAIL status in the scores table.
 
-### Anti-Pattern 3: Shared Context Between Generator and Evaluator
+### Anti-Pattern 3: Information Barrier Leaks
 
-**What:** Running Generator and Evaluator in the same context window, or letting the Evaluator see the Generator's conversation history.
-**Why bad:** The Evaluator inherits the Generator's blind spots. If the Generator struggled with a CSS layout and eventually "fixed" it, the Evaluator -- having seen the struggle -- is primed to be lenient about that area. Fresh context means the Evaluator sees only the result, not the effort.
-**Instead:** Each subagent spawn creates a fresh context window (this is the default behavior of Claude Code subagents). Do not attempt to pass conversation history between agents.
+**What:** Removing Step 10 (code review) but leaving source-code-dependent instructions elsewhere in evaluator.md.
+**Why bad:** Evaluator still reads source code through instructions like "Check for dead code, TODOs, stubs" (currently in Step 10, but also referenced in Step 11 listing). The GAN barrier is undermined.
+**Prevention:** Audit ALL evaluator.md steps for any instruction that requires reading the Generator's source files. The only legitimate code reading is the Evaluator reading its OWN evaluation artifacts (evaluation/round-N/). Robustness must be scorable entirely through behavioral observation.
+**Specific risk spots:**
+- Step 10 (Code Review) -- primary target, must be removed or restructured
+- Step 11 (List All Findings) mentions "Code quality observations" -- rename to "Robustness observations"
+- Step 14 self-verification -- remove any checks that reference code structure
 
-### Anti-Pattern 4: Evaluator Modifying Application Code
+### Anti-Pattern 4: Robustness Without Observable Signals
 
-**What:** Giving the Evaluator Edit tool access so it can "quick-fix" bugs it finds.
-**Why bad:** Collapses the adversarial loop into a single-agent system. The Evaluator's fixes are not reviewed by the Evaluator. The Generator never learns from the feedback because the feedback was consumed by the Evaluator itself. In GAN terms: the discriminator is now also generating -- it will converge to passing everything it produces.
-**Instead:** The Evaluator writes detailed, actionable bug reports in QA-REPORT.md. The Generator reads these and fixes the bugs in the next round.
+**What:** Renaming Code Quality to Robustness but keeping the same code-inspection assessment approach.
+**Why bad:** Robustness measured by reading source code violates the GAN information barrier.
+**Prevention:** Define the Robustness rubric entirely in terms of observable signals:
+1. Build success/failure (`npm run build` output)
+2. Console error count (playwright-cli console output)
+3. Test suite pass/fail (`npm test` output -- Evaluator can run tests without reading test code)
+4. Dependency audit (`npm audit` output)
+5. Network error count during feature testing
+6. Crash/freeze behavior during normal and edge-case usage
+7. Error handling quality (how does the app respond to invalid input, empty states, network failures?)
+All of these are observable through Bash commands and playwright-cli, without reading a single source file.
 
-### Anti-Pattern 5: Leaking Extra Context to Agents
-
-**What:** The orchestrator adds extra information to agent spawn prompts beyond what SKILL.md defines (e.g., summarizing QA results, adding tips, inserting its own analysis).
-**Why bad:** Unpredictable agent behavior. The orchestrator's summary may misrepresent the QA report. Extra tips may conflict with the agent's own instructions. This also makes the system harder to debug -- you cannot reproduce agent behavior by reading its prompt and input files alone.
-**Instead:** The orchestrator passes exactly what SKILL.md specifies: the user's prompt verbatim (to Planner), the round number and file reference (to Generator/Evaluator). Nothing more.
-
-## Convergence Strategy: Score-Based Exit with Plateau Detection
-
-### Thresholds (from Evaluator grading criteria)
-
-| Criterion | Threshold | Weight in convergence |
-|-----------|-----------|----------------------|
-| Product Depth | 7 | Equal |
-| Functionality | 7 | Equal |
-| Visual Design | 6 | Equal |
-| Code Quality | 6 | Equal |
-
-### Exit Conditions (ordered by priority)
-
-1. **PASS**: All four criteria >= their thresholds
-2. **PLATEAU**: Total score improvement <= 1 point over last 3 rounds
-3. **REGRESSION**: Total score decreased for 2 consecutive rounds (stop, do not make it worse)
-4. **SAFETY CAP**: Round count reaches 10
-
-### Score Tracking
-
-The orchestrator must parse QA-REPORT.md after each evaluation to extract the scores table. The parsing target is deterministic (the Evaluator writes a Markdown table with fixed column headers). The orchestrator maintains a mental tally (or could write to a tracking file, but since it only has Read, it must track in-context).
-
-**Important limitation:** The orchestrator runs as a skill in the main context, not as a subagent. It persists across the entire workflow. Score tracking happens naturally in the orchestrator's context window. No external state file is needed -- the orchestrator reads each QA-REPORT.md and accumulates scores in its reasoning.
-
-## Build Order (Dependencies Between Changes)
-
-The following build order reflects dependencies between the v1 hardening requirements. Changes at the top are prerequisites for changes below them.
-
-### Layer 1: Foundation (No Dependencies)
-
-These changes are independent and can be done in any order:
-
-1. **Tool allowlists audit** -- Update agent `tools:` fields per the recommended state above. Add `Bash` to Planner. Verify Evaluator has no `Edit`.
-2. **Orchestrator guard rails** -- Add explicit instruction to SKILL.md: "If an agent fails, retry once. If it fails again, report the error to the user. Never attempt agent work yourself." Remove any implicit fallback paths.
-3. **Planner commits SPEC.md** -- Add git commit instruction to planner.md. Requires Bash tool.
-
-### Layer 2: Git Strategy (Depends on Layer 1 tool allowlists)
-
-4. **Generator feature-by-feature commits** -- Add commit cadence instructions to generator.md. Generator already has Bash.
-5. **Generator adds/updates .gitignore** -- Add to generator.md's setup phase.
-6. **Evaluator commits qa/round-N/ artifacts** -- Add commit + folder structure to evaluator.md. Evaluator already has Bash + Write.
-7. **Milestone git tags** -- Add tagging to SKILL.md or delegate to last agent per phase. Requires deciding whether the orchestrator gets Bash (not recommended) or delegates tagging to agents.
-
-### Layer 3: Score-Based Exit (Depends on Layer 1 orchestrator guard rails)
-
-8. **Replace fixed 3-round limit with score-based exit** -- Rewrite SKILL.md loop logic. Add plateau detection (3-round window, 1-point threshold). Add 10-round safety cap. Add regression detection (2 consecutive declines).
-9. **Orchestrator context discipline** -- Add rule to SKILL.md: "Only pass to agents what is described in this skill. No extra context leaking."
-
-### Layer 4: Evaluator Hardening (Depends on Layer 2 for qa/ structure)
-
-10. **Evaluator validates assets** -- Add asset validation section to evaluator.md: check for broken images, blocked cross-origin, placeholder content, missing attribution.
-11. **Evaluator probes AI features adversarially** -- Add adversarial AI testing to evaluator.md: varied inputs, semantic probing, nonsense input detection.
-
-### Layer 5: Generator Capabilities (Depends on Layer 3 for iteration budget)
-
-12. **Generator CI inner loop** -- Add pre-handoff CI check instructions to generator.md: typecheck, build, lint, test.
-13. **Generator guided toward browser-* AI skills** -- Update generator.md AI features section with skill references and preference hierarchy.
-14. **Generator web search for images** -- Add image sourcing guidance to generator.md: web search with license verification, or build-time generation.
-
-### Layer 6: Bundled Skills (Independent but deploy-time dependency)
-
-15. **Vite+ skill bundled with plugin** -- Create `skills/vite-plus/SKILL.md` in the plugin directory with vp CLI usage, config, and toolchain knowledge.
-16. **Generator prefers Vite+ for greenfield** -- Add preference nudge to generator.md. Depends on Vite+ skill existing.
-
-### Dependency Graph
-
-```
-Layer 1: [tool-allowlists] [orchestrator-guards] [planner-commits]
-              |                    |
-Layer 2: [gen-commits] [gen-gitignore] [eval-commits] [milestone-tags]
-              |                    |
-Layer 3: [score-based-exit] [context-discipline]
-              |                    |
-Layer 4: [eval-assets] [eval-ai-probing]
-              |
-Layer 5: [gen-ci-loop] [gen-browser-ai] [gen-images]
-              |
-Layer 6: [vite-plus-skill] --> [gen-vite-plus-pref]
-```
-
-## Claude Code Plugin Architecture Constraints
-
-### Subagent Limitations
-
-- **No sub-sub-agents.** Subagents cannot spawn other subagents. The orchestrator is the only entity that spawns agents. This means the Generator cannot delegate to a "CSS specialist" subagent, and the Evaluator cannot delegate to a "security scanner" subagent. All specialization must be encoded in the agent's prompt and skill references.
-- **No inter-agent messaging.** Subagents can only report back to the parent (orchestrator). They cannot message each other. All inter-agent communication must go through files.
-- **Plugin agents cannot use hooks, mcpServers, or permissionMode.** These frontmatter fields are ignored for plugin-distributed agents. If hooks are needed (e.g., PreToolUse validation for the Evaluator's Write targets), the user must copy the agent to `.claude/agents/` or configure session-level settings.
-- **Tools field is an allowlist, not fine-grained ACL.** `Write` means write anywhere. `Bash` means run anything. Fine-grained control requires hooks (which plugins cannot define).
-
-### Skill Orchestration
-
-- The orchestrator is a skill (`SKILL.md`), not an agent. It runs in the main conversation context and persists across the entire workflow.
-- `allowed-tools` on the skill restricts what the main conversation can do while the skill is active. `Agent, Read` means the orchestrator can only spawn agents and read files.
-- The skill's `$ARGUMENTS` placeholder passes the user's prompt verbatim to the orchestrator, which forwards it to the Planner.
-
-### Distribution Boundary
-
-Everything in `plugins/application-dev/` ships to users. No test files, no scratch files, no research. The architecture must be fully expressed in:
-- `agents/*.md` (agent definitions with YAML frontmatter + system prompts)
-- `skills/*/SKILL.md` (orchestration logic and domain skills)
-- `commands/*.md` (thin wrappers for slash commands)
-- `.claude-plugin/plugin.json` (manifest)
+---
 
 ## Scalability Considerations
 
-| Concern | Current (v1) | At 10+ rounds | At complex apps |
-|---------|--------------|---------------|-----------------|
-| Context window | Orchestrator accumulates across rounds; agents get fresh context per spawn | Orchestrator may hit compaction; score tracking could be lost | Agent context fills during long builds; compaction handles this |
-| Token cost | ~$125-200 per full run (Anthropic article data) | Linear scaling with rounds; plateau detection saves budget | Generator's 2+ hour builds dominate cost |
-| QA artifacts | Single QA-REPORT.md | qa/round-N/ folders prevent overwriting | Screenshot accumulation; consider cleanup |
-| Git history | Feature-by-feature commits | Many commits per round; milestone tags aid navigation | Large diffs; Generator should commit small |
+| Concern | v1.0 | After v1.1 | Future |
+|---------|------|------------|--------|
+| Score dimensions | 4 hardcoded in regex + CLI | 4 with new names -- still hardcoded | Consider dimensions config file or JSON schema for extensibility |
+| Verdict logic | In Evaluator (distributed) | In CLI (centralized) -- better for consistency | CLI is the right long-term home |
+| Test oracle | Ad hoc from SPEC.md | Structured acceptance criteria in SPEC.md | Could evolve into separate TEST-PLAN.md if specs grow large |
+| Template validation | Regex-based | Regex-based | Consider JSON sidecar for scores (EVALUATION.json alongside EVALUATION.md) for reliability |
+| GAN barrier | Evaluator reads source | Evaluator behavioral-only | Barrier could be tool-enforced with PreToolUse hooks in v2 |
+
+---
 
 ## Sources
 
-- [Anthropic: Harness design for long-running application development](https://www.anthropic.com/engineering/harness-design-for-long-running-application-development) -- PRIMARY. The source article defining the three-agent architecture. HIGH confidence.
-- [Claude Code Docs: Create custom subagents](https://code.claude.com/docs/en/sub-agents) -- AUTHORITATIVE. Definitive reference for agent YAML frontmatter, tool restrictions, spawning, and limitations. HIGH confidence.
-- [Claude Code Docs: Extend Claude with skills](https://code.claude.com/docs/en/skills) -- AUTHORITATIVE. Skill frontmatter, allowed-tools, context:fork. HIGH confidence.
-- [freeCodeCamp: How to Apply GAN Architecture to Multi-Agent Code Generation (Claude Forge)](https://www.freecodecamp.org/news/how-to-apply-gan-architecture-to-multi-agent-code-generation/) -- Independent implementation confirming the same architectural patterns. File-based communication, tool allowlists per role, iteration caps, fresh context per agent. HIGH confidence (cross-validated with Anthropic article).
-- [Claude Code Docs: Orchestrate teams of Claude Code sessions](https://code.claude.com/docs/en/agent-teams) -- Agent Teams (experimental). Not used in this architecture but documents the alternative. MEDIUM confidence.
-- [SitePoint: Agentic Design Patterns 2026](https://www.sitepoint.com/the-definitive-guide-to-agentic-design-patterns-in-2026/) -- Generator-evaluator pattern documentation. MEDIUM confidence.
-- [ASDLC.io: Adversarial Code Review](https://asdlc.io/patterns/adversarial-code-review/) -- Ralph Loop and adversarial patterns. MEDIUM confidence.
-- [OpenClaw: Fixing Agent Loops](https://www.shopclawmart.com/blog/fixing-agent-loops-openclaw) -- Convergence detection, boredom detection, semantic similarity. MEDIUM confidence (different domain but applicable principles).
-- [Understanding Data: Actor-Critic Adversarial Coding](https://understandingdata.com/posts/actor-critic-adversarial-coding/) -- 3-5 rounds eliminate 90%+ issues. MEDIUM confidence.
+- Direct codebase analysis of all 8 core plugin files (HIGH confidence):
+  - SKILL.md (415 lines) -- orchestrator workflow and data flow
+  - appdev-cli.mjs (709 lines) -- CLI state management, score extraction, escalation, exit logic
+  - SPEC-TEMPLATE.md (86 lines) -- current spec section structure
+  - EVALUATION-TEMPLATE.md (199 lines) -- current evaluation structure with regex-sensitive comments
+  - SCORING-CALIBRATION.md (230 lines) -- current ceiling rules, calibration scenarios, conflict resolution
+  - evaluator.md (392 lines) -- 15-step evaluation workflow, self-verification, scoring rubric
+  - planner.md (98 lines) -- planning workflow, self-verification
+  - generator.md (253 lines) -- build process, fix-only mode, testing decision framework
+- STATE.md -- v1.1 context: Dutch art museum test issues (threshold anchoring, GAN violation, resume failure)
+- RETROSPECTIVE.md -- v1.0 lessons: template extraction value, research-before-planning, audit catches real issues
+- PROJECT.md -- v1.1 target features list, design principles, constraints

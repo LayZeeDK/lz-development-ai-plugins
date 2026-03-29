@@ -1,442 +1,471 @@
-# Domain Pitfalls
+# Pitfalls Research: v1.1 Hardening
 
-**Domain:** GAN-inspired multi-agent application development harness (Claude Code plugin)
-**Researched:** 2026-03-27
+**Domain:** GAN-inspired multi-agent application development harness -- v1.1 feature additions
+**Researched:** 2026-03-29
+**Confidence:** HIGH (pitfalls derived from reading actual code, regex patterns, and template contracts)
+
+This document covers pitfalls specific to the v1.1 hardening features. It does not
+repeat the v1.0 pitfalls (Evaluator leniency, role collapse, mode collapse, etc.)
+which remain valid and are documented in the v1.0 research archive.
+
+---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, architectural breakdowns, or fundamental quality failures.
+### Pitfall 1: Breaking Evaluation Report Parsing When Changing Scoring Dimensions
 
-### Pitfall 1: Evaluator Leniency Drift (Self-Evaluation Bias)
+**What goes wrong:**
+The EVALUATION-TEMPLATE.md and appdev-cli.mjs have a hard coupling through regex
+patterns. The current `extractScores` function on line 92 of appdev-cli.mjs uses:
 
-**What goes wrong:** The Evaluator grades generously, letting mediocre work pass QA rounds. Scores cluster at 7-8 even when features are broken or stubbed. The adversarial loop becomes ceremonial -- it runs but does not improve quality.
+```
+/\|\s*(Product Depth|Functionality|Visual Design|Code Quality)\s*\|\s*(\d+)\/10/gi
+```
 
-**Why it happens:** LLMs exhibit systematic self-preference bias. Research published at NeurIPS 2024 demonstrates that LLM evaluators recognize and favor LLM-generated outputs, with a proven linear correlation between self-recognition and self-preference bias strength. The Anthropic article explicitly describes this: "I watched it identify legitimate issues, then talk itself into believing they weren't a big deal and approve the work anyway." The current evaluator.md addresses this with "do not rationalize issues away" language, but prompt-level mitigation alone is insufficient -- the model's training incentivizes agreeableness.
+Renaming "Code Quality" to "Robustness" and "Visual Design" to "Visual Coherence"
+will cause `extractScores` to find only 2 of the expected 4 criterion names. The
+function explicitly checks `Object.keys(scores).length !== 4` and returns an error
+if any are missing. The orchestrator treats this error as an Evaluator failure and
+triggers a retry -- which produces the same report with the same new names, causing
+an infinite retry loop until the 2-retry limit is exhausted and the user is asked to
+intervene.
 
-**Consequences:**
-- Early PASS verdicts with real bugs remaining (directly observed in testing: 1-2 round stops)
-- Scores above threshold mask genuine deficiencies
-- The entire GAN feedback loop collapses -- Generator never receives honest pressure to improve
+Worse, if only one dimension is renamed (partial migration), the function will find 3
+of 4 and still fail -- but the error message will point to a single missing criterion,
+making it look like the Evaluator "forgot" a dimension rather than a parsing mismatch.
 
-**Warning signs:**
-- Scores consistently 7+ from round 1
-- PASS verdict despite visible broken features in screenshots
-- Evaluator report says "minor issues" but lists 5+ bugs
-- Scores increase monotonically without plateaus (suspiciously smooth)
-- Evaluator uses hedging language: "could be improved" instead of "broken"
+**Why it happens:**
+The regex pattern is a string literal in appdev-cli.mjs, the template has HTML
+comments warning about regex sensitivity, and the evaluator.md references the four
+criteria by name. These three files must be updated atomically, but they live in three
+different directories and there is no automated check that they are in sync.
 
-**Prevention:**
-1. Calibrate with few-shot scoring examples (the Anthropic article used this successfully: "I calibrated the evaluator using few-shot examples with detailed score breakdowns")
-2. Require the Evaluator to list ALL tested interactions and their outcomes before scoring -- scoring happens last, not first
-3. Anchor each score explicitly to the rubric descriptors; require the Evaluator to quote which descriptor matches
-4. Separate bug-finding from scoring -- find bugs first (adversarial mindset), then score against findings (objective mindset)
-5. Add specific anti-leniency phrases that empirically reduce score inflation: "A score of 5 is average. Most first-round implementations deserve 4-6."
-6. Consider using a different model for evaluation than generation to reduce self-preference bias (research shows separate judge models reduce self-grading bias)
+Additionally, the Score Justifications table in the template uses prose format
+("(score of 10)") specifically to avoid colliding with `extractScores()`. The NOT
+regex-parsed comment on line 35 of the template explains this. Adding new dimension
+names to the scores table without also updating the justifications table risks creating
+a new collision vector if the prose format accidentally matches the regex.
 
-**Detection:** Track scores across rounds. If round 1 scores average above 6 across multiple test runs, the Evaluator is lenient.
-
-**Phase:** Should be addressed in the Evaluator hardening phase. HIGH confidence this is a real problem -- directly observed in testing and documented in the Anthropic article.
-
-**Sources:**
-- [Anthropic: Harness Design for Long-Running Apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) -- "evaluator would identify legitimate issues, then talk itself into deciding they weren't a big deal"
-- [NeurIPS 2024: LLM self-preference bias research](https://arxiv.org/html/2508.02994v1)
-
----
-
-### Pitfall 2: Orchestrator Absorbing Agent Work (Role Collapse)
-
-**What goes wrong:** When an agent fails (API error, rate limit, timeout, context exhaustion), the orchestrator falls back to doing the agent's work itself. The three-agent architecture collapses into a single-agent system with extra steps. This was directly observed in testing.
-
-**Why it happens:** LLMs are helpful by default. When delegation fails, the model's instinct is "I can do that myself" rather than "I should retry or error." The current SKILL.md orchestrator has `allowed-tools: Agent Read` -- it can only spawn agents and read files. But if the Agent tool fails, the model may attempt to work around the constraint by providing detailed instructions in its output that effectively constitute doing the work. More critically, if `allowed-tools` enforcement is unreliable (see Pitfall 7), the orchestrator may literally use tools it should not have.
-
-**Consequences:**
-- GAN separation of concerns is destroyed -- no adversarial dynamic
-- Self-evaluation bias returns (one model generating and judging)
-- Context window consumed by implementation work, leaving no room for coordination
-- User gets a single-agent experience at multi-agent cost
+**How to avoid:**
+1. Update all three files in a single commit: appdev-cli.mjs regex, EVALUATION-TEMPLATE.md
+   criterion names + HTML comments, SCORING-CALIBRATION.md criterion names + ceiling rules
+2. Add a unit test for `extractScores` that parses a sample report with the NEW criterion
+   names and verifies all 4 are extracted correctly
+3. Add a second test that parses a report with the OLD criterion names and verifies it
+   FAILS -- this catches stale templates in the wild
+4. Consider replacing the regex with a structured approach: parse the markdown table
+   generically and validate criterion names against a constant list, rather than embedding
+   names directly in the regex pattern. This makes future renames a one-line change
+5. The `computeEscalation` and `determineExit` functions use `scores.total` (sum of all 4)
+   -- this is name-agnostic and survives renames, but only if `extractScores` succeeds
 
 **Warning signs:**
-- Orchestrator context window fills rapidly
-- Orchestrator uses Write, Edit, or Bash tools
-- Orchestrator output contains code or implementation details
-- Agent spawning errors in logs followed by continued orchestrator execution
-- QA-REPORT.md or application files modified by the orchestrator session, not an agent session
+- appdev-cli round-complete returns `{"error": "Could not extract all 4 scores..."}`
+- Evaluator retries exhausted on round 1 with no obvious agent failure
+- State file shows round entry without scores (null scores)
+- The error message names specific missing criteria -- compare against the template
 
-**Prevention:**
-1. Explicit instruction: "If an agent fails, report the failure to the user. Do NOT attempt to perform the agent's work yourself. This is an architectural violation."
-2. Implement retry logic: on agent failure, retry up to 2 times before reporting failure
-3. Use the `disallowedTools` frontmatter field on the orchestrator skill to explicitly deny Write, Edit, Bash, Glob (belt-and-suspenders with `allowed-tools`)
-4. Validate after each agent spawn that the expected artifact (SPEC.md, QA-REPORT.md) was produced by the agent, not by the orchestrator
-5. Consider a hook-based guard: a `PostToolUse` hook that flags when the orchestrator session directly modifies project files
-
-**Detection:** Check git blame on artifacts -- if the orchestrator's session authored SPEC.md or application code, role collapse occurred.
-
-**Phase:** Should be addressed in the orchestrator hardening phase. HIGH confidence -- directly observed in testing.
+**Phase to address:**
+Must be the FIRST change in the Evaluator/scoring phase. Template + CLI + calibration
+updated atomically before any other scoring changes.
 
 ---
 
-### Pitfall 3: Mode Collapse in the Generator (Solution Homogeneity)
+### Pitfall 2: Evaluator Behavioral Regression When Removing Source Code Access
 
-**What goes wrong:** The Generator converges on a narrow set of patterns it knows work: the same React + Tailwind stack, the same card-grid layout, the same purple gradient hero section, the same form patterns. Every application looks and feels identical regardless of the prompt. This is the GAN analog of mode collapse -- the Generator finds one "mode" that satisfies the Evaluator and stops exploring.
+**What goes wrong:**
+The current evaluator.md Step 10 ("Review Code (Read-Only)") produces findings that
+feed into scoring for Code Quality (security vulnerabilities, error handling patterns,
+dead code, project structure) and also cross-pollinate into Functionality scoring
+(performance red flags like infinite loops, unbounded DOM growth). Removing source
+code access eliminates these signal sources entirely.
 
-**Why it happens:** GAN mode collapse occurs when "the generator discovers a particular type of sample that consistently fools the current discriminator" and "has a strong incentive to keep producing variations of that sample." In the LLM analog, the Generator's training data contains millions of React + Tailwind examples, so these patterns have the lowest generation difficulty. If the Evaluator doesn't penalize homogeneity (and lenient Evaluators won't), the Generator has no pressure to diversify. The Anthropic article noted: "Claude normally gravitates toward safe, predictable layouts that are technically functional but visually unremarkable."
+The risk is not just lower Code Quality scores -- it is that the Evaluator loses the
+ability to detect INVISIBLE bugs: security vulnerabilities (XSS via dangerouslySetInnerHTML),
+memory leaks (missing cleanup of event listeners/timers), unbounded state growth, and
+hardcoded API keys. These issues produce no visible symptoms during a short testing session
+but are real deficiencies. The Evaluator will be unable to distinguish a well-structured
+app from one held together with duct tape, as long as both look the same in the browser.
 
-**Consequences:**
-- Every application looks like "AI slop" -- generic, template-like, indistinguishable
-- The visual design language in SPEC.md is ignored in favor of familiar defaults
-- Users recognize the output as AI-generated immediately, undermining the product's value
-- The "creative leap" moments the Anthropic article demonstrated (the 3D gallery room) never occur
+Additionally, the Evaluator currently uses source code to verify AI feature authenticity
+(Step 8 references checking "source code contains switch/case or if/else chains matching
+user input keywords"). Without source code access, the Evaluator must rely entirely on
+behavioral probing to detect canned AI -- which is less reliable because a sophisticated
+canned implementation can pass behavioral tests (e.g., using a large response map indexed
+by embeddings rather than keyword matching).
+
+**Why it happens:**
+The GAN information barrier is architecturally correct -- in real GANs, the discriminator
+only sees the output, not the generator's internal state. But the analog is imperfect:
+real GANs operate on fixed-dimensionality outputs (images, audio) where all relevant
+information is visible in the output. Web applications have a hidden dimension (source code)
+that cannot be fully observed through the browser alone. The information barrier trades
+detection capability for architectural purity.
+
+**How to avoid:**
+1. Replace "Code Quality" with "Robustness" and redefine it as an OBSERVABLE criterion:
+   does the app handle errors gracefully? does it recover from bad input? does it work
+   across viewports? does it handle slow network? This can be tested through the browser
+   without source code
+2. Move security testing to behavioral probes: attempt XSS through input fields, test
+   for open redirects, check for exposed credentials in network requests, check for
+   information leakage in error messages
+3. Strengthen AI feature probing to compensate for lost source code inspection:
+   - Add latency analysis (canned responses are instant, real AI has model load time)
+   - Add output entropy analysis (canned responses have low variance)
+   - Add adversarial input testing (gibberish, wrong language, domain-irrelevant queries)
+   - Add the "Winograd schema" probes already in AI-PROBING-REFERENCE.md
+4. Accept that some code quality signals are lost and do NOT try to reconstruct them
+   through indirect observation -- that leads to unreliable heuristics and false confidence
+5. Consider a "commit hygiene" dimension that examines git log and diff stats (observable
+   without reading source) as a lightweight proxy for code organization
 
 **Warning signs:**
-- Generator always picks React + Vite + Tailwind regardless of prompt suitability
-- Purple/blue gradients, white cards with shadows, generic hero sections
-- Evaluator's Visual Design score consistently 6 (barely passing) -- good enough to pass, bad enough to be generic
-- No distinctive typography, color, or layout choices
+- Evaluator reports become shorter (no Code Quality Assessment section content)
+- Robustness scores cluster at 6-7 with vague justifications ("appears to handle errors")
+- Security vulnerabilities survive multiple rounds undetected
+- Canned AI features pass AI probing more often than before
 
-**Prevention:**
-1. Evaluator criteria must explicitly penalize "AI-slop" patterns (the current evaluator.md does mention this -- preserve and strengthen it)
-2. Generator prompt should reference SPEC.md's Visual Design Language section early and repeatedly
-3. The Planner's design language section must be specific enough to be actionable: not "clean and modern" but "dark-mode IDE aesthetic with monospace typography and neon accent colors" (the current planner.md handles this well)
-4. Add "originality" as a scored dimension or weight it heavily within Visual Design
-5. Consider instructing the Generator to make a "strategic decision" after Evaluator feedback: refine or pivot (the Anthropic article used this successfully)
-
-**Detection:** Compare visual output across 3+ different prompts. If they look interchangeable, mode collapse is occurring.
-
-**Phase:** Should be addressed across Planner, Generator, and Evaluator hardening. MEDIUM confidence -- partially mitigated by existing prompts but likely still present.
-
-**Sources:**
-- [Understanding GAN Failure Modes](https://medium.com/game-of-bits/understanding-failure-modes-of-gan-training-eae62dbcf1dd)
-- [GAN Mode Collapse Explained](https://apxml.com/courses/generative-adversarial-networks-gans/chapter-3-gan-training-stabilization/mode-collapse-causes-consequences)
-- [GANs Failure Modes: How to Identify and Monitor Them](https://neptune.ai/blog/gan-failure-modes)
+**Phase to address:**
+Evaluator phase -- must be coordinated with Pitfall 1 (dimension rename). The new
+"Robustness" criterion must have calibration scenarios, ceiling rules, and rubric
+descriptors written BEFORE the Evaluator agent definition is updated. Otherwise the
+Evaluator has a new criterion name but no anchor for scoring it.
 
 ---
 
-### Pitfall 4: Early Stopping (Premature Convergence)
+### Pitfall 3: Rising Thresholds Creating Impossible Convergence
 
-**What goes wrong:** The build/QA loop terminates after 1-2 rounds despite scores well below thresholds and unresolved issues. The orchestrator declares the project "good enough" or the Evaluator issues a PASS too soon. The user receives a partial application. This was directly observed in testing.
+**What goes wrong:**
+If v1.1 raises score thresholds (e.g., from 7 to 8 for Product Depth, or from 6 to 7
+for the new Robustness criterion), the GAN feedback loop may become impossible to
+converge. The Generator reaches a quality plateau that cannot be exceeded within the
+model's capability, and every round triggers FAIL, eventually hitting PLATEAU or
+SAFETY_CAP exit without ever achieving PASS.
 
-**Why it happens:** Multiple factors conspire:
-1. **Context anxiety:** As the context window fills, the model rushes to wrap up. Sonnet 4.5 exhibited this strongly; Sonnet 4.6 with 200K context (the test environment) may still exhibit it.
-2. **Evaluator leniency** (Pitfall 1): lenient scores trigger PASS too early.
-3. **Fixed round cap:** The current 3-round limit is arbitrary and insufficient for complex applications. The Anthropic article's DAW took 3 QA rounds with Opus 4.6 at 1M context -- smaller models with less context may need more.
-4. **Compaction artifacts:** When the context compacts, the orchestrator may lose track of how many rounds have run or what the current scores are.
+The mathematical problem is that the current `computeEscalation` function detects
+plateau as "<=1 point improvement over 3-round window" (line 152 of appdev-cli.mjs).
+If thresholds are raised such that the Generator's capability ceiling is between the
+old threshold and the new threshold, the system enters a dead zone: scores are too high
+to trigger REGRESSION but too low to achieve PASS, and improvement is too slow to avoid
+PLATEAU detection. The system exits with PLATEAU after 3-4 rounds, having wasted
+computation without achieving a better outcome than the lower threshold would have
+accepted.
 
-**Consequences:**
-- "Prompt-to-partial-application" instead of "prompt-to-application"
-- Core features missing or stubbed
-- The user's most visible pain point from testing
+This is compounded by the proposed minimum round count. If a minimum of 2 rounds is
+enforced AND thresholds are raised AND the model is capable of round-1 scores that
+meet old thresholds, then the minimum round requirement forces unnecessary rounds
+that risk introducing regressions (Pitfall 8 from v1.0) without improving quality.
+
+**Why it happens:**
+Threshold setting is disconnected from empirical measurement of what scores the
+Generator actually achieves. The current thresholds (Product Depth 7, Functionality 7,
+Visual Design 6, Code Quality 6) were chosen based on what "good enough" means
+conceptually, not based on observed score distributions across test runs. Raising them
+without empirical data risks setting targets the system cannot hit.
+
+**How to avoid:**
+1. Collect empirical score data from multiple test runs with the CURRENT thresholds
+   before raising any thresholds. If round-3 scores for Functionality average 7.2 with
+   std dev 1.1, raising the threshold to 8 means ~50% of runs will never converge
+2. If thresholds must change, change them by at most 1 point at a time and validate
+   with test runs before committing
+3. For the new dimensions (Robustness replacing Code Quality, Visual Coherence
+   replacing Visual Design), keep thresholds at the SAME level as the dimension they
+   replace (6 for both) until empirical data shows the new dimension is calibrated
+4. Make thresholds configurable in appdev-cli.mjs rather than hardcoded in the template.
+   The template currently embeds threshold values ("7" and "6") -- move them to a
+   configuration object that both the template and the CLI reference
+5. Add a safeguard: if 3 consecutive rounds have all criteria within 1 point of their
+   thresholds but never cross all simultaneously, exit with a new condition
+   (NEAR_PASS or similar) rather than wasting rounds
 
 **Warning signs:**
-- Build/QA loop completes in under 30 minutes total
-- Fewer rounds than the maximum allowed
-- Final QA report shows multiple FAIL criteria but overall PASS verdict
-- Orchestrator summary says "completed successfully" despite low scores
+- Multiple test runs end with PLATEAU or SAFETY_CAP exit, never PASS
+- Average total scores are high (e.g., 24-26/40) but one criterion consistently
+  misses its threshold by 1 point
+- The system produces 6-8 round runs where scores flatline after round 3
 
-**Prevention:**
-1. Replace fixed round count with score-based exit: continue until all criteria pass thresholds OR scores plateau (no improvement for 2 consecutive rounds) OR safety cap (10 rounds) is reached
-2. Plateau detection: if round N scores are not higher than round N-1 in any criterion, that counts as a plateau step
-3. Orchestrator must re-read QA-REPORT.md after each round and explicitly check: "Are all criteria above threshold? If not, which ones fail?"
-4. Add a minimum round count (at least 2 rounds) -- never PASS on round 1
-5. The orchestrator's loop logic should be procedural, not "decide when to stop" -- remove judgment from the stopping decision
-
-**Detection:** Log the number of rounds completed and the final scores. If rounds < max and any score < threshold, early stopping occurred.
-
-**Phase:** Should be addressed in the orchestrator hardening phase (score-based exit). HIGH confidence -- directly observed.
+**Phase to address:**
+Convergence logic hardening phase. Threshold changes should be the LAST scoring change
+(after dimension renames and calibration scenarios are validated) and should be gated
+on empirical data.
 
 ---
 
-### Pitfall 5: Broken/Stolen Assets (Image Sourcing Failure)
+### Pitfall 4: Cross-Validation False Positives Blocking Legitimate PASS
 
-**What goes wrong:** The Generator uses external image URLs (Unsplash, museum APIs, stock photo CDNs) that are blocked by CORS, hotlink-protected, or simply wrong. It also copies images from other websites without attribution. For visually-oriented applications (galleries, portfolios, design tools), this is a catastrophic failure -- the core value of the application is broken.
+**What goes wrong:**
+The proposed cross-validation safeguard (e.g., requiring that cross-feature interaction
+testing passes before issuing a PASS verdict) can generate false positives that block
+legitimate PASS verdicts. Cross-feature interactions are inherently combinatorial: N
+features produce N*(N-1)/2 interaction pairs. Testing all pairs is infeasible, so the
+Evaluator tests a subset. If ANY cross-feature test fails, and cross-validation is a
+hard gate on PASS, then a single minor interaction issue (e.g., opening the settings
+modal while the search overlay is active causes a z-index overlap) blocks PASS even if
+all individual criteria are above threshold.
 
-**Why it happens:** LLMs generate plausible-looking URLs from training data, but these URLs are often outdated, incorrect, or hotlink-protected. The Generator treats "add an image" as "add an img tag with a URL" rather than "source an actual image file." CORS and hotlink protections are invisible to the Generator because it never loads the page in a browser -- only the Evaluator does.
+The false positive rate scales with application complexity: a 12-feature app has 66
+interaction pairs. Even if each pair has only a 5% chance of surfacing a minor issue,
+the probability of at least one issue is 1 - 0.95^66 = 97%. Cross-validation as a hard
+gate effectively guarantees that complex applications never pass.
 
-**Consequences:**
-- Broken image placeholders across the application
-- Copyright violations from scraped/stolen images
-- For image-heavy applications (the Dutch art museum test case), the entire product is unusable
-- Legal liability for users who deploy the output
+**Why it happens:**
+Cross-feature interaction testing is a good SIGNAL but a bad GATE. It finds real issues
+(z-index conflicts, state pollution between features, navigation race conditions), but
+these issues range from Critical to cosmetic. Treating all cross-feature issues as
+PASS-blocking conflates severity levels.
+
+**How to avoid:**
+1. Cross-feature issues should feed into existing scoring dimensions (Functionality for
+   bugs, Visual Coherence for layout conflicts) rather than being a separate gate
+2. Only Critical and Major cross-feature bugs should block PASS -- Minor cross-feature
+   issues should lower the Functionality score but not independently veto the verdict
+3. Define a minimum cross-feature test count (e.g., "test at least 5 cross-feature
+   interactions per evaluation round") rather than "test all interactions"
+4. The Evaluator should prioritize testing interactions between Core features and between
+   features that share state (e.g., both write to the same data store)
+5. Do NOT add a separate "Cross-Validation" score or gate -- integrate findings into
+   existing criteria to avoid the combinatorial explosion problem
 
 **Warning signs:**
-- img src attributes pointing to external domains (unsplash.com, wikimedia.org, etc.)
-- Placeholder images (1x1 pixels, "image not found" alt text)
-- Browser console showing CORS errors or 403 responses
-- Images that work in development but break when served from a different origin
+- Applications that score 7+ on all individual criteria but still receive FAIL verdict
+  due to cross-feature issues
+- Cross-feature bugs listed are all Minor severity but still block PASS
+- The Evaluator spends most of its context budget on cross-feature testing and
+  abbreviates individual feature testing
+- Legitimate improvements in cross-feature behavior do not change the PASS/FAIL outcome
 
-**Prevention:**
-1. Generator should self-host all images: download or generate images and include them in the project directory
-2. Generator should use web search with license verification to find Creative Commons or public domain images, then download them
-3. Generator should consider build-time image generation for decorative/placeholder content (SVG generation, CSS art, canvas rendering)
-4. Evaluator must specifically check: (a) no external image URLs, (b) all images render, (c) no CORS errors in browser console, (d) attribution present for licensed content
-5. Browser-AI skills (Prompt API, WebLLM) could generate images at runtime for appropriate use cases
-
-**Detection:** The Evaluator runs `playwright-cli network` and checks for failed image requests. Also check the source for `<img src="http` pointing to external domains.
-
-**Phase:** Should be addressed in both Generator guidance and Evaluator validation phases. HIGH confidence -- directly observed in Dutch museum test.
+**Phase to address:**
+Evaluator phase. Cross-feature testing should be specified as a SCORING INPUT, not a
+separate gate. The evaluator.md update should explicitly state that cross-feature
+findings are classified by severity and routed to the appropriate scoring dimension.
 
 ---
 
-### Pitfall 6: Canned AI Features (Fake Intelligence)
+### Pitfall 5: Acceptance Test Plan Becoming a Ceiling Instead of a Floor
 
-**What goes wrong:** The Generator implements "AI features" as keyword-matching if/else chains, hardcoded response maps, or random selection from a pre-written list. The chatbot responds to "Tell me about this painting" with a canned paragraph matched by keyword, not actual AI inference. This was directly observed in testing with the "Jan AI Docent" chatbot.
+**What goes wrong:**
+Adding an acceptance test plan to SPEC.md (as a Planner output) creates a concrete list
+of "what to test." The risk is that both the Generator and Evaluator treat this list as
+exhaustive rather than minimum:
 
-**Why it happens:** Real in-browser AI (Prompt API, WebLLM, WebNN) requires complex setup: model downloads, feature detection, graceful degradation, async streaming, error handling. It is dramatically easier for the Generator to fake it with `if (input.includes("painting")) return "This is a masterpiece..."`. If the Evaluator only tests the happy path ("ask about a painting" -> "got a response about a painting"), the canned implementation passes.
+- The Generator implements exactly what the test plan tests and nothing more -- "teaching
+  to the test" behavior where features are optimized to pass the specific test scenarios
+  rather than to work generally
+- The Evaluator restricts its testing to the acceptance test plan and stops doing
+  adversarial exploration -- the entire adversarial dynamic collapses because the
+  Evaluator has a checklist to follow rather than a mandate to break things
+- The acceptance test plan, written by the Planner at generation time, cannot anticipate
+  the specific ways the Generator's implementation will be fragile. Real bugs live in
+  the gaps between planned tests
 
-**Consequences:**
-- The core differentiator of the product (AI-powered features) is a lie
-- Users immediately detect canned responses upon varied input
-- Undermines the "weave AI features throughout" value proposition from the Anthropic article
+This is the Goodhart's Law failure mode applied to testing: "When a measure becomes a
+target, it ceases to be a good measure." The acceptance test plan, intended to ensure
+minimum quality, becomes the maximum quality target.
+
+**Why it happens:**
+LLM agents are instruction-followers by nature. Given a checklist, they execute the
+checklist. The current evaluator.md works against this by explicitly instructing
+adversarial exploration ("try to break it", "test in unexpected orders", "one negative
+test per feature"). But an acceptance test plan provides a competing instruction: "verify
+these specific scenarios." When the agent has limited context budget, the concrete
+checklist wins over the abstract adversarial mandate.
+
+**How to avoid:**
+1. Frame the acceptance test plan as "minimum acceptance criteria" in the SPEC-TEMPLATE.md,
+   with explicit language: "The Evaluator MUST test all acceptance criteria AND perform
+   adversarial testing beyond these criteria. Passing acceptance criteria alone is
+   necessary but NOT sufficient for a PASS verdict."
+2. In the evaluator.md, add a rule: "After completing the acceptance test plan, spend at
+   least 30% of your testing time on adversarial exploration not covered by the plan"
+3. The acceptance test plan should test OUTCOMES, not IMPLEMENTATIONS. "User can create a
+   task with a title and due date" is an outcome. "User fills the title input, selects a
+   date from the datepicker, clicks Submit, and sees the task in the list" is an
+   implementation prescription that constrains the Generator's design space
+4. Do NOT include the acceptance test plan in EVALUATION-TEMPLATE.md. Keep it in SPEC.md
+   only. If it appears in the evaluation template, the Evaluator will treat it as a
+   section to fill out rather than a minimum bar to clear
+5. The Planner should write 3-5 acceptance tests per Core feature and 1-2 per
+   Important feature -- not exhaustive test scenarios. Keep the plan small enough that
+   it cannot substitute for adversarial testing
 
 **Warning signs:**
-- AI feature responses are suspiciously fast (no model loading time)
-- Same input always produces identical output (no stochastic behavior)
-- Slightly rephrased input produces completely different response quality
-- Source code contains switch/case or if/else chains matching user input keywords
-- No model download or initialization step in the application
+- Evaluator report's testing section exactly mirrors the acceptance test plan with no
+  additional tests
+- Generator implements features in a way that passes acceptance tests but fails obvious
+  unlisted scenarios
+- Bug count in evaluator reports decreases after adding acceptance tests (fewer bugs
+  found, not fewer bugs existing)
+- Evaluator context budget consumed by acceptance test checking, adversarial testing
+  section is brief or absent
 
-**Prevention:**
-1. Evaluator must probe AI features adversarially: varied inputs, rephrased questions, nonsense input, edge cases
-2. Evaluator should check for stochastic behavior: same input twice should produce different (but relevant) responses
-3. Evaluator should check source code for keyword-matching patterns and flag them as "canned, not AI"
-4. Generator should be guided toward the browser-AI skills (Prompt API, WebLLM, WebNN) with clear patterns for implementation
-5. Add a specific scoring dimension or sub-criterion for "AI feature authenticity"
-6. Generator should surface unsupported-browser states explicitly rather than silently falling back to canned responses
-
-**Detection:** Ask the AI feature the same question rephrased 3 different ways. If responses are identical or follow a clear keyword-pattern, it is canned.
-
-**Phase:** Should be addressed in both Generator AI-feature guidance and Evaluator adversarial probing phases. HIGH confidence -- directly observed.
+**Phase to address:**
+Planner phase (acceptance test plan format) and Evaluator phase (testing rules). Both
+must be coordinated: the plan's framing in SPEC-TEMPLATE.md and the evaluator.md's
+instructions about how to USE the plan must reinforce each other.
 
 ---
 
-### Pitfall 7: Tool Restriction Enforcement Gaps (Plugin Security Model)
+### Pitfall 6: Edge Browser Differences Breaking Evaluator Testing
 
-**What goes wrong:** The `allowed-tools` field in skill frontmatter may not be reliably enforced, allowing the orchestrator or agents to use tools they should not have access to. The `tools` field in agent frontmatter has its own enforcement model that differs between Claude Code CLI and SDK contexts.
+**What goes wrong:**
+The v1.1 milestone specifies "Edge-first for AI-feature applications" because Edge ships
+Phi-4-mini via the Prompt API on stable (Edge 139+). But the Evaluator's testing
+infrastructure (playwright-cli) defaults to Chromium, which does NOT include any built-in
+AI model. If the Generator builds against Edge's Prompt API and the Evaluator tests with
+default Chromium, all AI features will fail with "LanguageModel is not defined" -- the
+Evaluator will report them as Critical bugs and cap Product Depth at 5 (canned AI ceiling).
 
-**Why it happens:** GitHub issue #18837 reported that `allowed-tools` in skill frontmatter was not enforced -- Claude used tools not listed in `allowed-tools`. The issue was closed as duplicate, suggesting it may be addressed, but the underlying concern remains: tool restriction enforcement is a moving target across Claude Code versions. Additionally, plugin agents cannot use `hooks`, `mcpServers`, or `permissionMode` (these are stripped for security) -- so hook-based guards are not available in the distributed plugin context.
+Conversely, if the Evaluator is configured to use `channel: 'msedge'`, it gains access to
+Phi-4-mini but loses access to Gemini Nano. Applications built targeting Chrome's Prompt
+API (Gemini Nano) will work differently under Edge's Phi-4-mini: different response
+quality, different token limits (Edge restricts to 9216 token context window), different
+language support, and different hardware requirements (Edge needs 5.5 GB VRAM vs Chrome's
+4 GB).
 
-**Consequences:**
-- GAN separation of concerns breaks: Evaluator could write files, Generator could spawn agents, orchestrator could write code
-- The entire adversarial architecture collapses silently -- no error, just wrong behavior
-- Testing works in development but breaks differently in user environments depending on Claude Code version
+The underlying problem is that the Prompt API has identical JavaScript surface across
+Chrome and Edge but uses DIFFERENT models with DIFFERENT capabilities. An application that
+works perfectly in Chrome may produce worse results in Edge (or vice versa), and the
+Evaluator's assessment is browser-dependent.
+
+Additionally, Edge requires Windows 10/11 or macOS 13.3+ -- no Linux support. Users
+running on Linux will have no Edge option and must fall back to Chrome's Gemini Nano
+(if available in extensions) or skip browser AI features entirely.
+
+**How to avoid:**
+1. The browser-prompt-api skill already abstracts over Chrome vs Edge, but the Evaluator
+   and Generator must agree on which browser to target. Add a "Browser Target" field to
+   SPEC.md that the Planner sets based on the prompt requirements
+2. The Evaluator's playwright-cli launch must use `channel: 'msedge'` when testing
+   Edge-targeted applications. This must be explicit in the evaluator.md instructions,
+   not left to inference
+3. The Generator's graceful degradation code MUST be tested by the Evaluator in BOTH
+   scenarios: (a) with the target browser (AI works) and (b) with default Chromium
+   (AI unavailable). The existing ceiling rule "App non-functional without browser AI
+   APIs -> Functionality max 4" already handles this, but the Evaluator must actually
+   test the degradation path
+4. For AI feature probing, the Evaluator should note which browser and model it tested
+   against, so that behavioral differences between Gemini Nano and Phi-4-mini are
+   documented rather than treated as bugs
+5. Consider keeping Chromium as the default Evaluator browser for non-AI testing and
+   switching to the branded channel only for AI feature probing. This isolates browser
+   differences to the AI testing steps
 
 **Warning signs:**
-- Agent performs actions outside its declared tool list (e.g., Evaluator editing source files)
-- Orchestrator creates or modifies project files directly
-- Different behavior between `claude --plugin-dir` (development) and installed plugin (production)
-- No errors in logs -- the tools simply work despite restrictions
+- AI features consistently fail in evaluation despite working when tested manually
+- Evaluator reports "LanguageModel is not defined" as a Critical bug
+- AI probing results are inconsistent between test runs (different hardware, different
+  browser)
+- Applications that pass on one developer's machine fail on another's due to browser
+  or hardware differences
 
-**Prevention:**
-1. Use both `tools` (allowlist) AND `disallowedTools` (denylist) on agents for belt-and-suspenders defense
-2. Add explicit "You do NOT have access to [tool]. Do NOT attempt to use [tool]" instructions in agent prompts as a prompt-level guard
-3. The Evaluator agent prompt already says "Never modify the application's source code" and "You may only write QA-REPORT.md" -- this is good prompt-level defense; add similar explicit constraints to other agents
-4. Test tool restriction behavior on each Claude Code version update
-5. For the orchestrator skill: `allowed-tools: Agent Read` is correct for the skill, but verify this is enforced in practice
-6. Note that plugin agents cannot use `hooks` -- so the `PreToolUse` hook guard pattern from the docs is NOT available in the distributed plugin. Prompt-level enforcement is the primary control.
-
-**Detection:** In test runs, grep the session transcript for tool calls by each agent. If an agent used a tool not in its `tools` list, enforcement is broken.
-
-**Phase:** Should be addressed in the tool allowlist audit phase. MEDIUM confidence -- the bug was reported but may be fixed; needs validation on current Claude Code version.
-
-**Sources:**
-- [GitHub: allowed-tools not enforced (#18837)](https://github.com/anthropics/claude-code/issues/18837)
-- [GitHub: allowed-tools inconsistency CLI vs SDK (#18737)](https://github.com/anthropics/claude-code/issues/18737)
-- [Claude Code Plugins Reference](https://code.claude.com/docs/en/plugins-reference) -- "For security reasons, hooks, mcpServers, and permissionMode are not supported for plugin-shipped agents"
+**Phase to address:**
+Browser phase (Edge-first configuration) and Evaluator phase (browser channel selection).
+The browser target must be set BEFORE the Generator runs, and the Evaluator must be told
+which channel to use. This is a cross-cutting concern that affects Planner (spec),
+Generator (implementation), and Evaluator (testing).
 
 ---
 
-## Moderate Pitfalls
+## Technical Debt Patterns
 
-### Pitfall 8: Regression Oscillation (Fix One, Break Another)
+Shortcuts that seem reasonable but create long-term problems.
 
-**What goes wrong:** Generator fixes bugs from round N but introduces regressions in previously-working features. Round N+1 fixes those regressions but re-breaks the original fixes. The build/QA loop oscillates rather than converges -- like a GAN that never reaches Nash equilibrium.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Hardcoding new criterion names in regex without tests | Quick rename, single commit | Next rename repeats the breakage; no safety net against template drift | Never -- add tests first, then rename |
+| Keeping old threshold values when renaming dimensions | Avoids threshold calibration effort | New dimension may have different score distributions, making old thresholds too easy or too hard | Acceptable as a temporary measure if validated empirically within 2-3 test runs |
+| Making the Evaluator use `msedge` channel for ALL testing | Simplifies browser configuration | Misses Chrome-specific issues; Edge has different headless behavior; Edge not available on Linux | Only when the application explicitly targets Edge AI features |
+| Adding acceptance test plan to EVALUATION-TEMPLATE.md | Evaluator can check off tests systematically | Evaluator becomes a checklist executor, adversarial testing dies | Never -- keep acceptance tests in SPEC.md only |
+| Using `scores.total` as the primary convergence metric | Simple to compute, already implemented | Masks dimension-specific issues; a 10/10 Product Depth can compensate for a 4/10 Robustness in the total | Acceptable for trajectory analysis (which direction are scores moving) but NOT for PASS/FAIL decisions (which correctly uses per-criterion thresholds) |
 
-**Why it happens:** The Generator receives QA feedback as a list of bugs and addresses them one by one. Without careful planning, a fix in one area cascades into breakage in another. CSS changes break layout elsewhere. API changes break dependent components. State management changes break unrelated flows. The Generator's "minimize blast radius" instruction helps but is insufficient when fundamental architecture is fragile.
+## Integration Gotchas
 
-**Prevention:**
-1. Evaluator must explicitly check for regressions (the current evaluator.md handles this well with the regression section)
-2. Evaluator should compare scores across rounds -- declining scores are a red flag
-3. Generator should plan before coding in round 2+ (the current generator.md handles this with the "plan before coding" instruction)
-4. Generator CI inner loop (typecheck, build, lint, test) catches regressions before the Evaluator sees them
-5. Orchestrator plateau detection should count oscillating scores (up then down) as a plateau signal
+Common mistakes when connecting v1.1 features to the existing system.
 
-**Detection:** Scores that go up in round N, then down in round N+1 for the same criterion.
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| EVALUATION-TEMPLATE.md + appdev-cli.mjs | Update template dimension names but forget to update the regex in extractScores | Update regex, template, and calibration atomically in one commit; add unit tests |
+| SCORING-CALIBRATION.md + evaluator.md | Add new calibration scenarios for Robustness but keep old Code Quality rubric descriptors in evaluator.md | Calibration scenarios and rubric descriptors must match -- they define the same dimension from different angles |
+| Acceptance test plan in SPEC.md + evaluator.md | Planner writes prescriptive tests ("click button X") instead of outcome tests ("user can do Y") | SPEC-TEMPLATE.md must frame acceptance tests as outcomes; review examples in the template |
+| Minimum round count + PASS on round 1 | Adding minimum rounds of 2 but not updating the PASS exit condition in determineExit() | The `current.verdict === "PASS"` check on line 195 of appdev-cli.mjs fires before the minimum round check; add `current.round < minRounds` guard |
+| Cross-validation + Verdict logic | Adding a cross-validation gate as a new exit condition in determineExit() | Do NOT add a new exit condition -- route cross-feature findings into existing scoring dimensions |
+| Edge browser channel + playwright-cli install | Using `channel: 'msedge'` but not checking that Edge is installed on the machine | Add a prerequisite check: `npx playwright-cli --version` with msedge channel; fail gracefully with a message about browser availability |
 
-**Phase:** Addressed by CI inner loop (Generator) and regression testing (Evaluator).
+## Performance Traps
 
----
+Patterns that work at small scale but fail as usage grows.
 
-### Pitfall 9: Context Window Exhaustion in Long Builds
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Cross-feature combinatorial explosion | Evaluator context exhaustion; testing takes 20+ minutes per round; later features not tested | Cap cross-feature tests at 5-8 per round; prioritize Core feature interactions | Applications with 10+ features (66+ interaction pairs) |
+| Acceptance test plan in SPEC.md growing large | SPEC.md exceeds 8K tokens; Generator context consumed by test plan instead of feature descriptions | Limit to 3-5 tests per Core feature, 1-2 per Important feature; max ~40 acceptance tests total | Specs with 14+ features |
+| Rising thresholds + minimum rounds | 6-8 round runs that plateau without PASS; total agent tokens consumed >500K per run | Keep thresholds at current levels until empirical data justifies raising them | When the model's capability ceiling is between old and new thresholds |
 
-**What goes wrong:** The Generator or Evaluator exhausts its context window mid-task, leading to truncated output, lost instructions, or premature wrapping-up of work. The model begins cutting corners, skipping features, or producing terse implementations.
+## "Looks Done But Isn't" Checklist
 
-**Why it happens:** A full application build can easily consume 100K+ tokens. The Generator reads SPEC.md (potentially 5K+ tokens), writes many files (each one goes into context), reads QA-REPORT.md, and modifies files in response. With Sonnet 4.6's 200K context, this leaves limited headroom. Context anxiety causes the model to rush completion as it approaches what it believes is its limit. The Anthropic article noted that Opus 4.6 "largely removed" context anxiety, but the plugin supports `model: inherit` -- users may run Sonnet or smaller models.
+Things that appear complete but are missing critical pieces.
 
-**Prevention:**
-1. Generator should commit frequently and use git as an external memory -- file contents can be re-read from disk rather than kept in context
-2. The orchestrator spawns fresh agent instances per round (context reset), which the article identified as "essential to the harness design"
-3. Document recommended model: Opus 4.6 1M for best results, with explicit warnings about smaller context windows
-4. Generator should work incrementally: implement one feature, test it, commit it, then move to the next -- not attempt to implement everything in one pass
-5. Keep SPEC.md concise: detailed enough for the Generator but not so long it consumes excessive context
+- [ ] **Dimension rename:** appdev-cli.mjs regex updated -- verify by running `node appdev-cli.mjs round-complete --round 1 --report test-report.md` with a report using new names
+- [ ] **Dimension rename:** SCORING-CALIBRATION.md ceiling rules updated for new dimension names -- verify all 4 dimensions have ceiling rules
+- [ ] **Dimension rename:** evaluator.md rubric descriptors updated for new dimension names -- verify the grade range descriptions (1-3, 4-5, 6-7, 8-10) match the new dimensions
+- [ ] **Dimension rename:** evaluator.md Step 12 scoring instructions reference new names -- verify no stale references to "Code Quality" or "Visual Design"
+- [ ] **Information barrier:** evaluator.md Step 10 removed or replaced -- verify no remaining instructions to "Read the source code"
+- [ ] **Information barrier:** evaluator.md tools frontmatter still includes Read/Glob -- verify these are NOT removed (Evaluator still needs to Read SPEC.md, screenshots, network logs)
+- [ ] **Acceptance test plan:** SPEC-TEMPLATE.md includes acceptance criteria section -- verify it frames criteria as outcomes, not implementations
+- [ ] **Acceptance test plan:** evaluator.md references acceptance criteria as floor, not ceiling -- verify explicit "adversarial testing beyond these criteria" language
+- [ ] **Browser target:** browser-prompt-api skill updated for Edge-first -- verify the skill does not hard-assume Chrome
+- [ ] **Convergence:** appdev-cli.mjs determineExit enforces minimum round count -- verify PASS on round 1 is blocked if minimum rounds > 1
+- [ ] **Cross-validation:** No separate cross-validation gate in determineExit -- verify findings route to existing scoring dimensions
 
-**Detection:** Generator output quality degrades in the latter half of its run. Late features are stubbed or minimal compared to early features.
+## Recovery Strategies
 
-**Phase:** Partially addressed by score-based exit (more rounds with fresh context), and CI inner loop (catch late-stage quality drops).
+When pitfalls occur despite prevention, how to recover.
 
----
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| Broken score parsing (Pitfall 1) | LOW | Fix the regex in appdev-cli.mjs; re-run the evaluator for the failed round; the state file preserves rounds history so no data is lost |
+| Evaluator blind spots after source removal (Pitfall 2) | MEDIUM | Cannot recover detection capability retroactively; must strengthen behavioral probes and re-evaluate. Consider temporary "code audit" step as a non-scoring advisory appendix |
+| Impossible convergence from high thresholds (Pitfall 3) | LOW | Lower thresholds back to previous values; re-run from the current round. The state file and git tags preserve all history |
+| Cross-validation false positives (Pitfall 4) | LOW | Re-classify cross-feature issues by severity; recompute verdict ignoring Minor cross-feature issues. Manual override via `appdev-cli complete --exit-condition PASS` |
+| Acceptance test ceiling effect (Pitfall 5) | MEDIUM | Requires rewriting evaluator.md instructions and re-running evaluation. Existing scores may have been inflated by checklist-only testing -- round scores are unreliable |
+| Edge/Chrome browser mismatch (Pitfall 6) | LOW | Re-run evaluator with correct browser channel. AI feature scores from the mismatched run are invalid but other scores are fine |
 
-### Pitfall 10: Compaction Losing Critical State
+## Pitfall-to-Phase Mapping
 
-**What goes wrong:** When Claude Code compacts the context mid-agent, critical state is summarized away. The Generator forgets it was on feature 8 of 12. The Evaluator forgets which features it already tested. The orchestrator forgets the current round number or previous scores.
+How roadmap phases should address these pitfalls.
 
-**Why it happens:** Compaction summarizes earlier parts of the conversation to make room for new content. The summary may drop details that seem unimportant to the compaction algorithm but are critical to the task: specific score numbers, which features were completed, what the QA report said.
-
-**Prevention:**
-1. File-based communication (SPEC.md, QA-REPORT.md) is the primary defense -- agents re-read files from disk, not from memory
-2. Orchestrator should re-read QA-REPORT.md after each agent completes, never relying on what it "remembers"
-3. Generator should re-read SPEC.md at the start of each round to refresh its understanding
-4. Git log serves as external memory for what was accomplished
-5. Milestone git tags provide anchor points that survive compaction
-
-**Detection:** Agent behavior becomes inconsistent or contradictory after a long running session. Agent re-implements features it already completed.
-
-**Phase:** Addressed by file-based communication (already in design) and git commit strategy.
-
----
-
-### Pitfall 11: Specification Ambiguity Cascading into Implementation Errors
-
-**What goes wrong:** The Planner's SPEC.md is ambitious but vague on critical details. The Generator interprets ambiguity differently from what the Evaluator expects. The Evaluator grades against its interpretation, not the Generator's. The Generator "fixes" things that were deliberate choices. Multiple rounds are wasted on miscommunication, not actual improvement.
-
-**Why it happens:** The Planner is instructed to "focus on product context and high-level design, not HOW to implement it technically." This is correct -- over-specifying cascades errors (the Anthropic article identified this). But under-specifying causes interpretation divergence. The article's v1 harness addressed this with "sprint contracts" where Generator and Evaluator negotiated acceptance criteria before building. The v2 harness removed this but used a more capable model (Opus 4.6 1M) that needed less scaffolding.
-
-**Prevention:**
-1. Planner should include specific, testable acceptance criteria in user stories (not just "As a user, I want to..." but "Verified when: clicking Submit creates a new entry visible in the list")
-2. Evaluator should grade against SPEC.md's explicit requirements, not its own interpretation of what "good" means
-3. The feature status table in QA-REPORT.md serves as a de facto contract -- ensure it maps 1:1 to SPEC.md features
-4. If a feature's spec is genuinely ambiguous, the Evaluator should note "ambiguous spec" rather than grading harshly
-
-**Detection:** Generator and Evaluator disagree repeatedly about the same feature across rounds.
-
-**Phase:** Addressed in Planner output quality and Evaluator grading criteria.
-
----
-
-### Pitfall 12: No Git History (Lost Work, No Recovery Points)
-
-**What goes wrong:** Agents do not commit their work. The entire application exists as uncommitted changes. If an agent fails mid-run, all progress is lost. There is no way to inspect what changed between rounds. There is no way to revert a destructive change. This was directly observed in testing.
-
-**Why it happens:** Git operations are a secondary concern for the model. The Generator is focused on implementing features, not on version control hygiene. Without explicit instructions and a commit strategy, git is forgotten entirely.
-
-**Prevention:**
-1. Generator must commit after each significant feature (explicit instruction in generator.md -- currently present but needs enforcement)
-2. Planner commits SPEC.md after generating it
-3. Evaluator commits QA report + artifacts into qa/round-N/ per round
-4. Orchestrator creates milestone git tags at key points
-5. Add .gitignore management to the Generator's setup phase
-6. Consider a PostToolUse hook that reminds the agent to commit -- but note that plugin agents cannot use hooks (see Pitfall 7)
-
-**Detection:** `git log` after a run shows zero or one commit. All changes are staged or unstaged.
-
-**Phase:** Addressed in the git strategy phase. HIGH confidence -- directly observed.
-
----
-
-## Minor Pitfalls
-
-### Pitfall 13: Evaluator Testing Depth (Surface-Level QA)
-
-**What goes wrong:** The Evaluator navigates the happy path, takes screenshots, and declares the application functional. It does not test error states, edge cases, data persistence, or cross-feature workflows. Bugs only surface when a real user interacts with the application.
-
-**Prevention:**
-1. The current evaluator.md has thorough testing instructions (negative tests, edge cases, data persistence) -- enforce these
-2. Require minimum interaction count: the Evaluator must perform at least N playwright interactions before scoring
-3. Evaluator should test features in unexpected order, not just the order listed in SPEC.md
-
-**Detection:** QA report describes testing only happy paths. Bug list is suspiciously short for a first-round evaluation.
-
-**Phase:** Addressed in Evaluator hardening.
-
----
-
-### Pitfall 14: Dev Server Startup Race Conditions
-
-**What goes wrong:** The Evaluator tries to navigate to the application before the dev server is ready. curl returns connection refused. playwright-cli opens a blank page. The Evaluator concludes "the application is broken" when it actually just was not ready yet.
-
-**Prevention:**
-1. Evaluator should poll the server URL with retries and backoff before beginning testing
-2. The current evaluator.md includes a `sleep 3` and curl check -- this should be a retry loop, not a fixed sleep
-3. Consider: `for i in {1..30}; do curl -s http://localhost:PORT && break || sleep 1; done`
-
-**Detection:** QA report says "server not responding" or "blank page" but the application works when started manually.
-
-**Phase:** Minor fix in Evaluator workflow.
-
----
-
-### Pitfall 15: SPEC.md Over-Ambition (Scope Explosion)
-
-**What goes wrong:** The Planner generates a 16-feature spec with AI integration, real-time collaboration, and advanced visualizations for a prompt like "build a todo app." The Generator cannot implement all of this. Features are stubbed or incomplete. The Evaluator grades against the spec and everything fails.
-
-**Prevention:**
-1. Planner ambition should scale with prompt complexity -- "todo app" != "DAW"
-2. Feature tiers (Core/Important/Nice-to-have) help the Generator prioritize, but the Evaluator should also weight Core features more heavily
-3. Generator should be allowed to defer Nice-to-have features if Core features need more rounds
-4. Consider: Planner should target 10-12 features for simple prompts, 14-16 for complex ones
-
-**Detection:** SPEC.md has 15+ features for a simple prompt. Most features scored as "Partial" or "Missing" in QA report.
-
-**Phase:** Addressed in Planner calibration.
-
----
-
-### Pitfall 16: Context Leaking Between Agent Roles
-
-**What goes wrong:** The orchestrator passes extra context to agents beyond what is specified in SKILL.md. For example, passing the full QA report contents in the Agent prompt instead of instructing the agent to read QA-REPORT.md from disk. This leaks context that should be file-mediated, bloats the agent's context window, and couples agents to the orchestrator's implementation.
-
-**Prevention:**
-1. Orchestrator prompt should contain only: the agent type to spawn and a brief directive ("Build the application from SPEC.md", "Evaluate against SPEC.md, write report to QA-REPORT.md")
-2. No file contents in the agent spawn prompt
-3. All shared state goes through files: SPEC.md, QA-REPORT.md, git history
-4. Audit: compare the `Agent()` calls in SKILL.md against the actual prompts passed
-
-**Detection:** Agent spawn prompts contain more than 2-3 sentences. File contents appear in spawn prompts.
-
-**Phase:** Addressed in orchestrator audit.
-
----
-
-## Phase-Specific Warnings
-
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Score-based exit | Pitfall 4 (Early Stopping) + Pitfall 1 (Leniency) compound: lenient scores trigger premature PASS | Score-based exit alone is insufficient without Evaluator calibration |
-| Evaluator hardening | Pitfall 1 (Leniency) is the root cause of multiple downstream pitfalls | Few-shot calibration examples are the highest-leverage intervention |
-| Generator AI features | Pitfall 6 (Canned AI) requires both Generator guidance AND Evaluator probing | Neither alone is sufficient -- Generator must know HOW to use browser-AI skills, Evaluator must know how to DETECT fakes |
-| Asset validation | Pitfall 5 (Broken Assets) requires Evaluator-side detection but Generator-side sourcing guidance | Evaluator validates outcomes; Generator needs practical alternatives to external URLs |
-| Tool allowlists | Pitfall 7 (Enforcement Gaps) means prompt-level guards are the primary defense in the plugin context | Cannot rely on `tools` field alone; explicit "you cannot use X" in agent prompts |
-| Git strategy | Pitfall 12 (No History) is an agent discipline issue | Clear, repeated instructions in each agent prompt; verify commits exist after each agent run |
-| CI inner loop | Pitfall 8 (Regressions) caught earlier by typecheck/build/test before Evaluator | Generator runs CI before handing off; reduces wasted QA rounds |
-| Orchestrator hardening | Pitfall 2 (Role Collapse) undermines the entire architecture | Strict delegation-only behavior; explicit error-out on agent failure |
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Broken score parsing (Pitfall 1) | Scoring dimension restructuring (FIRST phase) | Unit test: `extractScores` parses new names; integration test: full round-complete with sample report |
+| Evaluator blind spots (Pitfall 2) | Evaluator hardening (after scoring restructure) | Compare evaluator reports pre/post information barrier: are security issues still detected via behavioral probes? |
+| Impossible convergence (Pitfall 3) | Convergence logic hardening (AFTER empirical data collection) | Run 3+ test prompts with new thresholds; verify >50% achieve PASS within 5 rounds |
+| Cross-validation false positives (Pitfall 4) | Evaluator hardening (cross-feature testing rules) | Verify cross-feature findings appear in scoring justifications, NOT as a separate gate; no new exit condition in appdev-cli |
+| Acceptance test ceiling (Pitfall 5) | Planner phase (template) + Evaluator phase (rules) | Verify evaluator reports contain adversarial tests NOT in the acceptance plan; bug count does not decrease versus pre-acceptance-plan runs |
+| Edge browser mismatch (Pitfall 6) | Browser phase (Edge-first) + Evaluator phase (channel config) | Verify evaluator uses correct browser channel for AI testing; verify graceful degradation tested in Chromium |
 
 ## Sources
 
-### Primary (HIGH confidence)
-- [Anthropic: Harness Design for Long-Running Apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) -- source article for the plugin's architecture
-- [Anthropic: Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
-- [Claude Code Docs: Sub-agents](https://code.claude.com/docs/en/sub-agents) -- official tool restriction and agent configuration reference
-- [Claude Code Docs: Skills](https://code.claude.com/docs/en/skills) -- official skill frontmatter reference
-- [Claude Code Docs: Plugin Reference](https://code.claude.com/docs/en/plugins-reference) -- plugin agent restrictions (no hooks, mcpServers, permissionMode)
-- PROJECT.md testing observations -- directly observed failures in Copilot + Sonnet 4.6 200K tests
+### Primary (HIGH confidence -- derived from reading actual code)
+- `plugins/application-dev/scripts/appdev-cli.mjs` lines 79-124 -- extractScores regex and validation logic
+- `plugins/application-dev/skills/application-dev/references/evaluator/EVALUATION-TEMPLATE.md` -- REGEX-SENSITIVE comments on lines 12-21
+- `plugins/application-dev/skills/application-dev/references/evaluator/SCORING-CALIBRATION.md` -- ceiling rules and threshold values
+- `plugins/application-dev/agents/evaluator.md` -- Steps 10 (code review), 12 (scoring), 14 (self-verification)
+- `plugins/application-dev/skills/application-dev/SKILL.md` -- orchestrator workflow and convergence check
+- `plugins/application-dev/skills/browser-prompt-api/SKILL.md` -- Chrome vs Edge model differences
 
-### Secondary (MEDIUM confidence)
-- [GitHub: allowed-tools not enforced (#18837)](https://github.com/anthropics/claude-code/issues/18837)
-- [GitHub: allowed-tools inconsistency CLI vs SDK (#18737)](https://github.com/anthropics/claude-code/issues/18737)
-- [Why Multi-Agent Systems Fail: 17x Error Trap](https://towardsdatascience.com/why-your-multi-agent-system-is-failing-escaping-the-17x-error-trap-of-the-bag-of-agents/)
-- [Understanding GAN Failure Modes](https://medium.com/game-of-bits/understanding-failure-modes-of-gan-training-eae62dbcf1dd)
-- [GANs Failure Modes: How to Identify and Monitor](https://neptune.ai/blog/gan-failure-modes)
-- [Google ML: Common GAN Problems](https://developers.google.com/machine-learning/gan/problems)
-- [LLM-as-Judge vs Human Evaluation](https://galileo.ai/blog/llm-as-a-judge-vs-human-evaluation)
+### Secondary (MEDIUM confidence -- verified with official docs)
+- [Playwright browsers documentation](https://playwright.dev/docs/browsers) -- channel selection for Chrome and Edge
+- [Microsoft Edge Prompt API docs](https://learn.microsoft.com/en-us/microsoft-edge/web-platform/prompt-api) -- Phi-4-mini availability, system requirements, Edge 139+ stable
+- [Chrome Prompt API docs](https://developer.chrome.com/docs/ai/prompt-api) -- Gemini Nano, Chrome 138+ stable for extensions
+- [Edge Prompt API context window limitation](https://github.com/MicrosoftEdge/MSEdgeExplainers/issues/1224) -- 9216 token limit on Phi-4-mini
+- [Cross-browser testing with Playwright](https://ray.run/discord-forum/threads/65748-chromium-vs-edge-vs-chrome) -- Edge vs Chrome minimal differences for non-AI testing
 
-### Tertiary (LOW confidence -- for context only)
-- [Stack Overflow: Bugs and Incidents with AI Coding Agents](https://stackoverflow.blog/2026/01/28/are-bugs-and-incidents-inevitable-with-ai-coding-agents/)
-- [Composio: AI Agent Report 2026](https://composio.dev/blog/why-ai-agent-pilots-fail-2026-integration-roadmap)
+### Tertiary (LOW confidence -- general principles, not project-specific)
+- [Hidden feedback loops in ML systems (2025)](https://link.springer.com/article/10.1007/s10115-025-02560-w) -- mathematical model of convergence in feedback-dependent systems
+- [ICLR 2026: adversarial CI evaluation](https://openreview.net/pdf?id=YuxgSGFaqb) -- dual-role adversarial evaluation protocol with reviewer constraints
+
+---
+*Pitfalls research for: v1.1 hardening of GAN-inspired application-dev plugin*
+*Researched: 2026-03-29*

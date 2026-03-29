@@ -1,356 +1,297 @@
-# Technology Stack
+# Stack Research: v1.1 Hardening
 
-**Project:** application-dev plugin v1 hardening
-**Researched:** 2026-03-27
-**Mode:** Ecosystem research -- Claude Code plugin conventions, agent patterns, skill authoring
+**Domain:** Claude Code plugin -- autonomous application development (GAN-inspired)
+**Researched:** 2026-03-29
+**Confidence:** HIGH (verified against official docs and npm registry)
 
-## Recommended Stack
+This research covers ONLY the stack additions/changes needed for v1.1 hardening
+features. The existing v1.0 stack (plugin system, agent definitions, appdev-cli.mjs,
+six bundled skills) is validated and not re-researched.
 
-This is a Claude Code plugin. It has no build step, no runtime dependencies (except playwright-cli for the Evaluator), and no package.json. The "stack" is the Claude Code plugin component system itself: markdown files with YAML frontmatter, organized by convention.
+## Recommended Stack Additions
 
-### Core Framework: Claude Code Plugin System
+### 1. Convergence Logic Hardening (appdev-cli.mjs)
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Claude Code Plugin System | 1.0.33+ | Plugin runtime | The only framework. Plugins are markdown + JSON discovered by convention from `agents/`, `skills/`, `commands/`, and `.claude-plugin/plugin.json`. No alternatives exist. |
-| YAML Frontmatter | N/A | Agent/skill configuration | Declarative metadata (name, description, tools, model) in markdown headers. This is how Claude Code reads agent and skill definitions. |
-| Markdown | N/A | System prompts + instructions | Agent body = system prompt. Skill body = instructions. No templating language needed beyond `$ARGUMENTS` and `${CLAUDE_PLUGIN_ROOT}` substitutions. |
-| JSON | N/A | Plugin manifest | `.claude-plugin/plugin.json` defines name, version, description, author. Auto-discovery handles the rest. |
+**No new npm dependencies needed.** Use `simple-statistics` only if the
+implementation proves unwieldy with inline code. The convergence logic runs in
+appdev-cli.mjs which is a zero-dependency Node.js script today -- keeping it
+dependency-free is preferred.
 
-### External Dependencies
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Node.js built-in `Math` | N/A | Z-score, IQR, standard deviation | The formulas are trivial (5-15 lines each). Adding a dependency for `zScore = (x - mean) / stdDev` is over-engineering. appdev-cli.mjs already computes deltas and trajectories without dependencies. |
+| `simple-statistics` | 7.8.8 | Fallback if stats code grows beyond ~50 lines | Zero-dependency, 316 npm dependents, well-tested. Provides `zScore()`, `standardDeviation()`, `mean()`, `interquartileRange()`, `quantile()`, `medianAbsoluteDeviation()`. Only adopt if cross-validation or anomaly detection logic exceeds inline complexity threshold. |
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| playwright-cli | Latest | Browser-based QA testing | Evaluator uses it to navigate the running app, take snapshots, screenshots, and interact with UI elements. Only external runtime dependency. Must be on PATH. |
+#### Anomaly Detection Strategy (inline, no dependencies)
 
-### Supporting Skills (Bundled)
+The v1.1 convergence hardening needs three statistical capabilities:
 
-| Skill | Purpose | When Used |
-|-------|---------|-----------|
-| browser-prompt-api | On-device LLM via LanguageModel API | Generator implements Prompt API features |
-| browser-webllm | WebLLM in-browser inference | Generator implements WebLLM features |
-| browser-webnn | WebNN neural network inference | Generator implements WebNN features |
+1. **Cross-validation of scores:** Detect when an Evaluator anchors all dimensions
+   to the same value (the 7/7/7/7 mode collapse from the Dutch art museum test).
+   Implementation: compute standard deviation of the 4 dimension scores. If
+   `stdDev < 0.5` for any round, flag as potential anchoring. This is one line of
+   math, not a library call.
 
-## Plugin Component Patterns and Conventions
+2. **Rising thresholds:** Ensure minimum improvement per round. Already partially
+   implemented via escalation levels (E-0 through E-IV). Enhancement: enforce
+   minimum rounds before PASS (e.g., round 1 cannot PASS even with all thresholds
+   met -- the first evaluation is uncalibrated). This is a simple `if` guard, no
+   statistics.
 
-### plugin.json Manifest
+3. **Anomaly detection on score trajectory:** Flag suspicious patterns like
+   a score jumping from 3 to 9 in one round (likely hallucinated evaluation).
+   Implementation: compute z-score of the latest delta against the trajectory's
+   mean delta. Flag if `|z| > 2.0`. Formula: `z = (delta - meanDelta) / stdDevDelta`.
+   Requires >= 3 rounds of data.
 
-**Confidence: HIGH** (verified with official docs at code.claude.com/docs/en/plugins-reference)
+All three are 5-15 lines of inline JavaScript. The z-score formula:
+```javascript
+function zScore(value, values) {
+  const n = values.length;
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const stdDev = Math.sqrt(values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / n);
 
-The manifest is optional but recommended. Only `name` is required if present. Current plugin manifest is minimal and correct.
+  if (stdDev === 0) {
+    return 0;
+  }
 
-```json
-{
-  "name": "application-dev",
-  "version": "0.1.0",
-  "description": "Autonomous application development...",
-  "author": { "name": "Lars Gyrup Brink Nielsen" },
-  "license": "MIT",
-  "keywords": ["application-development", "autonomous", "multi-agent", "gan-inspired"],
-  "repository": "https://github.com/LayZeeDK/lz-development-ai-plugins",
-  "homepage": "https://github.com/LayZeeDK/lz-development-ai-plugins/tree/main/plugins/application-dev"
+  return (value - mean) / stdDev;
 }
 ```
 
-**Recommended addition:** The `version` field drives update detection. If you change code but do not bump version, users on cached installs will not see changes. Use semver -- bump PATCH for fixes, MINOR for new features, MAJOR for breaking changes. The current `0.1.0` is appropriate for pre-stable.
+**Decision: Do NOT add `simple-statistics` unless the implementation grows beyond
+50 lines of stats code.** The current appdev-cli.mjs pattern is zero-dependency
+Node.js -- this is a strength for a distributed plugin where users install via
+git clone. Every dependency is friction.
 
-**Supported fields not currently used:**
-- `hooks` -- inline hook config or path to `hooks/hooks.json`. Useful for post-tool-use validation.
-- `settings.json` -- can set `"agent": "agent-name"` to make an agent the default main thread. Not needed here (the orchestrator is a skill, not an agent).
+### 2. Playwright CLI for Acceptance Test Execution
 
-### Directory Layout
+The plugin already depends on `@playwright/cli` (installed in Step 0.5). The
+v1.1 changes are about how it is used, not what is installed.
 
-**Confidence: HIGH** (verified with official docs)
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| `@playwright/cli` | 0.1.1+ (latest) | Evaluator browser automation, acceptance test execution | Already a dependency. Token-efficient (27K vs 114K tokens for MCP). Saves snapshots/screenshots to disk. Evaluator already uses it extensively (Steps 5-8). |
+| `@playwright/test` | 1.58+ (latest) | Generator writes e2e tests, Evaluator can execute acceptance test plans | Already recommended in playwright-testing skill. Provides `expect()`, test runner, config. Used by Generator for e2e tests, can be used by Evaluator for acceptance test plan execution. |
 
-Current layout is correct. Critical rule: only `plugin.json` goes inside `.claude-plugin/`. All other directories (`agents/`, `skills/`, `commands/`) must be at the plugin root.
+#### Acceptance Test Plan Execution Architecture
 
-```
-plugins/application-dev/
-|-- .claude-plugin/
-|   '-- plugin.json              # Manifest (only file in this dir)
-|-- agents/
-|   |-- planner.md               # Planner agent definition
-|   |-- generator.md             # Generator agent definition
-|   '-- evaluator.md             # Evaluator agent definition
-|-- skills/
-|   |-- application-dev/
-|   |   |-- SKILL.md             # Orchestrator skill
-|   |   '-- references/
-|   |       '-- frontend-design-principles.md
-|   |-- browser-prompt-api/
-|   |   |-- SKILL.md
-|   |   |-- references/
-|   |   '-- examples/
-|   |-- browser-webllm/
-|   |   '-- SKILL.md
-|   '-- browser-webnn/
-|       '-- SKILL.md
-|-- commands/
-|   '-- application-dev.md       # Slash command (thin wrapper)
-'-- README.md
-```
+The v1.1 feature "acceptance test plan in SPEC.md" works as follows:
 
-**Key conventions:**
-- Skill folder name = skill name, namespaced as `application-dev:<skill-name>`
-- Agent file name = agent name (lowercase, hyphens only), namespaced as `application-dev:<agent-name>`
-- Commands in `commands/` are auto-discovered; they create `/application-dev:<command-name>` slash commands
-- `commands/` and `skills/` are now unified -- a file in `commands/` and a `skills/<name>/SKILL.md` both create a `/name` shortcut. Skills are preferred for new content because they support directories with reference files.
+- **Planner** writes abstract acceptance scenarios in SPEC.md (Given/When/Then
+  or similar structured format)
+- **Evaluator** translates these into concrete playwright-cli commands at
+  evaluation time and executes them
 
-## Agent Definition Best Practices
+This does NOT require any new packages. The Evaluator already has Bash access
+and uses `npx playwright-cli` commands (click, fill, snapshot, screenshot, etc.)
+to interact with the running app. The acceptance test plan is a structured
+section in SPEC.md that the Evaluator reads and operationalizes.
 
-### Frontmatter Fields
+**No changes to npm dependencies needed for acceptance test execution.**
 
-**Confidence: HIGH** (verified with official docs at code.claude.com/docs/en/sub-agents)
+#### playwright-cli Browser Channel for Edge
 
-| Field | Required | Current Usage | Recommendation |
-|-------|----------|---------------|----------------|
-| `name` | Yes | All agents have it | Correct. Lowercase + hyphens only. |
-| `description` | Yes | All agents have it with examples | Correct. Include `<example>` blocks for Claude to understand when to delegate. Write in third person for discovery. |
-| `model` | No | `inherit` on all agents | Correct for v1. `inherit` uses the parent session's model. Options: `sonnet`, `opus`, `haiku`, `inherit`, or full model ID like `claude-opus-4-6`. |
-| `tools` | No | Explicit lists per agent | **Must remain explicit.** Omitting `tools` inherits ALL tools including MCP tools. Explicit allowlists enforce GAN separation of concerns. |
-| `disallowedTools` | No | Not used | Alternative to `tools` -- denylist instead of allowlist. For GAN separation, explicit allowlists (`tools`) are clearer and safer. |
-| `color` | No | Used (blue/green/yellow) | Cosmetic. Helps visually distinguish agents in the UI. Current color choices are good. |
-| `maxTurns` | No | Not set | **Consider adding.** Prevents runaway agents. Generator and Evaluator should have reasonable caps (e.g., 100-200 turns for Generator, 80-100 for Evaluator). |
-| `effort` | No | Not set | Options: `low`, `medium`, `high`, `max` (Opus 4.6 only). Could be set per-agent to tune quality vs speed. Default inherits from session. |
-| `skills` | No | Not used in agents | **Recommended for Generator.** The `skills` field injects full skill content at agent startup. Generator should preload browser-* skills rather than relying on runtime discovery within a subagent context. Subagents do NOT inherit skills from the parent conversation. |
-| `memory` | No | Not used | Enables persistent cross-session learning. Scopes: `user`, `project`, `local`. Not needed for this plugin -- each run is independent. |
-| `background` | No | Not used | Set `true` to run concurrently. Not needed -- the orchestrator runs agents sequentially. |
-| `isolation` | No | Not used | Set to `worktree` for isolated git worktree. Could benefit Generator to prevent file conflicts but adds complexity. Evaluate for v2. |
-| `permissionMode` | No | Not used | **Not supported in plugin agents** for security. Ignored when loading from a plugin. Users must configure permissions separately. |
-| `hooks` | No | Not used | **Not supported in plugin agents** for security. Ignored when loading from a plugin. |
-| `mcpServers` | No | Not used | **Not supported in plugin agents** for security. Ignored when loading from a plugin. |
+The Evaluator currently defaults to Chrome/Chromium. For Edge-first testing:
 
-### Tool Allowlists: GAN Separation of Concerns
+```bash
+# Method 1: CLI flag
+npx playwright-cli open --browser=msedge http://localhost:5173
 
-**Confidence: HIGH** (verified with official docs + aligned with GAN architecture principles)
-
-The GAN architecture demands strict role separation. Each agent should have only the tools it needs for its role. The current allowlists and recommended changes:
-
-#### Planner (current: `Read`, `Write`)
-
-```yaml
-tools: ["Read", "Write"]
+# Method 2: Configuration file (.playwright-cli/config.json)
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "channel": "msedge"
+    }
+  }
+}
 ```
 
-**Assessment: Nearly correct, but incomplete.**
+The `PLAYWRIGHT_MCP_BROWSER=msedge` environment variable may also work but is
+not documented for `@playwright/cli` specifically (it is documented for
+`@playwright/mcp`). Prefer the `--browser=msedge` flag or config file approach.
 
-- `Read` -- needed to read the design principles reference file
-- `Write` -- needed to create SPEC.md
-- **Missing: `Bash`** -- The v1 requirements say "Planner commits SPEC.md after generating it." The Planner needs `Bash` for `git add` and `git commit`. Alternatively, do NOT give Planner Bash and have the orchestrator commit after verifying SPEC.md. The latter is safer from a GAN perspective (Planner's role is planning, not git operations).
+For Playwright Test (Generator's e2e tests), Edge channel is configured in
+`playwright.config.ts`:
 
-**Recommendation:** Keep `["Read", "Write"]`. Have the orchestrator handle git commits. This preserves role purity -- the Planner plans, it does not perform side effects beyond writing SPEC.md.
-
-#### Generator (current: `Read`, `Write`, `Edit`, `Glob`, `Bash`)
-
-```yaml
-tools: ["Read", "Write", "Edit", "Glob", "Bash"]
+```typescript
+projects: [
+  {
+    name: 'Microsoft Edge',
+    use: { ...devices['Desktop Edge'], channel: 'msedge' },
+  },
+],
 ```
 
-**Assessment: Correct for the Generator's role.**
+### 3. Edge Browser for AI Features
 
-- `Read` -- reads SPEC.md, QA-REPORT.md, reference files
-- `Write` -- creates source files
-- `Edit` -- modifies existing source files
-- `Glob` -- finds files in the project
-- `Bash` -- runs npm install, dev server, git commits, CI checks
-- **Skill tool not listed** -- Generator currently has browser-* skill references inline in its system prompt. Since subagents do NOT inherit skills from the parent, and `Skill` is not in the tools list, the Generator cannot invoke skills at runtime. The current approach (embedding skill references inline) works but is fragile.
+**No new npm packages needed.** The change is in how skills reference the
+LanguageModel API across browsers.
 
-**Recommendation:** Add `Skill` to the Generator's tools list OR use the `skills` frontmatter field to preload browser-* skills. The `skills` field is preferred because it injects full content at startup without requiring the Generator to discover and load skills. This is the pattern the official docs recommend for subagents that need domain knowledge.
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Microsoft Edge (Canary/Dev) | 138.0.3309.2+ | On-device AI via Prompt API with Phi-4-mini | First browser with documented Phi-4-mini integration. Same LanguageModel API as Chrome (W3C WebML CG standard). Prompt API in Edge supports structured output, tool use, streaming. |
+| `@types/dom-chromium-ai` | Latest | TypeScript types for LanguageModel API | Already referenced in browser-prompt-api skill. Works for both Chrome and Edge since they share the same API surface. |
 
-```yaml
-tools: ["Read", "Write", "Edit", "Glob", "Bash"]
-skills:
-  - application-dev:browser-prompt-api
-  - application-dev:browser-webllm
-  - application-dev:browser-webnn
-```
+#### LanguageModel API: Browser-Agnostic Pattern
 
-**What the Generator must NOT have:**
-- `Agent` -- cannot spawn sub-subagents (subagents already cannot spawn other subagents, but being explicit is defensive)
+The existing `browser-prompt-api` skill already documents the LanguageModel API
+correctly. The skill notes Edge as "not yet documented" -- this has changed.
+Edge now has official documentation (learn.microsoft.com/en-us/microsoft-edge/
+web-platform/prompt-api, updated 2026-02-04).
 
-#### Evaluator (current: `Read`, `Write`, `Glob`, `Bash`)
+Key update for v1.1: The LanguageModel API is the SAME across Chrome and Edge.
+Same `LanguageModel.availability()`, same `LanguageModel.create()`, same
+`session.prompt()` / `session.promptStreaming()`. The underlying model differs
+(Gemini Nano on Chrome, Phi-4-mini on Edge) but the API surface is identical.
+This is by design -- both implement the W3C Web Machine Learning CG proposal at
+github.com/webmachinelearning/prompt-api.
 
-```yaml
-tools: ["Read", "Write", "Glob", "Bash"]
-```
+**v1.1 action:** Update browser-prompt-api skill to document Edge as officially
+supported (not "not yet documented"), add Edge hardware requirements (5.5 GB
+VRAM, 20 GB storage), and note the `edge://flags/#prompt-api-for-phi-mini`
+setup step.
 
-**Assessment: Correct for the Evaluator's role.**
+#### Edge-Specific Requirements
 
-- `Read` -- reads SPEC.md, source code (read-only review)
-- `Write` -- creates QA-REPORT.md (and screenshots in qa/round-N/)
-- `Glob` -- finds source files for code review
-- `Bash` -- runs playwright-cli, curl, dev server, git commands
+| Requirement | Chrome | Edge |
+|-------------|--------|------|
+| Min version | 138+ | 138.0.3309.2+ |
+| Channel | Stable (extensions), Origin trial (web) | Canary or Dev only |
+| Model | Gemini Nano | Phi-4-mini (3.5B params) |
+| Storage | ~22 GB | >= 20 GB |
+| GPU VRAM | >= 4 GB | >= 5.5 GB |
+| Setup | chrome://flags | edge://flags, edge://on-device-internals |
+| Inference | GPU | GPU (NPU planned, not yet active) |
 
-**What the Evaluator must NOT have:**
-- `Edit` -- Evaluator must NEVER modify application source code. This is a core GAN principle. The discriminator does not modify the generator's output. Current allowlist correctly omits Edit.
-- `Skill` -- Evaluator has no need for browser-* skills. Those are Generator concerns.
+### 4. Scoring Analysis Tools
 
-### Model Selection Strategy
+**No new npm packages needed.** The scoring analysis is part of appdev-cli.mjs
+convergence logic hardening (Section 1 above).
 
-**Confidence: MEDIUM** (based on official docs + Anthropic article patterns)
+| Analysis Need | Implementation | Why Not a Library |
+|---------------|---------------|-------------------|
+| Score variance across dimensions | `stdDev` of 4 scores (1 line) | Trivial math |
+| Score trajectory anomaly detection | Z-score of latest delta (5 lines) | Single formula |
+| Cross-validation (dimension independence) | Pairwise correlation check (10 lines) | Only 4 dimensions, 6 pairs |
+| Minimum round enforcement | Conditional guard in `determineExit()` | Boolean logic, not statistics |
+| Rising thresholds | Round-indexed threshold lookup | Array indexing |
 
-| Agent | Current | Recommendation | Rationale |
-|-------|---------|----------------|-----------|
-| Planner | `inherit` | `inherit` | Planning benefits from the strongest model available. Opus 4.6 1M produces better specs. Let users choose. |
-| Generator | `inherit` | `inherit` | Building a full application is the most demanding task. Needs the strongest model available. |
-| Evaluator | `inherit` | `inherit` or `sonnet` | QA testing is less demanding than generation. Sonnet is faster and cheaper. However, rigorous adversarial evaluation benefits from stronger reasoning. Keep `inherit` for v1, consider `sonnet` for v2 cost optimization. |
+## What NOT to Add
 
-**Why not hardcode models:** The plugin runs on both Claude Code CLI and Copilot CLI. Users may have different model access. `inherit` respects the user's choice. The Anthropic article achieved best results with Opus 4.6 1M but the plugin should not mandate it.
-
-## Skill Authoring Patterns
-
-### SKILL.md Structure
-
-**Confidence: HIGH** (verified with official best practices at platform.claude.com)
-
-Key principles from official best practices, applied to this plugin:
-
-1. **Concise is key.** The context window is a shared resource. Only add information Claude does not already have. The current orchestrator SKILL.md is ~106 lines -- well within the 500-line guideline.
-
-2. **Progressive disclosure.** SKILL.md is loaded when triggered. Reference files are loaded on demand. The current `references/frontend-design-principles.md` pattern is correct -- it is referenced from agent prompts, not inlined.
-
-3. **One level deep references.** All reference files should link directly from SKILL.md (or agent prompts). Avoid chains where SKILL.md -> file A -> file B. Current structure is correct.
-
-4. **Description is critical for discovery.** The orchestrator skill description is good -- it includes trigger phrases ("build me an app", "create a web application", "make a 2D game maker"). This helps Claude decide when to activate the skill.
-
-5. **`disable-model-invocation`** -- The orchestrator skill should NOT disable model invocation. Claude should automatically recognize "build me an app" prompts and activate the skill. Current behavior is correct (field not set, defaults to false).
-
-### Frontmatter Fields for Skills
-
-**Confidence: HIGH** (verified with official docs at code.claude.com/docs/en/skills)
-
-| Field | Current | Recommendation |
-|-------|---------|----------------|
-| `name` | `application-dev` | Correct. |
-| `description` | Detailed with trigger phrases | Correct. Official docs stress including both what and when. |
-| `allowed-tools` | `Agent Read` | **Needs review.** This grants the orchestrator the `Agent` tool (to spawn subagents) and `Read` (to verify SPEC.md, QA-REPORT.md). Missing: `Bash` for git operations if the orchestrator handles commits/tags. |
-| `license` | `MIT` | Optional metadata. Fine to include. |
-| `compatibility` | Stated | Optional metadata for runtime requirements. |
-| `metadata.author` | Stated | Optional. |
-| `context` | Not set | Should remain unset. The orchestrator runs inline (not forked) so it can spawn agents. Skills with `context: fork` run in a subagent -- that would break the orchestrator pattern. |
-
-**Critical detail about `allowed-tools` on skills vs agents:**
-- On a SKILL.md, `allowed-tools` grants Claude permission to use those tools **without asking** when the skill is active. It does NOT restrict Claude to only those tools.
-- On an agent `.md`, `tools` IS an allowlist -- the agent can ONLY use those tools.
-- This is an important distinction. The orchestrator skill's `allowed-tools: Agent Read` means Claude auto-approves Agent and Read calls, but could still use other tools if permissions allow. For the orchestrator, this is correct -- it primarily needs Agent (to spawn subagents) and Read (to verify output files).
-
-### Orchestrator Skill: allowed-tools for Agent Spawning
-
-**Confidence: HIGH** (verified with official docs)
-
-The `Agent` tool syntax supports restricting which subagent types can be spawned:
-
-```yaml
-allowed-tools: Agent(planner, generator, evaluator) Read
-```
-
-This is more defensive than bare `Agent`. It ensures the orchestrator can only spawn the three defined agents, not arbitrary agent types. However, this restriction only applies when the agent runs as the main thread via `--agent`. For a skill, the broader `Agent` permission is appropriate since subagent spawning is already controlled by the agents/ directory contents.
-
-**Current orchestrator spawning syntax** uses `subagent_type: "application-dev:planner"` format. This is the correct namespaced format for plugin agents.
-
-### The Commands Directory: Thin Wrapper Pattern
-
-**Confidence: HIGH** (verified with official docs)
-
-The current `commands/application-dev.md` is a thin wrapper:
-
-```yaml
----
-description: Build a complete application autonomously from a short prompt
-argument-hint: "<1-4 sentence application description>"
-allowed-tools: ["Skill"]
----
-
-/application-dev $ARGUMENTS
-```
-
-This is a good pattern. The command delegates to the skill, which has the full logic. The `Skill` tool in `allowed-tools` allows the command to invoke the skill. The `$ARGUMENTS` substitution passes through the user's prompt.
-
-**Why this exists:** Commands create `/application-dev:application-dev` as a user-invokable entry point. The skill `application-dev` is model-invokable (Claude auto-detects when to use it). Having both ensures the plugin works whether the user types a slash command or just describes what they want.
-
-## Plugin Security Constraints
-
-**Confidence: HIGH** (verified with official docs)
-
-Plugin agents have security restrictions that differ from user/project agents:
-
-| Feature | User/Project Agents | Plugin Agents |
-|---------|---------------------|---------------|
-| `hooks` | Supported | **Ignored** (security) |
-| `mcpServers` | Supported | **Ignored** (security) |
-| `permissionMode` | Supported | **Ignored** (security) |
-| `tools` | Supported | Supported |
-| `disallowedTools` | Supported | Supported |
-| `model` | Supported | Supported |
-| `skills` | Supported | Supported |
-| `maxTurns` | Supported | Supported |
-| `memory` | Supported | Supported |
-| `isolation` | Supported | Supported |
-
-**Implication for v1 hardening:** The orchestrator cannot use hooks to validate agent behavior (e.g., a PreToolUse hook to block the Evaluator from editing files). Tool allowlists are the only enforcement mechanism available in plugin agents. This makes the `tools` field even more critical to get right.
-
-## What NOT to Do
-
-### Anti-Patterns in Plugin Architecture
-
-**Confidence: HIGH** (derived from official docs + testing experience documented in PROJECT.md)
-
-1. **Do NOT omit the `tools` field on agents.** Omitting it means the agent inherits ALL tools, including MCP tools from the user's environment. This violates the GAN separation principle and creates unpredictable behavior. Always use explicit allowlists.
-
-2. **Do NOT put agent/skill/command directories inside `.claude-plugin/`.** Only `plugin.json` goes there. This is the #1 documented mistake in the official docs.
-
-3. **Do NOT use `context: fork` on the orchestrator skill.** Forking runs the skill in a subagent context. Subagents cannot spawn other subagents. The orchestrator MUST run inline to spawn Planner, Generator, and Evaluator.
-
-4. **Do NOT rely on skill auto-discovery in subagents.** Subagents do NOT inherit skills from the parent conversation. If Generator needs browser-* skills, they must be preloaded via the `skills` frontmatter field or referenced inline in the agent's system prompt.
-
-5. **Do NOT give the Evaluator the `Edit` tool.** This violates the GAN discriminator principle. The Evaluator observes and reports; it never modifies the Generator's output.
-
-6. **Do NOT give the Planner `Bash` access unless it needs to commit.** The Planner's role is expanding a prompt into a spec. Side effects (git, npm) should be handled by the orchestrator or Generator. Keep the Planner's tool surface minimal.
-
-7. **Do NOT use `permissionMode`, `hooks`, or `mcpServers` in plugin agent frontmatter.** These are silently ignored for plugin agents. If you need them, document that users should copy the agent to `.claude/agents/` for full functionality. This is a security restriction, not a bug.
-
-8. **Do NOT exceed 500 lines in SKILL.md.** Split detailed content into `references/` files. Claude loads them on demand. The current orchestrator SKILL.md is well within this limit.
-
-9. **Do NOT use Windows-style paths (backslashes) in SKILL.md or agent prompts.** Use forward slashes. The plugin runs cross-platform.
-
-10. **Do NOT use time-sensitive information in skills/agents.** Avoid "if before August 2025, do X." Instead, document the current approach and move deprecated patterns to an "old patterns" section.
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `simple-statistics` (as initial dependency) | Over-engineering for 5-15 lines of inline math. Adds npm dependency to a zero-dependency CLI script. Plugin users install via git clone -- every dependency is friction. | Inline z-score, stdDev, mean functions in appdev-cli.mjs |
+| `@playwright/mcp` | MCP is 4x more token-expensive than CLI (114K vs 27K tokens). The plugin already uses CLI. MCP's persistent state model conflicts with the Evaluator's per-round evaluation pattern. | `@playwright/cli` (already installed) |
+| `mathjs` | 500 KB, massive scope (matrices, complex numbers, units). Absurd for computing z-scores on arrays of 4-10 numbers. | Inline statistics in appdev-cli.mjs |
+| `outlier-detection` / `anomalib` / similar ML libraries | Machine learning anomaly detection is overkill. We have at most 10 rounds of 4 scores each. Classical statistics (z-score, IQR) is the right tool. | Inline z-score with threshold |
+| `@playwright/test` as new dependency | Already recommended in the playwright-testing skill and installed by the Generator. Evaluator does not need it -- Evaluator uses playwright-cli commands, not Playwright Test runner. | `npx playwright-cli` (already installed) |
+| Separate scoring analysis package/script | Fragmentation. All convergence logic belongs in appdev-cli.mjs where it is already centralized. | New subcommands in appdev-cli.mjs |
+| `puppeteer` | Playwright is the standard. Plugin already depends on it. Puppeteer is Chrome-only, no Edge channel support as clean as Playwright's. | `@playwright/cli` |
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Plugin framework | Claude Code plugins | MCP server | Plugins are markdown-native, zero-build, and the only way to bundle agents + skills + commands together. MCP servers are for external tool integration, not agent orchestration. |
-| Orchestration | Skill (SKILL.md) | Agent as main thread (`settings.json` `agent` field) | The orchestrator is a task workflow, not a persistent persona. Skills are invoked on demand; agents as main thread replace the entire session behavior. |
-| Agent spawning | Sequential (Planner -> Generator -> Evaluator) | Parallel via Agent Teams | The GAN loop is inherently sequential: plan -> build -> evaluate -> iterate. Parallel execution makes no sense for this workflow. Agent Teams add coordination overhead without benefit. |
-| Tool restriction | Allowlists (`tools` field) | Denylists (`disallowedTools`) | Allowlists are safer for GAN separation. Denylists require knowing every tool that might exist (including user MCP tools). Allowlists guarantee only intended tools are available. |
-| Skill injection | `skills` frontmatter on Generator | Inline references in system prompt | `skills` injects full content at startup, ensuring the Generator has browser-* knowledge in context. Inline `${CLAUDE_PLUGIN_ROOT}/skills/...` references require the Generator to read files during execution, which may fail or be skipped. |
-| Model selection | `inherit` for all agents | Hardcoded per agent (e.g., Opus for Planner, Sonnet for Evaluator) | `inherit` respects user choice. Hardcoding locks users out of experimentation. The Anthropic article achieved best results with Opus 4.6 1M, but Sonnet 4.6 200K also works. |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| Inline z-score/stdDev in appdev-cli.mjs | `simple-statistics` 7.8.8 | If convergence logic grows beyond ~50 lines of statistics code. Milestone: when adding IQR-based outlier removal, MAD, or linear regression to trajectory analysis. |
+| `@playwright/cli --browser=msedge` | `PLAYWRIGHT_MCP_BROWSER=msedge` env var | If the Evaluator workflow switches from CLI to MCP (unlikely -- CLI is 4x more token-efficient). |
+| Edge Canary/Dev for AI features | Chrome Stable + extensions | When AI features do not require Phi-4-mini specifically, or when target users are on Chrome. The LanguageModel API is the same -- only the model differs. |
+| `@types/dom-chromium-ai` for TS types | Manual type declarations | Never -- the community types package tracks the W3C spec and covers both Chrome and Edge. |
 
-## Key Changes from Current Implementation
+## Stack Patterns by Feature
 
-Based on this research, the most impactful stack changes for v1 hardening:
+**If implementing CLI-decided verdict (moving verdict from Evaluator to CLI):**
+- No new dependencies. Enhance `round-complete` subcommand in appdev-cli.mjs to
+  compute verdict from scores + thresholds instead of parsing `## Verdict:` from
+  EVALUATION.md. The Evaluator still writes scores; the CLI decides PASS/FAIL.
 
-1. **Add `skills` frontmatter to Generator** -- Preload browser-* skills so the Generator has them in context from the start.
-2. **Add `maxTurns` to all agents** -- Prevent runaway execution. Generator needs the most turns (complex builds), Planner the fewest.
-3. **Add `Bash` to orchestrator `allowed-tools`** -- If the orchestrator handles git commits/tags (as specified in requirements), it needs Bash.
-4. **Keep Planner tool-lean** -- Do not add Bash to Planner. Orchestrator handles commits.
-5. **Consider `Agent(application-dev:planner, application-dev:generator, application-dev:evaluator)` syntax** -- More defensive agent spawning restriction (though less critical for a skill context).
+**If implementing minimum rounds before PASS:**
+- No new dependencies. Add `minRounds` parameter to `determineExit()` in
+  appdev-cli.mjs. Guard: `if (round < minRounds) return { should_continue: true }`.
+
+**If implementing score anomaly detection:**
+- No new dependencies (see Section 1). Add `detectAnomaly()` function to
+  appdev-cli.mjs. Called from `round-complete` after score extraction.
+  Returns `{ anomaly: boolean, reason: string }`.
+
+**If implementing cross-validation of dimension scores:**
+- No new dependencies. Add `detectAnchoring()` function to appdev-cli.mjs.
+  Computes stdDev of the 4 dimension scores. If < 0.5, warns of potential
+  score anchoring. This is one line of math.
+
+**If implementing Edge-first browser for AI features:**
+- Update `browser-prompt-api` skill to document Edge officially.
+- Update `playwright-testing` skill config example to include Edge project.
+- Update Evaluator to use `--browser=msedge` when SPEC.md indicates AI features.
+- No new npm packages.
+
+## Version Compatibility
+
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| `@playwright/cli` 0.1.1+ | Node.js 18+ | Minimum Node version |
+| `@playwright/cli` 0.1.1+ | Edge 138+ | Via `--browser=msedge` flag |
+| `@playwright/test` 1.58+ | Edge 138+ | Via `channel: 'msedge'` in config |
+| `simple-statistics` 7.8.8 | Node.js 14+ (ESM and CJS) | Only if needed as fallback |
+| `@types/dom-chromium-ai` | TypeScript 5.0+ | Types for LanguageModel API, covers Chrome and Edge |
+
+## Installation
+
+No new installation steps for v1.1. The existing Step 0.5 workspace setup is
+sufficient:
+
+```bash
+# Already in Step 0.5 (no changes needed)
+npm init -y
+npm install --save-dev @playwright/cli
+```
+
+If `simple-statistics` becomes needed later:
+```bash
+# Only if inline stats code exceeds ~50 lines
+npm install simple-statistics
+```
+
+## Scoring Dimension Changes (Code Impact)
+
+The v1.1 scoring dimension restructuring (Robustness replaces Code Quality,
+Visual Coherence expands Visual Design) impacts appdev-cli.mjs score extraction:
+
+```javascript
+// Current v1.0 pattern in extractScores()
+const scorePattern = /\|\s*(Product Depth|Functionality|Visual Design|Code Quality)\s*\|\s*(\d+)\/10/gi;
+
+// v1.1 pattern (Robustness replaces Code Quality, Visual Coherence replaces Visual Design)
+const scorePattern = /\|\s*(Product Depth|Functionality|Visual Coherence|Robustness)\s*\|\s*(\d+)\/10/gi;
+```
+
+The `scores` object keys would change from `code_quality` and `visual_design`
+to `robustness` and `visual_coherence`. All other convergence logic
+(escalation, exit conditions, trajectory) operates on `scores.total` and is
+unaffected by dimension name changes.
 
 ## Sources
 
 ### Official Documentation (HIGH confidence)
-- [Create plugins -- Claude Code Docs](https://code.claude.com/docs/en/plugins)
-- [Plugins reference -- Claude Code Docs](https://code.claude.com/docs/en/plugins-reference)
-- [Create custom subagents -- Claude Code Docs](https://code.claude.com/docs/en/sub-agents)
-- [Extend Claude with skills -- Claude Code Docs](https://code.claude.com/docs/en/skills)
-- [Skill authoring best practices -- Claude API Docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
-- [Security -- Claude Code Docs](https://code.claude.com/docs/en/security)
+- [Microsoft Edge Prompt API](https://learn.microsoft.com/en-us/microsoft-edge/web-platform/prompt-api) -- LanguageModel API for Edge, Phi-4-mini, hardware requirements
+- [Playwright Browsers](https://playwright.dev/docs/browsers) -- Edge channel support, msedge configuration
+- [Playwright CLI GitHub](https://github.com/microsoft/playwright-cli) -- CLI architecture, config file format, --browser flag
+- [W3C Prompt API Spec](https://github.com/webmachinelearning/prompt-api) -- Shared API standard for Chrome and Edge
+- [Playwright MCP GitHub](https://github.com/microsoft/playwright-mcp) -- MCP vs CLI comparison, PLAYWRIGHT_MCP_BROWSER env var
 
-### Anthropic Engineering (HIGH confidence)
-- [Harness Design for Long-Running Apps -- Anthropic Engineering Blog](https://www.anthropic.com/engineering/harness-design-long-running-apps)
+### npm Registry (HIGH confidence)
+- [@playwright/cli 0.1.1](https://www.npmjs.com/package/@playwright/cli) -- Latest version, token-efficiency benchmarks
+- [simple-statistics 7.8.8](https://www.npmjs.com/package/simple-statistics) -- API reference, zero-dependency
+- [simple-statistics docs](https://simple-statistics.github.io/) -- Function list including zScore, standardDeviation, interquartileRange
 
-### Community and Ecosystem (MEDIUM confidence)
-- [Claude Code Sub-Agents: Parallel vs Sequential Patterns](https://claudefa.st/blog/guide/agents/sub-agent-best-practices)
-- [Orchestrate teams of Claude Code sessions -- Claude Code Docs](https://code.claude.com/docs/en/agent-teams)
-- [30 Tips for Claude Code Agent Teams](https://getpushtoprod.substack.com/p/30-tips-for-claude-code-agent-teams)
-- [Claude Agent Skills: A First Principles Deep Dive](https://leehanchung.github.io/blogs/2025/10/26/claude-skills-deep-dive/)
+### Ecosystem (MEDIUM confidence)
+- [Playwright CLI Deep Dive (TestDino)](https://testdino.com/blog/playwright-cli/) -- CLI vs MCP token comparison (114K vs 27K)
+- [Playwright CLI as Alternative (TestCollab)](https://testcollab.com/blog/playwright-cli) -- Skill-based workflow pattern
+- [Edge Phi-4 Mini Integration (WindowsLatest)](https://www.windowslatest.com/2025/05/19/microsoft-edge-could-integrate-phi-4-mini-to-enable-on-device-ai-on-windows-11/) -- GPU-only inference (NPU not yet active)
+- [Edge Blog: Prompt and Writing Assistance APIs](https://blogs.windows.com/msedgedev/2025/05/19/introducing-the-prompt-and-writing-assistance-apis/) -- Official announcement
+
+---
+*Stack research for: application-dev plugin v1.1 hardening*
+*Researched: 2026-03-29*
