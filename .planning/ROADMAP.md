@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 02.1: Use templates for SPEC.md and EVALUATION.md** (INSERTED) - Extract inline format specs into canonical template files for structural consistency (completed 2026-03-28)
 - [ ] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring
 - [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
+- [ ] **Phase 5: Optimize Agent Definitions** - Research-driven optimization of agent definitions with progressive disclosure, round-conditional instructions, and skill extraction
 
 ## Phase Details
 
@@ -103,7 +104,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4
+Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -112,3 +113,20 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4
 | 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete    | 2026-03-28 |
 | 3. Evaluator Hardening | 0/2 | Not started | - |
 | 4. Generator Hardening and Skills | 0/2 | Not started | - |
+| 5. Optimize Agent Definitions | 0/? | Not started | - |
+
+### Phase 5: Optimize Agent Definitions
+
+**Goal:** Optimize Planner, Generator, and Evaluator agent definitions based on researched best practices -- progressive disclosure, round-conditional instructions, skill extraction for context-heavy guidance
+**Requirements**: TBD
+**Depends on:** Phase 4 (all agent definitions need to be finalized before optimization)
+**Plans:** TBD
+
+Notes:
+- Research Claude agent definition best practices from Claude docs, plugin-dev plugin, Anthropic blog, community blogs
+- Progressive disclosure: round-1-only instructions, AI-feature-conditional probing guidance
+- Skill extraction: move context-heavy instructions (e.g., AI probing batteries) to skills invoked on demand
+- Add and commit research corpus to repo
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 5 to break down)

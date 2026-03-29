@@ -91,6 +91,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 02.1 inserted after Phase 2: Use templates for SPEC.md and EVALUATION.md (URGENT)
+- Phase 5 added: Optimize agent definitions (research-driven progressive disclosure, skill extraction)
 
 ### Pending Todos
 
