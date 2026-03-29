@@ -24,69 +24,24 @@ allowed-tools: Agent Read Write Bash(node *appdev-cli*) Bash(git init*) Bash(git
 # Autonomous Application Development
 
 Build a complete application from the user's prompt using three specialized
-agents in an adversarial loop inspired by GANs.
-
-## Architecture
-
-- **Planner**: Expands the user's prompt into an ambitious product specification
-- **Generator**: Builds the full application from the spec (like a GAN generator)
-- **Evaluator**: Critiques the running app with skepticism (like a GAN discriminator)
-
-The Generator and Evaluator form an adversarial pair: the Evaluator's honest
-critique drives the Generator to improve, just as a GAN discriminator's feedback
-drives the generator to produce better outputs. Separating generation from
-evaluation prevents the self-praise bias that occurs when a model evaluates its
-own work.
-
-Each agent has a structural tool allowlist (frontmatter `tools` field) and
-behavioral prompt guards (output-domain constraints in its instructions). This
-two-layer enforcement replaces the originally-planned four-layer design --
-plugin hooks were dropped because they are session-wide and cannot distinguish
-agents.
-
-The convergence detection system uses an escalation vocabulary inspired by
-cybernetics control theory -- named operating regimes (E-0 through E-IV) with
-threshold-based state transitions in a feedback loop. The appdev-cli computes
-escalation levels from score trajectory data and returns structured JSON that
-the orchestrator acts on without interpreting scores directly.
-
-## Enforcement Model
-
-Role boundaries are enforced through two complementary layers:
-
-**Layer 1: Tool allowlists** (structural enforcement)
-- Agent `tools` frontmatter is a strict restriction -- agents cannot use tools
-  outside their list. This is enforced by the runtime.
-- Skill `allowed-tools` is pre-approval -- tools listed here are available
-  without user confirmation. In autonomous flow (no user prompts between
-  steps), this is effectively a strict restriction because there is no user
-  to approve unlisted tools.
-
-**Layer 2: Prompt guards** (behavioral enforcement)
-- Each agent's instructions contain explicit output-domain constraints:
-  - Planner: "You may only write SPEC.md in the working directory"
-  - Generator: "Do not write to the evaluation/ folder or EVALUATION.md"
-  - Evaluator: "Never modify the application's source code. Only write
-    EVALUATION.md and evaluation/ artifacts"
-  - Orchestrator (this skill): "Write is ONLY for .appdev-state.json and
-    .gitignore" (see Rules below)
-
-**What is NOT available:**
-- `disallowedTools` is not a supported field on skills or agents
-- Plugin hooks were dropped -- they apply session-wide and cannot distinguish
-  between agents, making per-role enforcement impossible
+agents (Planner, Generator, Evaluator) in an adversarial loop.
 
 ## Rules
 
-1. **Write is ONLY for .appdev-state.json and .gitignore.** Never write source
-   code, specs, evaluation artifacts, or any other files.
-2. **Never diagnose agent output beyond binary file-exists checks and
-   appdev-cli's JSON response.** Do not read EVALUATION.md directly except in
-   the Summary step.
-3. **Never add corrective instructions to agent prompts on retry.** Use the
-   exact same prompt for retries as the original spawn.
-4. **Never perform agent work.** If an agent fails and retries are exhausted,
-   ask the user -- do not attempt the agent's task yourself.
+1. **Write is ONLY for .appdev-state.json and .gitignore.** Source code, specs,
+   and evaluation artifacts belong to their respective agents -- do not write
+   them from the orchestrator.
+2. **Do not diagnose agent output beyond binary file-exists checks and
+   appdev-cli's JSON response.** Qualitative assessment of agent output
+   reintroduces the self-praise bias the adversarial architecture eliminates.
+   The one exception: reading agent output in the Summary step for user
+   presentation.
+3. **Do not add corrective instructions to agent prompts on retry.** Corrective
+   additions accumulate prompt drift and bypass the agent's own
+   self-verification. Use the exact same prompt for retries as the original
+   spawn.
+4. **Do not perform agent work.** If an agent fails and retries are exhausted,
+   ask the user -- do not attempt the agent's task.
 5. **Fully autonomous after initial prompt.** Do not ask the user for feedback
    during the workflow except for error recovery (retry exhaustion).
 6. **All agents work in the current working directory.** Do not create a
@@ -398,16 +353,11 @@ Output: `[3/3] Summarizing... done`
 All agent spawns follow this pattern:
 
 1. Spawn the agent with the defined prompt
-2. If the agent spawn fails (Agent tool returns an error):
-   - **Retry 1:** Spawn again with the EXACT same prompt (no modifications,
-     no diagnostic context added)
-   - **Retry 2:** Spawn again with the EXACT same prompt
-   - **After 2 retries exhausted:** Use AskUserQuestion to present options:
-     - "Retry now" -- spawns the agent again (unlimited user-initiated retries)
-     - "Resume later" -- writes current state and stops (user can run
-       `/application-dev` later to resume)
-     - "Abort" -- deletes state file and stops
-3. The Agent tool's success/failure status may be unreliable
+2. If the spawn fails (Agent tool returns an error), retry up to 2 times with
+   the EXACT same prompt -- no modifications, no diagnostic context added
+3. After 2 retries exhausted, use AskUserQuestion to present options: retry
+   now, resume later (save state and stop), or abort (delete state and stop)
+4. The Agent tool's success/failure status may be unreliable
    (classifyHandoffIfNeeded bug). Always perform the binary file-exists check
    regardless of reported status. If expected files exist, treat the agent as
    successful even if the Agent tool reported failure.
@@ -419,31 +369,17 @@ Evaluator will overwrite its report.
 
 ## Agent Prompt Protocol
 
-The orchestrator passes these exact prompts to each agent. No additions, no
-context injection, no failure diagnostics.
+Pass these exact prompts to each agent. No additions, no context injection, no
+failure diagnostics. Each agent's definition handles file reading internally.
 
-**Planner:**
-```
-<user's full prompt, verbatim>
-```
-Nothing else. The user's prompt is the entire agent prompt.
+**Planner:** `<user's full prompt, verbatim>` -- nothing else.
 
-**Generator (all rounds):**
-```
-This is generation round N.
-```
-The Generator's agent definition handles reading SPEC.md (round 1) and
-`evaluation/round-{N-1}/EVALUATION.md` (rounds 2+) internally. The
-orchestrator fills in only the round number. No free-form additions. No error
-context. No diagnostic notes. No "this time make sure to..." instructions.
+**Generator (all rounds):** `This is generation round N.` -- the orchestrator
+fills in only the round number. No free-form additions, error context,
+diagnostic notes, or "this time make sure to..." instructions.
 
-**Evaluator (all rounds):**
-```
-This is evaluation round N.
-```
-The Evaluator's agent definition handles reading SPEC.md, launching the
-application, and writing to `evaluation/round-N/EVALUATION.md` internally.
-The orchestrator fills in only the round number.
+**Evaluator (all rounds):** `This is evaluation round N.` -- the orchestrator
+fills in only the round number.
 
 ## File-Based Communication
 
@@ -455,7 +391,25 @@ Agents communicate through two file types:
 The orchestrator coordinates through one file only:
 - `.appdev-state.json` -- managed exclusively via appdev-cli
 
-No other inter-agent communication paths exist. Agents do not read or write
-the state file. The orchestrator does not read or write SPEC.md or
-EVALUATION.md except for the binary checks described above and the Summary
-presentation step.
+No other inter-agent communication paths exist. The orchestrator does not read
+or write SPEC.md or EVALUATION.md except for binary checks and Summary
+presentation.
+
+## Architecture
+
+Three agents with distinct roles:
+- **Planner**: Expands the user's prompt into an ambitious product specification
+- **Generator**: Builds the full application from the spec
+- **Evaluator**: Critiques the running app with skepticism
+
+The Generator and Evaluator form an adversarial pair -- the Evaluator's honest
+critique drives the Generator to improve. Separating generation from evaluation
+prevents self-praise bias.
+
+Role boundaries enforced by tool allowlists (agent frontmatter) and prompt
+guards (agent instructions). The orchestrator's output domain is
+.appdev-state.json and .gitignore only.
+
+Convergence detection uses escalation levels (E-0 through E-IV) computed by
+appdev-cli from score trajectory data. The orchestrator acts on the structured
+JSON response without interpreting scores directly.
