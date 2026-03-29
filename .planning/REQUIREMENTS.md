@@ -59,7 +59,7 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 - [ ] **GEN-02**: Generator has browser-* AI skills (Prompt API, WebLLM, WebNN) preloaded via `skills` frontmatter so it can implement real AI features
 - [ ] **GEN-03**: Generator is aware of image sourcing approaches (web search with license verification, build-time generation via npm packages or browser AI + playwright screenshot, procedural/SVG generation) as examples, not prescriptions -- Generator remains tech stack-agnostic
 - [ ] **GEN-04**: Generator prefers Vite+ over Vite for greenfield web projects (preference, not mandate)
-- [ ] **GEN-05**: Generator must not fabricate/hallucinate image URLs -- all external URLs must be verified accessible
+- [x] **GEN-05**: Generator must not fabricate/hallucinate image URLs -- all external URLs must be verified accessible
 - [ ] **GEN-06**: Generator uses latest stable versions of chosen frameworks/libraries unless the user prompt specifies otherwise
 
 ### Bundled Skills
@@ -149,7 +149,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEN-02 | Phase 4 | Pending |
 | GEN-03 | Phase 4 | Pending |
 | GEN-04 | Phase 4 | Pending |
-| GEN-05 | Phase 4 | Pending |
+| GEN-05 | Phase 4 | Complete |
 | GEN-06 | Phase 4 | Pending |
 | SKILL-01 | Phase 4 | Pending |
 

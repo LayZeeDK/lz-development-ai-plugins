@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-29T09:49:29.921Z"
-last_activity: "2026-03-29 -- Completed 03-02 (Evaluator agent rewrite: 15-step adversarial workflow, ELIZA effect, AI slop checklist, 10-check self-verification)"
+status: in_progress
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-03-29T11:59:03.000Z"
+last_activity: "2026-03-29 -- Completed 04-03 (check-assets subcommand: TDD URL verification with soft-404 detection)"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_plans: 12
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application. Working application with real assets, real AI features, quality driven by adversarial iteration.
-**Current focus:** Phase 03: Evaluator Hardening (COMPLETE)
+**Current focus:** Phase 04: Generator Hardening and Skills (IN PROGRESS)
 
 ## Current Position
 
-Phase: 03 of 5 (Evaluator Hardening) -- COMPLETE
-Plan: 2 of 2 in current phase -- COMPLETE
-Status: Phase complete
-Last activity: 2026-03-29 -- Completed 03-02 (Evaluator agent rewrite: 15-step adversarial workflow, ELIZA effect, AI slop checklist, 10-check self-verification)
+Phase: 04 of 5 (Generator Hardening and Skills) -- IN PROGRESS
+Plan: 3 of 4 in current phase -- COMPLETE
+Status: In progress
+Last activity: 2026-03-29 -- Completed 04-03 (check-assets subcommand: TDD URL verification with soft-404 detection)
 
-Progress: [##########] 100%
+Progress: [########--] 75%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [##########] 100%
 | Phase 02.1 P01 | 3min | 2 tasks | 4 files |
 | Phase 03 P01 | 9min | 3 tasks | 3 files |
 | Phase 03 P02 | 18min | 2 tasks | 1 files |
+| Phase 04 P03 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,9 @@ Recent decisions affecting current work:
 - [Phase 03]: AI Slop Checklist sourced from RESEARCH.md and frontend-design-principles.md, deduplicated into 6 categories
 - [Phase 03]: Self-Verification appears both in Step 14 (workflow) and standalone section (quick reference)
 - [Phase 03]: Ceiling rule values not duplicated in evaluator.md -- behavioral instruction to load SCORING-CALIBRATION.md only
+- [Phase 04]: check-assets uses stdout JSON + exit code 1 for errors, matching round-complete pattern
+- [Phase 04]: Sequential URL checks to avoid rate limiting (no parallel fetch)
+- [Phase 04]: Soft-404 only flags URLs with image file extensions returning non-image content-type
 
 ### Roadmap Evolution
 
@@ -113,6 +117,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T09:42:01.000Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-29T11:56:10.000Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
