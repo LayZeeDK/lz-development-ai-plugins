@@ -115,20 +115,22 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5
 | 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete    | 2026-03-28 |
 | 3. Evaluator Hardening | 2/2 | Complete | 2026-03-29 |
 | 4. Generator Hardening and Skills | 4/4 | Complete | 2026-03-29 |
-| 5. Optimize Agent Definitions | 0/? | Not started | - |
+| 5. Optimize Agent Definitions | 0/3 | Not started | - |
 
 ### Phase 5: Optimize Agent Definitions
 
-**Goal:** Optimize Planner, Generator, and Evaluator agent definitions based on researched best practices -- progressive disclosure, round-conditional instructions, skill extraction for context-heavy guidance
-**Requirements**: TBD
+**Goal:** Optimize all four agent definitions (evaluator.md, SKILL.md, generator.md, planner.md) using researched best practices -- progressive disclosure extraction, WHY-based rationale, imperative voice, deduplication, and trimmed educational content
+**Requirements**: OPT-01, OPT-02, OPT-03, OPT-04, OPT-05
 **Depends on:** Phase 4 (all agent definitions need to be finalized before optimization)
-**Plans:** TBD
-
-Notes:
-- Research Claude agent definition best practices from Claude docs, plugin-dev plugin, Anthropic blog, community blogs
-- Progressive disclosure: round-1-only instructions, AI-feature-conditional probing guidance
-- Skill extraction: move context-heavy instructions (e.g., AI probing batteries) to skills invoked on demand
-- Add and commit research corpus to repo
+**Success Criteria** (what must be TRUE):
+  1. Agent definitions use progressive disclosure -- protocol-heavy content extracted to reference files, behavioral guidance stays inline
+  2. Evaluator Self-Verification appears exactly once (Step 14 only, duplicate standalone section removed)
+  3. AI Slop Checklist extracted to references/evaluator/AI-SLOP-CHECKLIST.md with Read instruction in evaluator.md
+  4. SKILL.md uses imperative voice consistently, section ordering puts workflow before design rationale, educational content trimmed
+  5. No regression in appdev-cli integration, file-based communication protocol, agent prompt protocol, or regex-parsed output formats
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 5 to break down)
+- [ ] 05-01-PLAN.md -- Evaluator optimization (extract AI Slop Checklist and Asset Validation to references, deduplicate Self-Verification, WHY-based rationale)
+- [ ] 05-02-PLAN.md -- SKILL.md restructure (imperative voice, section reordering, trim educational content, integration contract verification)
+- [ ] 05-03-PLAN.md -- Generator and Planner refinements (skills note reframe, WHY-based rationale, emphasis cleanup)

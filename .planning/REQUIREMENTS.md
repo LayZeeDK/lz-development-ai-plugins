@@ -66,6 +66,14 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 
 - [x] **SKILL-01**: Vite+ skill bundled with the plugin providing correct vp CLI usage, config format, and toolchain documentation (Vite+Rolldown+tsdown, tsgo+Oxlint+Oxfmt, Vitest, vp run)
 
+### Agent Definition Optimization (Phase 5)
+
+- [ ] **OPT-01**: Agent definitions use progressive disclosure -- protocol-heavy content (AI Slop Checklist, Asset Validation protocol) extracted to reference files, behavioral guidance stays inline, extraction threshold is ~30 lines + single-step-relevance
+- [ ] **OPT-02**: Evaluator Self-Verification deduplicated -- single instance in Step 14 of the workflow, standalone duplicate section removed
+- [ ] **OPT-03**: AI Slop Checklist extracted to references/evaluator/AI-SLOP-CHECKLIST.md with Read instruction in evaluator.md Step 5
+- [ ] **OPT-04**: SKILL.md restructured -- imperative voice consistently, workflow section before design rationale, educational content Claude already knows trimmed
+- [ ] **OPT-05**: No regression in appdev-cli integration, file-based communication protocol, agent prompt protocol, or regex-parsed output formats (Scores table, Verdict heading, evaluation file paths)
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -152,12 +160,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEN-05 | Phase 4 | Complete |
 | GEN-06 | Phase 4 | Complete |
 | SKILL-01 | Phase 4 | Complete |
+| OPT-01 | Phase 5 | Planned |
+| OPT-02 | Phase 5 | Planned |
+| OPT-03 | Phase 5 | Planned |
+| OPT-04 | Phase 5 | Planned |
+| OPT-05 | Phase 5 | Planned |
 
 **Coverage:**
-- v1 requirements: 38 total
-- Mapped to phases: 38
+- v1 requirements: 43 total
+- Mapped to phases: 43
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after Phase 02.1 planning*
+*Last updated: 2026-03-29 after Phase 05 planning*
