@@ -452,6 +452,217 @@ function cmdExists() {
   output({ exists: existsSync(STATE_FILE) });
 }
 
+// --- Asset checking ---
+
+const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico", ".bmp", ".avif"];
+const SKIP_URL_VALUES = ["local", "n/a", ""];
+
+function parseAssetsTable(content) {
+  const lines = content.split("\n");
+  const assets = [];
+  let urlColIndex = -1;
+  let assetColIndex = -1;
+  let foundHeader = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (!line.startsWith("|")) {
+      continue;
+    }
+
+    const cells = line
+      .split("|")
+      .map(function (c) {
+        return c.trim();
+      })
+      .filter(function (c, idx, arr) {
+        // Split on | produces empty strings at start and end
+        return idx > 0 && idx < arr.length - 1;
+      });
+
+    if (!foundHeader) {
+      // Look for header row with "URL" column
+      urlColIndex = cells.findIndex(function (c) {
+        return c.toLowerCase() === "url";
+      });
+
+      assetColIndex = cells.findIndex(function (c) {
+        return c.toLowerCase() === "asset";
+      });
+
+      if (urlColIndex >= 0) {
+        foundHeader = true;
+      }
+
+      continue;
+    }
+
+    // Skip separator row (contains only dashes and colons)
+    if (/^[|\s:-]+$/.test(line)) {
+      continue;
+    }
+
+    if (urlColIndex >= cells.length) {
+      continue;
+    }
+
+    const url = cells[urlColIndex] || "";
+    const asset = assetColIndex >= 0 && assetColIndex < cells.length ? cells[assetColIndex] : "";
+
+    // Skip local/N/A/empty URLs
+    if (SKIP_URL_VALUES.includes(url.toLowerCase())) {
+      continue;
+    }
+
+    // Only include http/https URLs
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      assets.push({ asset: asset, url: url });
+    }
+  }
+
+  return assets;
+}
+
+function isImageUrl(url) {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+
+    return IMAGE_EXTENSIONS.some(function (ext) {
+      return pathname.endsWith(ext);
+    });
+  } catch {
+    return false;
+  }
+}
+
+async function checkUrl(url, timeout) {
+  if (timeout === undefined) {
+    timeout = 5000;
+  }
+
+  const result = { url: url, status: null, ok: false, contentType: null, soft404: false, error: null };
+
+  async function doFetch(method) {
+    const controller = new AbortController();
+    const timer = setTimeout(function () {
+      controller.abort();
+    }, timeout);
+
+    try {
+      const opts = {
+        method: method,
+        signal: controller.signal,
+        redirect: "follow",
+        headers: {},
+      };
+
+      if (method === "GET") {
+        opts.headers["User-Agent"] = "appdev-cli/1.0 asset-checker";
+      }
+
+      const response = await fetch(url, opts);
+      clearTimeout(timer);
+
+      return response;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
+    }
+  }
+
+  try {
+    let response;
+
+    try {
+      response = await doFetch("HEAD");
+    } catch (headErr) {
+      // If HEAD fails entirely, try GET
+      response = await doFetch("GET");
+    }
+
+    // If HEAD returned 403 or 405, retry with GET
+    if (response.status === 403 || response.status === 405) {
+      try {
+        response = await doFetch("GET");
+      } catch {
+        // Keep the HEAD response if GET also fails
+      }
+    }
+
+    result.status = response.status;
+    result.ok = response.status >= 200 && response.status < 400;
+    result.contentType = response.headers.get("content-type") || null;
+
+    // Soft-404 detection: image URL returning non-image content-type
+    if (isImageUrl(url) && result.ok && result.contentType) {
+      const ct = result.contentType.toLowerCase();
+
+      if (!ct.startsWith("image/")) {
+        result.soft404 = true;
+        result.ok = false;
+      }
+    }
+  } catch (err) {
+    if (err.name === "AbortError" || err.message.includes("abort")) {
+      result.error = "Timeout after " + timeout + "ms";
+    } else {
+      result.error = err.message || String(err);
+    }
+  }
+
+  return result;
+}
+
+async function cmdCheckAssets(argv) {
+  const args = parseArgs(argv);
+  const filePath = args.file || join(process.cwd(), "ASSETS.md");
+
+  if (!existsSync(filePath)) {
+    output({ error: "ASSETS.md not found: " + filePath });
+    process.exit(1);
+  }
+
+  let content;
+
+  try {
+    content = readFileSync(filePath, "utf8");
+  } catch (err) {
+    output({ error: "Failed to read ASSETS.md: " + err.message });
+    process.exit(1);
+  }
+
+  const assets = parseAssetsTable(content);
+  const results = [];
+
+  // Sequential to avoid rate limiting
+  for (const asset of assets) {
+    const result = await checkUrl(asset.url);
+    results.push(result);
+  }
+
+  const passed = results.filter(function (r) {
+    return r.ok;
+  }).length;
+
+  const failed = results.filter(function (r) {
+    return !r.ok;
+  }).length;
+
+  const warnings = results.filter(function (r) {
+    return r.soft404;
+  }).length;
+
+  output({
+    total: assets.length,
+    checked: assets.length,
+    passed: passed,
+    failed: failed,
+    warnings: warnings,
+    results: results,
+  });
+}
+
 // --- Main ---
 
 const subcommand = process.argv[2];
@@ -482,14 +693,17 @@ switch (subcommand) {
   case "exists":
     cmdExists();
     break;
+  case "check-assets":
+    cmdCheckAssets(subArgs);
+    break;
   default:
     if (!subcommand) {
-      fail("No subcommand provided. Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists");
+      fail("No subcommand provided. Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets");
     } else {
       fail(
         "Unknown subcommand: " +
           subcommand +
-          ". Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists"
+          ". Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets"
       );
     }
 }
