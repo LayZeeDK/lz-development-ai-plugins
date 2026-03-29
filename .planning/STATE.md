@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-29T13:53:53.979Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-29T13:54:03.541Z"
 last_activity: 2026-03-29 -- Completed 05-01 (evaluator optimization with progressive disclosure)
 progress:
   total_phases: 6
@@ -124,6 +124,7 @@ Recent decisions affecting current work:
 - [Phase 05]: Agent Prompt Protocol condensed to inline format (27 -> 11 lines) without losing prompt templates
 - [Phase 05]: AI Slop Checklist Read pointer placed in Critical Mindset section with reference during Step 5 and Step 10
 - [Phase 05]: Self-Verification kept only as Step 14 (canonical workflow position), standalone section removed
+- [Phase 05]: ALL-CAPS emphasis replaced with WHY-based rationale throughout evaluator.md (zero MUST/NEVER/ALWAYS instances)
 
 ### Roadmap Evolution
 
@@ -141,6 +142,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T13:53:22.320Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-29T13:53:56.003Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
