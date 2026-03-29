@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
 - [x] **Phase 02.1: Use templates for SPEC.md and EVALUATION.md** (INSERTED) - Extract inline format specs into canonical template files for structural consistency (completed 2026-03-28)
 - [x] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring (completed 2026-03-29)
-- [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
+- [x] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill (completed 2026-03-29)
 - [ ] **Phase 5: Optimize Agent Definitions** - Research-driven optimization of agent definitions with progressive disclosure, round-conditional instructions, and skill extraction
 
 ## Phase Details
@@ -98,10 +98,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Create playwright-testing meta-skill (SKILL.md + 3 references for plan/generate/heal e2e workflow)
-- [ ] 04-02-PLAN.md -- Create vitest-browser skill, vite-plus skill, and ASSETS-TEMPLATE.md reference
-- [ ] 04-03-PLAN.md -- Add check-assets subcommand to appdev-cli.mjs (TDD: URL verification with soft-404 detection)
-- [ ] 04-04-PLAN.md -- Rewrite generator.md with progressive CI, testing framework, asset pipeline, and skill wiring
+- [x] 04-01-PLAN.md -- Create playwright-testing meta-skill (SKILL.md + 3 references for plan/generate/heal e2e workflow)
+- [x] 04-02-PLAN.md -- Create vitest-browser skill, vite-plus skill, and ASSETS-TEMPLATE.md reference
+- [x] 04-03-PLAN.md -- Add check-assets subcommand to appdev-cli.mjs (TDD: URL verification with soft-404 detection)
+- [x] 04-04-PLAN.md -- Rewrite generator.md with progressive CI, testing framework, asset pipeline, and skill wiring
 
 ## Progress
 
@@ -114,7 +114,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5
 | 2. Git Workflow and Loop Control | 3/3 | Complete | 2026-03-28 |
 | 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete    | 2026-03-28 |
 | 3. Evaluator Hardening | 2/2 | Complete | 2026-03-29 |
-| 4. Generator Hardening and Skills | 0/4 | Not started | - |
+| 4. Generator Hardening and Skills | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | 0/? | Not started | - |
 
 ### Phase 5: Optimize Agent Definitions

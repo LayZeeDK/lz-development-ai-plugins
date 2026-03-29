@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-29T12:04:10.767Z"
-last_activity: "2026-03-29 -- Completed 04-03 (check-assets subcommand: TDD URL verification with soft-404 detection)"
+status: completed
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-03-29T12:12:41.901Z"
+last_activity: 2026-03-29 -- Completed 04-04 (generator rewrite with progressive CI, skills, asset pipeline)
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 12
-  completed_plans: 11
-  percent: 75
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application. Working application with real assets, real AI features, quality driven by adversarial iteration.
-**Current focus:** Phase 04: Generator Hardening and Skills (IN PROGRESS)
+**Current focus:** Phase 04: Generator Hardening and Skills (COMPLETE)
 
 ## Current Position
 
-Phase: 04 of 5 (Generator Hardening and Skills) -- IN PROGRESS
-Plan: 3 of 4 in current phase -- COMPLETE
-Status: In progress
-Last activity: 2026-03-29 -- Completed 04-03 (check-assets subcommand: TDD URL verification with soft-404 detection)
+Phase: 04 of 5 (Generator Hardening and Skills) -- COMPLETE
+Plan: 4 of 4 in current phase -- COMPLETE
+Status: Phase 04 complete, Phase 05 not started
+Last activity: 2026-03-29 -- Completed 04-04 (generator rewrite with progressive CI, skills, asset pipeline)
 
-Progress: [########--] 75%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [########--] 75%
 | Phase 04 P03 | 3min | 2 tasks | 2 files |
 | Phase 04 P02 | 5min | 2 tasks | 3 files |
 | Phase 04 P01 | 6min | 2 tasks | 4 files |
+| Phase 04 P04 | 5min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,10 @@ Recent decisions affecting current work:
 - [Phase 04]: ASSETS-TEMPLATE.md uses 7-column table (Asset, Type, Source, License, Attribution, URL, Verified) with 6-category Source taxonomy
 - [Phase 04]: SKILL.md uses relative Read paths (references/test-planning.md) since skill Read operations are relative to skill directory
 - [Phase 04]: Content under 300 lines per file via progressive disclosure: tables replace verbose code examples in anti-patterns and healing patterns
+- [Phase 04]: AI features section slimmed to lean decision router with Read fallback -- no inline API details in generator.md
+- [Phase 04]: Testing decision framework routes by SPEC.md app type: Trophy for frontend SPA, Pyramid for CLI/data, hybrid for full-stack
+- [Phase 04]: Bug #25834 workaround: skills frontmatter for future auto-injection + explicit Read fallback instructions for now
+- [Phase 04]: Diagnostic battery is diagnostic not gate: fix quick wins, document rest, always hand off to Evaluator
 
 ### Roadmap Evolution
 
@@ -124,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T12:03:56.124Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-29T12:12:41.898Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
