@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Orchestrator Integrity** - Enforce GAN role separation with tool allowlists, prompt guards, and delegation-only orchestrator behavior
 - [x] **Phase 2: Git Workflow and Loop Control** - Add version control throughout the workflow and replace fixed round limits with score-based convergence detection
 - [x] **Phase 02.1: Use templates for SPEC.md and EVALUATION.md** (INSERTED) - Extract inline format specs into canonical template files for structural consistency (completed 2026-03-28)
-- [ ] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring
+- [x] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring (completed 2026-03-29)
 - [ ] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill
 - [ ] **Phase 5: Optimize Agent Definitions** - Research-driven optimization of agent definitions with progressive disclosure, round-conditional instructions, and skill extraction
 
@@ -82,8 +82,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Create reference files (SCORING-CALIBRATION.md, AI-PROBING-REFERENCE.md) and extend EVALUATION-TEMPLATE.md
-- [ ] 03-02-PLAN.md -- Rewrite evaluator.md with 15-step hardened workflow, ELIZA warning, AI slop checklist, extended self-verification
+- [x] 03-01-PLAN.md -- Create reference files (SCORING-CALIBRATION.md, AI-PROBING-REFERENCE.md) and extend EVALUATION-TEMPLATE.md
+- [x] 03-02-PLAN.md -- Rewrite evaluator.md with 15-step hardened workflow, ELIZA warning, AI slop checklist, extended self-verification
 
 ### Phase 4: Generator Hardening and Skills
 **Goal**: The Generator produces higher-quality applications by self-checking with CI before Evaluator handoff, using real AI skills for in-app AI features, and sourcing assets responsibly
@@ -111,7 +111,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5
 | 1. Orchestrator Integrity | 2/2 | Complete | 2026-03-28 |
 | 2. Git Workflow and Loop Control | 3/3 | Complete | 2026-03-28 |
 | 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete    | 2026-03-28 |
-| 3. Evaluator Hardening | 0/2 | Not started | - |
+| 3. Evaluator Hardening | 2/2 | Complete | 2026-03-29 |
 | 4. Generator Hardening and Skills | 0/2 | Not started | - |
 | 5. Optimize Agent Definitions | 0/? | Not started | - |
 
