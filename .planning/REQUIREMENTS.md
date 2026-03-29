@@ -71,7 +71,7 @@ Requirements for the v1 hardening milestone. Each maps to roadmap phases.
 - [x] **OPT-01**: Agent definitions use progressive disclosure -- protocol-heavy content (AI Slop Checklist, Asset Validation protocol) extracted to reference files, behavioral guidance stays inline, extraction threshold is ~30 lines + single-step-relevance
 - [ ] **OPT-02**: Evaluator Self-Verification deduplicated -- single instance in Step 14 of the workflow, standalone duplicate section removed
 - [ ] **OPT-03**: AI Slop Checklist extracted to references/evaluator/AI-SLOP-CHECKLIST.md with Read instruction in evaluator.md Step 5
-- [ ] **OPT-04**: SKILL.md restructured -- imperative voice consistently, workflow section before design rationale, educational content Claude already knows trimmed
+- [x] **OPT-04**: SKILL.md restructured -- imperative voice consistently, workflow section before design rationale, educational content Claude already knows trimmed
 - [x] **OPT-05**: No regression in appdev-cli integration, file-based communication protocol, agent prompt protocol, or regex-parsed output formats (Scores table, Verdict heading, evaluation file paths)
 
 ## v2 Requirements

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-03-29T13:49:53Z"
-last_activity: 2026-03-29 -- Completed 05-03 (generator and planner emphasis refinement)
+status: completed
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-29T13:53:53.979Z"
+last_activity: 2026-03-29 -- Completed 05-01 (evaluator optimization with progressive disclosure)
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 15
   percent: 87
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 ## Current Position
 
 Phase: 05 of 5 (Optimize Agent Definitions) -- IN PROGRESS
-Plan: 1 of 3 in current phase (05-03 complete, 05-01 and 05-02 remaining)
-Status: Phase 05 in progress
-Last activity: 2026-03-29 -- Completed 05-03 (generator and planner emphasis refinement)
+Plan: 3 of 3 in current phase -- COMPLETE
+Status: Phase 05 complete
+Last activity: 2026-03-29 -- Completed 05-01 (evaluator optimization with progressive disclosure)
 
 Progress: [########--] 87%
 
@@ -61,6 +61,8 @@ Progress: [########--] 87%
 | Phase 04 P01 | 6min | 2 tasks | 4 files |
 | Phase 04 P04 | 5min | 2 tasks | 1 files |
 | Phase 05 P03 | 2min | 2 tasks | 2 files |
+| Phase 05 P02 | 4min | 2 tasks | 1 files |
+| Phase 05 P01 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -116,6 +118,12 @@ Recent decisions affecting current work:
 - [Phase 05]: Skills loading reframed as design choice (selective loading ~2-3k vs ~15k) not bug #25834 workaround
 - [Phase 05]: WHY-based rationale names concrete consequences (waste round, contaminate feedback loop, trigger Critical bugs)
 - [Phase 05]: ALL-CAPS emphasis eliminated from generator and planner agent definitions
+- [Phase 05]: Rules section placed before Workflow in SKILL.md -- hard constraints fresh in context when workflow begins
+- [Phase 05]: Architecture and Enforcement Model merged and moved to end of SKILL.md -- design rationale not execution instructions
+- [Phase 05]: WHY-based rationale added to all 6 orchestrator rules naming concrete consequences
+- [Phase 05]: Agent Prompt Protocol condensed to inline format (27 -> 11 lines) without losing prompt templates
+- [Phase 05]: AI Slop Checklist Read pointer placed in Critical Mindset section with reference during Step 5 and Step 10
+- [Phase 05]: Self-Verification kept only as Step 14 (canonical workflow position), standalone section removed
 
 ### Roadmap Evolution
 
@@ -133,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T13:49:53Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-03-29T13:53:22.320Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
