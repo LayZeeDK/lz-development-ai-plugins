@@ -95,11 +95,13 @@ Plans:
   3. The Generator sources images through verifiable means (web search with license check, build-time generation, procedural/SVG) -- no fabricated URLs, no hotlinked external images without verification
   4. A Vite+ skill is bundled with the plugin providing correct vp CLI usage, and the Generator prefers Vite+ for greenfield web projects
   5. The Generator uses latest stable framework versions unless the user prompt specifies otherwise
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md -- Create playwright-testing meta-skill (SKILL.md + 3 references for plan/generate/heal e2e workflow)
+- [ ] 04-02-PLAN.md -- Create vitest-browser skill, vite-plus skill, and ASSETS-TEMPLATE.md reference
+- [ ] 04-03-PLAN.md -- Add check-assets subcommand to appdev-cli.mjs (TDD: URL verification with soft-404 detection)
+- [ ] 04-04-PLAN.md -- Rewrite generator.md with progressive CI, testing framework, asset pipeline, and skill wiring
 
 ## Progress
 
@@ -112,7 +114,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5
 | 2. Git Workflow and Loop Control | 3/3 | Complete | 2026-03-28 |
 | 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete    | 2026-03-28 |
 | 3. Evaluator Hardening | 2/2 | Complete | 2026-03-29 |
-| 4. Generator Hardening and Skills | 0/2 | Not started | - |
+| 4. Generator Hardening and Skills | 0/4 | Not started | - |
 | 5. Optimize Agent Definitions | 0/? | Not started | - |
 
 ### Phase 5: Optimize Agent Definitions
