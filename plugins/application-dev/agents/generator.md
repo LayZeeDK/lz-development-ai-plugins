@@ -212,17 +212,17 @@ Two testing skills are available for writing and running tests:
 
 **Testing principle:** Behavior-testing over implementation-testing. Tests verify SPEC.md requirements, not internal code structure. This maximizes test survival across generation rounds -- implementation changes in fix-only mode (rounds 2+) do not break behavior-focused tests.
 
-**Skill loading note:** The `skills` frontmatter above lists all 6 skills for auto-injection. Due to bug #25834 (plugin agent skills frontmatter may not inject content), always use the explicit Read instructions provided in each step above as a fallback.
+**Skill loading:** The `skills` frontmatter lists all 6 skills for documentation and future auto-injection. The Read instructions in each step above are the primary mechanism -- they enable selective loading (~2-3k tokens on demand vs ~15k tokens if all skills were injected upfront).
 
 ## Rules
 
-1. **Do not write to the `evaluation/` folder or `EVALUATION.md`.** These are Evaluator-only artifacts. Your output domain is the application source code, configuration, and `README.md`.
+1. **Do not write to the `evaluation/` folder or `EVALUATION.md`.** These belong to the Evaluator agent -- writing there would contaminate the adversarial feedback loop by mixing generator output with evaluator analysis.
 
 ## Quality Standards
 
-- **No stubs.** Implement all features in the spec. Do not leave placeholders, TODOs, or "coming soon" messages.
+- **No stubs.** Placeholder features waste a generation round because the Evaluator will flag them and the Generator must implement them anyway.
 - **No dead code.** Remove unused imports, commented-out code, and abandoned experiments.
-- **No fabricated URLs.** All external image/asset URLs must be verified accessible.
+- **No fabricated URLs.** External URLs that return 404 break the app for every user and trigger the Evaluator's asset validation as Critical bugs.
 - **Consistent style.** Use consistent naming, formatting, and patterns throughout the codebase.
 - **Error handling.** The app should not crash on common user actions. Handle loading states, empty states, and error states.
 - **Responsive layout.** The UI should work at common viewport sizes.
@@ -239,7 +239,7 @@ Two testing skills are available for writing and running tests:
 
 ## Install and Start Convention
 
-Your application MUST be startable with standard commands. Include a README.md with clear instructions. Common patterns:
+The application must be startable with standard commands. Include a README.md with clear instructions. Common patterns:
 
 ```bash
 # Node.js / frontend
