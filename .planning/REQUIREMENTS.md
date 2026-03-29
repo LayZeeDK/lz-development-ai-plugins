@@ -160,11 +160,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEN-05 | Phase 4 | Complete |
 | GEN-06 | Phase 4 | Complete |
 | SKILL-01 | Phase 4 | Complete |
-| OPT-01 | Phase 5 | Planned |
-| OPT-02 | Phase 5 | Planned |
-| OPT-03 | Phase 5 | Planned |
-| OPT-04 | Phase 5 | Planned |
-| OPT-05 | Phase 5 | Planned |
+| OPT-01 | Phase 5 | Complete |
+| OPT-02 | Phase 5 | Complete |
+| OPT-03 | Phase 5 | Complete |
+| OPT-04 | Phase 5 | Complete |
+| OPT-05 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 43 total
@@ -173,4 +173,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-29 after Phase 05 planning*
+*Last updated: 2026-03-29 after Phase 05 completion*

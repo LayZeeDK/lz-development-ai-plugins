@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 02.1: Use templates for SPEC.md and EVALUATION.md** (INSERTED) - Extract inline format specs into canonical template files for structural consistency (completed 2026-03-28)
 - [x] **Phase 3: Evaluator Hardening** - Make the Evaluator an adversarial quality gate that catches broken assets, canned AI, and lenient scoring (completed 2026-03-29)
 - [x] **Phase 4: Generator Hardening and Skills** - Give the Generator CI self-checks, AI feature skills, asset sourcing awareness, and the bundled Vite+ skill (completed 2026-03-29)
-- [ ] **Phase 5: Optimize Agent Definitions** - Research-driven optimization of agent definitions with progressive disclosure, round-conditional instructions, and skill extraction
+- [x] **Phase 5: Optimize Agent Definitions** - Research-driven optimization of agent definitions with progressive disclosure, round-conditional instructions, and skill extraction (completed 2026-03-29)
 
 ## Phase Details
 
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5
 | 02.1. Templates for SPEC/EVALUATION | 1/1 | Complete    | 2026-03-28 |
 | 3. Evaluator Hardening | 2/2 | Complete | 2026-03-29 |
 | 4. Generator Hardening and Skills | 4/4 | Complete | 2026-03-29 |
-| 5. Optimize Agent Definitions | 0/3 | Not started | - |
+| 5. Optimize Agent Definitions | 3/3 | Complete | 2026-03-29 |
 
 ### Phase 5: Optimize Agent Definitions
 
@@ -131,6 +131,6 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- Evaluator optimization (extract AI Slop Checklist and Asset Validation to references, deduplicate Self-Verification, WHY-based rationale)
-- [ ] 05-02-PLAN.md -- SKILL.md restructure (imperative voice, section reordering, trim educational content, integration contract verification)
-- [ ] 05-03-PLAN.md -- Generator and Planner refinements (skills note reframe, WHY-based rationale, emphasis cleanup)
+- [x] 05-01-PLAN.md -- Evaluator optimization (extract AI Slop Checklist and Asset Validation to references, deduplicate Self-Verification, WHY-based rationale)
+- [x] 05-02-PLAN.md -- SKILL.md restructure (imperative voice, section reordering, trim educational content, integration contract verification)
+- [x] 05-03-PLAN.md -- Generator and Planner refinements (skills note reframe, WHY-based rationale, emphasis cleanup)
