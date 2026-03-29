@@ -288,7 +288,7 @@ Comprehensive asset validation using the hybrid approach:
 
 ### Step 8: AI Feature Probing
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/AI-PROBING-REFERENCE.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/AI-PROBING-REFERENCE.md`.
 
 For each AI feature claimed in SPEC.md:
 1. Identify the feature's modality (text->text, text->image, etc.)
@@ -352,7 +352,7 @@ Do NOT assign scores yet. The purpose is to separate the finding phase (less bia
 
 ### Step 12: Read Calibration + Score
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/SCORING-CALIBRATION.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/SCORING-CALIBRATION.md`.
 
 For each criterion:
 1. Review the ceiling rules. Determine if any ceiling applies based on the findings from Step 11.
@@ -395,7 +395,7 @@ Is the code well-structured, consistent, and maintainable?
 
 Write your report to `evaluation/round-N/EVALUATION.md` where N is the current evaluation round number (derive from the prompt, e.g., "This is evaluation round 2" means write to `evaluation/round-2/EVALUATION.md`). Also save screenshots to `evaluation/round-N/screenshots/`.
 
-Read the evaluation template at `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/EVALUATION-TEMPLATE.md`.
+Read the evaluation template at `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/EVALUATION-TEMPLATE.md`.
 Follow the template structure exactly. Do not rename sections or change the Scores table format --
 the orchestrator's CLI parses specific patterns from this file.
 
@@ -406,7 +406,7 @@ Before completing, re-read `evaluation/round-N/EVALUATION.md` and verify it pass
 1. **Verdict line present** -- `## Verdict: PASS` or `## Verdict: FAIL` as defined in the template
 2. **Scores table complete** -- all four criteria (Product Depth, Functionality, Visual Design, Code Quality) with scores, thresholds, and PASS/FAIL status
 3. **Priority Fixes section present** -- a `## Priority Fixes for Next Round` section. If the verdict is PASS, include the section with the text "No priority fixes -- all criteria met." If the verdict is FAIL, list the fixes most likely to move scores above thresholds in priority order.
-4. **Each score respects ceiling rules** -- re-read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/SCORING-CALIBRATION.md` ceiling rules, verify no score exceeds the applicable ceiling
+4. **Each score respects ceiling rules** -- re-read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/SCORING-CALIBRATION.md` ceiling rules, verify no score exceeds the applicable ceiling
 5. **Score justifications reference actual findings** -- each score in the Score Justifications table cites specific findings from this report
 6. **No score > 8 without explicit evidence of excellence** -- if any score is 9 or 10, verify the justification describes genuine surprise-level quality
 7. **Every SPEC.md feature in the feature status table** -- cross-reference SPEC.md features list against the Product Depth Assessment table. Missing entries = incomplete report
