@@ -22,7 +22,9 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 
 ### Active
 
-(None yet -- define with next milestone)
+<!-- Current scope: v1.1 Hardening after Dutch art museum website test #1 -->
+
+(Defining with milestone v1.1 -- see REQUIREMENTS.md)
 
 ### Out of Scope
 
@@ -36,6 +38,17 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 - Autopoietic learning -- requires multi-session infrastructure beyond single-run architecture
 - Context rotation (Ralph Loop) -- monolithic pattern; GAN architecture uses fresh context per agent spawn
 - VSM dashboard (cybernetics) -- monitoring infrastructure beyond current scope
+
+## Current Milestone: v1.1 Hardening after Dutch art museum website test #1
+
+**Goal:** Fix issues surfaced by the first real-world test (Dutch art museum website) -- scoring dimension restructuring, GAN information barrier enforcement, orchestrator crash recovery, and generator quality improvements.
+
+**Target features:**
+- Planner: acceptance test plan in SPEC.md, tech constraints, asset strategy, measurability rule
+- Orchestrator: CLI-decided verdict, convergence logic hardening, session resume recovery
+- Generator: Vite+ adoption, dependency freshness, browser-agnostic LanguageModel, test style
+- Evaluator: Robustness dimension (replaces Code Quality), Visual Coherence (expands Visual Design), GAN information barrier (no source code), cross-feature interaction testing, commit hygiene
+- Browser: Edge-first for AI-feature applications
 
 ## Context
 
@@ -131,4 +144,4 @@ Key principle: improve quality by strengthening both sides. The Generator needs 
 | Cybernetics damping principle for fix-only mode | Unconstrained changes cause oscillation between rounds | Good -- Generator stays focused in rounds 2+ |
 
 ---
-*Last updated: 2026-03-29 after v1.0 milestone*
+*Last updated: 2026-03-29 after v1.1 milestone start*
