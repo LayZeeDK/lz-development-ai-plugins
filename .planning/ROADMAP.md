@@ -79,11 +79,11 @@ Plans:
   2. The Evaluator sends varied inputs, nonsense queries, and semantic rephrasings to AI features and reports whether responses are real inference or keyword-triggered canned responses
   3. The Evaluator's scoring follows calibration examples and anti-leniency phrasing -- scores are anchored to rubric descriptors, not inflated
   4. The Evaluator checks all links and reports blocked asset/document/XHR requests with HTTP status codes
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md -- Create reference files (SCORING-CALIBRATION.md, AI-PROBING-REFERENCE.md) and extend EVALUATION-TEMPLATE.md
+- [ ] 03-02-PLAN.md -- Rewrite evaluator.md with 15-step hardened workflow, ELIZA warning, AI slop checklist, extended self-verification
 
 ### Phase 4: Generator Hardening and Skills
 **Goal**: The Generator produces higher-quality applications by self-checking with CI before Evaluator handoff, using real AI skills for in-app AI features, and sourcing assets responsibly
