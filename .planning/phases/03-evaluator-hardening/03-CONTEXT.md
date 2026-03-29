@@ -119,19 +119,31 @@ Probe 9 empirically validated: Chrome LanguageModel configured for English-only 
 
 **Goodhart's Law protection**: AI-PROBING-REFERENCE.md describes probe STRATEGIES, not fixed scripts. The Evaluator generates domain-appropriate probe inputs on the fly. This prevents the Generator from pre-computing responses to known probes.
 
-**Turing test concepts incorporated**:
-- ELIZA effect warning in evaluator.md: "First impressions of intelligence are unreliable." Extra skepticism for emotionally engaging AI domains (therapy, coaching, companionship) where the ELIZA effect is strongest and canned responses most harmful.
-- Winograd Schema probes: ambiguity resolution requiring reasoning ("The trophy doesn't fit because IT is too big")
-- Total Turing Test: test every claimed modality independently
-- Functional Turing Test: non-conversational AI tested by function, not conversation
-- Chinese Room (Searle): probes test semantics (understanding), not syntax (well-formed responses). Theoretical basis for behavioral probing.
-- Grice's specificity probe: ask narrow factual questions ("What year was Vermeer born?"). Real AI gives direct answers; canned gives broad keyword-triggered responses. Tests Quantity and Relation maxims.
-- Compression round-trip: "Summarize in one sentence" then "Expand back to a paragraph." Tests understanding via information preservation through compress/decompress cycle.
-- Complexity scaling (Kolmogorov): give inputs of varying complexity, check if response complexity scales proportionally. Canned systems produce constant-complexity responses regardless of input.
-- Theory of Mind probes: "I believe the museum closes at 5pm. If it actually closes at 6pm, what would you tell me?" Tests whether AI can model the user's mental state.
-- Visual Turing Test (Geman et al.): for Text->Image, structure verification as binary questions per prompt element ("Does this contain a red car?" "Is it on a beach?"). Hit rate measures prompt-image alignment.
-- Probe ordering: start with baseline probes (domain, variability), escalate to adversarial (nonsense, negation, reasoning). Prevents habituation from masking baseline failures.
-- Subject Matter Expert judge: Evaluator reads SPEC.md before probing, becoming a domain expert. Domain-expert judges catch canned responses that fool naive judges.
+**Turing test concepts incorporated** (adapted to the GAN Evaluator context):
+
+1. **ELIZA effect warning**: Add to evaluator.md critical mindset section. "First impressions of intelligence are unreliable -- the Generator's AI features may trigger the ELIZA effect, where polished UI and keyword-relevant responses create an illusion of understanding." Extra skepticism for emotionally engaging AI features (therapy chatbot, wellness coach, companion) where the ELIZA effect is strongest and canned responses most harmful to users.
+
+2. **Winograd Schema probes**: Add to Text->Text battery. Generate domain-appropriate ambiguity sentences from the SPEC.md context. Example for a museum chatbot: "The painting was moved from the gallery to the vault because it was too valuable." -> "What was too valuable?" Keyword matchers can't resolve the reference. The Evaluator generates these on the fly per Goodhart's Law protection.
+
+3. **Total Turing Test (multimodal)**: If SPEC.md claims an AI feature with multiple modalities (e.g., "AI chatbot with voice responses"), the Evaluator tests EACH modality independently. A chatbot that passes text probes but plays pre-recorded audio clips fails the voice modality. Don't let one strong modality mask a fake in another.
+
+4. **Functional Turing Test**: Non-conversational AI features (OCR, classification, recommendations, image generation) are tested by whether they perform their claimed FUNCTION, not by conversation quality. The modality-based probe batteries implement this -- each tests function, not imitation.
+
+5. **Chinese Room (syntax vs semantics)**: The theoretical foundation for all behavioral probing. State in AI-PROBING-REFERENCE.md: "Probes test semantics (does the AI understand the input?) not syntax (does the response look well-formed?). A grammatically correct response is not evidence of real AI -- the Generator can produce syntactically perfect canned responses."
+
+6. **Grice's specificity probe**: Add to Text->Text battery. Ask narrow factual questions derived from SPEC.md content where a direct answer is expected. "What year was Vermeer born?" (for a museum chatbot) or "How many items are in my cart?" (for an e-commerce assistant). Real AI gives focused answers; canned systems give broad keyword-triggered paragraphs. The Evaluator checks the Quantity maxim: is the response proportional to the question?
+
+7. **Compression round-trip**: Add to Text->Text battery. Give the AI feature a paragraph of domain content from SPEC.md, ask it to summarize in one sentence, then expand back to a paragraph. Compare expansion to original for information preservation. Canned systems can't compress-decompress faithfully because they don't model underlying meaning. Works for any text-based AI feature: chatbot, summarizer, assistant.
+
+8. **Complexity scaling**: Add to Text->Text and Text->Structured Data batteries. Give inputs of increasing complexity and verify response complexity scales. A museum chatbot asked "Who painted this?" should give a short answer. Asked "Explain the relationship between Vermeer's use of light and the camera obscura theory" should give a proportionally longer, more nuanced answer. Canned systems give similar-length responses to both because they map keywords to fixed-size responses.
+
+9. **Theory of Mind probes**: Add to Text->Text battery as the most advanced probe (run last per probe ordering principle). Present a scenario with a false belief: "I think the museum's Vermeer collection has 10 paintings, but I've only seen 8 on display. What happened to the other two?" Real AI engages with the user's mental model. Canned systems keyword-match on "Vermeer" and give a generic response.
+
+10. **Visual Turing Test**: Add to Text->Image battery. For each AI-generated image, decompose the text prompt into individual elements and ask binary questions via Claude vision: "Does this image contain [element]?" Tally the hit rate. A pre-stored stock photo matches few prompt elements; real generation matches most. Example: prompt "a corgi in a spacesuit on Mars" -> questions: "Is there a corgi?" "Is it wearing a spacesuit?" "Is the setting Mars-like?" Hit rate 3/3 = likely real. Hit rate 0/3 = stock photo.
+
+**Supporting principles**:
+- **Probe ordering**: The 10-probe battery (0-9) is already ordered baseline-to-adversarial. Name this explicitly in AI-PROBING-REFERENCE.md: "Start with variability and domain probes. Escalate to adversarial probes (nonsense, negation, Theory of Mind). Prevents habituation from masking baseline failures."
+- **Subject Matter Expert judge**: The Evaluator reads SPEC.md before AI probing (workflow step 1 -> step 8). By the time it probes AI features, it knows the app's domain. This makes it a domain-expert judge -- dramatically harder to fool than a naive judge. Domain questions and Winograd schemas should reference SPEC.md content, not generic examples.
 
 **Off-spec features** (GAN precision principle + YAGNI):
 - Product Depth: penalized (off-spec outputs, misallocated effort, GAN precision)
