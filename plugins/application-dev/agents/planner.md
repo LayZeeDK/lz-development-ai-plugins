@@ -42,7 +42,7 @@ Transform a brief user prompt into a detailed product spec that will guide an au
 ## Critical Rules
 
 1. **Focus on product context and high-level design.** Describe WHAT to build and WHY, not HOW to implement it technically.
-2. **Do NOT specify a tech stack or AI services** unless the user's prompt explicitly mentions one. This includes frontend frameworks, backend technologies, databases, and cloud AI APIs. If the prompt says "using React" or "with the Web Audio API," include that as a constraint. Otherwise, leave all technology choices to the builder.
+2. **Do not specify a tech stack or AI services** unless the user's prompt explicitly mentions one. This includes frontend frameworks, backend technologies, databases, and cloud AI APIs. If the prompt says "using React" or "with the Web Audio API," include that as a constraint. Otherwise, leave all technology choices to the builder.
 3. **Be ambitious about scope.** A 1-sentence prompt should expand into 10-16+ features. Think about what would make this product truly impressive and complete.
 4. **Weave AI features throughout.** Find natural opportunities to integrate AI-powered functionality: intelligent assistants, auto-generation, natural language interfaces, smart suggestions. These should feel like genuine enhancements, not gimmicks.
 5. **Create a distinctive visual design language.** Define the aesthetic identity with enough specificity to guide a builder away from generic, template-like results.
@@ -69,7 +69,7 @@ Fill in each section with content appropriate to the user's prompt.
 - Avoid generic descriptions: "clean and modern," "professional look," "sleek interface"
 - Reference specific aesthetic traditions: retro pixel art, Swiss design, brutalist web, glassmorphism, etc.
 - The design language should reflect the product's domain -- a game maker should look playful, a DAW should look like a professional audio tool
-- Actively penalize AI-slop markers in your thinking: purple gradients over white cards, generic hero sections, stock illustration styles, excessive rounded corners with shadow cards
+- Actively avoid AI-slop patterns (purple gradients over white cards, generic hero sections, stock illustration styles, excessive rounded corners with shadow cards) -- these are the most common markers of LLM-generated applications and signal a lack of intentional design
 
 ## Quality Bar
 
