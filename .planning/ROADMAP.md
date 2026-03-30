@@ -3,7 +3,8 @@
 ## Milestones
 
 - v1.0 **Hardening** -- Phases 1-5 (shipped 2026-03-29)
-- v1.1 **Hardening after Dutch art museum website test #1** -- Phases 7-9 (in progress)
+- v1.1 **Ensemble Evaluator + Crash Recovery** -- Phases 7-9 (in progress)
+- v1.2 **Dutch Art Museum Test Fixes** -- Phases 10+ (planned)
 
 ## Phases
 
@@ -21,51 +22,99 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 </details>
 
-### v1.1 Hardening after Dutch art museum website test #1
+### v1.1 Ensemble Evaluator + Crash Recovery
 
-**Milestone Goal:** Fix issues surfaced by the first real-world test -- scoring dimension restructuring, GAN information barrier enforcement, CLI-decided verdict, convergence hardening, acceptance test planning, generator quality improvements, and architecture documentation.
+**Milestone Goal:** Replace the monolithic Evaluator (which crashes sessions via memory leak + context exhaustion) with an ensemble of specialized sub-agents that stay within safe context limits, use token-efficient Playwright patterns, and recover from crashes.
 
-- [ ] **Phase 7: Scoring Pipeline Overhaul** - Atomic migration of scoring dimensions, verdict authority, information barrier, and convergence logic
-- [ ] **Phase 8: Evaluation Quality and Spec-Driven Testing** - Acceptance test plan, planner improvements, cross-feature testing, and Edge browser support
-- [ ] **Phase 9: Generator Hardening, Recovery, and Documentation** - Generator quality improvements, session resume, and architecture documentation
+**Scope:** ONLY the crash fix and ensemble architecture. All other Dutch art museum test issues defer to v1.2.
+
+- [ ] **Phase 7: Ensemble Discriminator Architecture** - Replace monolithic evaluator.md with evaluator-observer + evaluator-tester + appdev-cli compile-evaluation
+- [ ] **Phase 8: Token Efficiency Patterns** - Playwright eval-first patterns, write-and-run acceptance tests, dedicated evaluation reference
+- [ ] **Phase 9: Crash Recovery** - Session resume detection, per-agent recovery states, dev server lifecycle
+
+### v1.2 Dutch Art Museum Test Fixes (planned)
+
+**Milestone Goal:** Address all remaining issues from the Dutch art museum website test #1: additional discriminators (Robustness, Visual Coherence), convergence logic hardening, planner/generator improvements, architecture documentation.
+
+**Requirements:** DISC-01..04, CONV-01..05, SCORE-01..02, PLAN-01..04, GEN-01..05, EVAL-01..02, ORCH-01, DOCS-01
+
+(Phases defined after v1.1 ships)
 
 ## Phase Details
 
-### Phase 7: Scoring Pipeline Overhaul
-**Goal**: The CLI mechanically decides PASS/FAIL from restructured scoring dimensions, the Evaluator scores through behavioral observation only, and convergence logic catches anomalies and premature exits
+### Phase 7: Ensemble Discriminator Architecture
+**Goal**: The monolithic Evaluator is replaced by an ensemble of 2 parallel sub-agents (observer + tester) and a deterministic CLI aggregator. Each sub-agent scores one dimension, the CLI computes the third and assembles the report. No single agent exceeds ~60K context tokens.
 **Depends on**: Phase 5 (v1.0 complete)
-**Requirements**: SCORE-01, SCORE-02, SCORE-03, SCORE-04, SCORE-05, BARRIER-01, BARRIER-02, BARRIER-03, BARRIER-04, VERDICT-01, VERDICT-02, VERDICT-03, VERDICT-04, VERDICT-05, VERDICT-06, CONV-01, CONV-02, CONV-03, CONV-04, CONV-05
+**Requirements**: ENSEMBLE-01, ENSEMBLE-02, ENSEMBLE-03, ENSEMBLE-04, ENSEMBLE-05, ENSEMBLE-06, ENSEMBLE-07, ENSEMBLE-08, ENSEMBLE-09, ENSEMBLE-10, BARRIER-01, BARRIER-02, BARRIER-03
 **Success Criteria** (what must be TRUE):
-  1. Running `appdev-cli round-complete` on an EVALUATION.md with the new dimension names (Product Depth, Functionality, Visual Coherence, Robustness) extracts all 4 scores and computes PASS/FAIL mechanically -- no verdict is parsed from the report
-  2. The Evaluator agent definition contains zero instructions to read application source code, compute an overall verdict, or assess code structure -- Robustness is scored entirely through behavioral observation (build output, console errors, test results, error handling under stress)
-  3. Running `appdev-cli round-complete` on round 1 with all scores above threshold still returns `should_continue: true` because minimum 2 rounds are enforced before PASS can fire
-  4. Running `appdev-cli round-complete` with all 4 scores identical (e.g., 7/7/7/7) triggers an anchoring warning; a score jump >8 points between rounds triggers an anomaly flag
-  5. SCORING-CALIBRATION.md contains rubric descriptors, grade ranges, ceiling rules, and calibration scenarios for both Visual Coherence and Robustness -- with Major bug ceiling rules (1 Major = max 8, 2 Major = max 7, 3+ Major = max 6)
+  1. Two new agent definitions exist (evaluator-observer, evaluator-tester) each under 150 lines -- focused and compact per SkillsBench finding that detailed Skills outperform comprehensive ones
+  2. `appdev-cli compile-evaluation --round N` reads observations/summary.json + interactions/summary.json, computes Product Depth from acceptance test results, applies ceiling rules, and writes EVALUATION.md -- fully deterministic, zero LLM tokens
+  3. `appdev-cli install-dep --dev <packages>` safely handles concurrent calls via file-based mutex -- both sub-agents can request dependencies simultaneously
+  4. The monolithic evaluator.md is removed. The orchestrator evaluation phase spawns 2 parallel agents with prompt "This is evaluation round N." and runs compile-evaluation after both complete
+  5. EVALUATION.md has clear provenance per section (Observer findings, Tester findings, CLI-computed scores) and the summary.json schema is extensible for future discriminators (v1.2 robustness agent writes to robustness/summary.json with zero CLI changes)
 **Plans**: TBD
 
-### Phase 8: Evaluation Quality and Spec-Driven Testing
-**Goal**: The Planner produces structured acceptance criteria that the Evaluator uses as a test oracle, the Evaluator tests features in combination (not just isolation), and AI-feature applications are tested in Edge
+### Phase 8: Token Efficiency Patterns
+**Goal**: Sub-evaluator agents use token-efficient Playwright patterns that keep each agent's context under 60K tokens total. The Tester generates acceptance tests using playwright-testing skill patterns and runs them deterministically.
 **Depends on**: Phase 7
-**Requirements**: ATP-01, ATP-02, ATP-03, ATP-04, ATP-05, PLAN-01, PLAN-02, PLAN-03, PLAN-04, EVAL-01, EVAL-02, EVAL-03
+**Requirements**: TOKEN-01, TOKEN-02, TOKEN-03, TOKEN-04, TOKEN-05
 **Success Criteria** (what must be TRUE):
-  1. SPEC-TEMPLATE.md contains an Acceptance Test Plan section where each Core feature has >= 3 scenarios and cross-feature journey scenarios test features in sequence -- framed as behavioral outcomes, not implementation prescriptions
-  2. The Evaluator translates acceptance scenarios into concrete playwright-cli actions and reports per-scenario PASS/FAIL with screenshot evidence; the CLI uses acceptance scenario pass rate as a verdict input (< 80% = FAIL)
-  3. The Evaluator tests Core features in combination (not just isolation) and routes cross-feature findings into Functionality and Visual Coherence scores -- there is no separate cross-validation gate
-  4. When SPEC.md indicates browser AI features, the Evaluator uses `--browser=msedge` for AI-feature testing; the browser-prompt-api skill documents Edge as officially supported with Phi-4-mini, hardware requirements, and setup steps
-  5. SPEC-TEMPLATE.md contains Technical Constraints (required skills, stack guidance) and Asset Strategy sections; every quality claim in the spec passes the "Can the Evaluator verify this with playwright-cli?" test
+  1. PLAYWRIGHT-EVALUATION.md reference exists teaching eval-first (structured JSON extraction over snapshot), write-and-run (acceptance tests outside context), and snapshot-as-fallback (only for ref IDs needed to click)
+  2. evaluator-observer uses eval for all data extraction and page state checks -- snapshot is only used when interaction ref IDs are needed. Responsive checks use resize + eval, not screenshot at each viewport
+  3. evaluator-tester writes acceptance-tests.spec.ts from SPEC.md using playwright-testing skill patterns (getByRole, getByLabel, getByText), runs via `npx playwright test --reporter=json`, and reads JSON results. The browser interaction for feature testing happens entirely outside the agent's context window
+  4. Both agents use `console error` (not `console`) for filtered console output
+  5. Both agents write structured summary.json files with scores + findings. Raw observation data (snapshots, screenshots) exists on disk but does NOT persist in agent context after the observation step
 **Plans**: TBD
 
-### Phase 9: Generator Hardening, Recovery, and Documentation
-**Goal**: The Generator produces higher-quality applications with current dependencies and browser-agnostic AI, the Orchestrator recovers gracefully from session interruptions, and architectural decisions are documented
-**Depends on**: Nothing (independent of Phases 7-8; can run in parallel)
-**Requirements**: GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, ORCH-01, ORCH-02, DOCS-01
+### Phase 9: Crash Recovery
+**Goal**: The orchestrator detects completed sub-agent artifacts on resume and recovers from any crash point with minimal rework. Dev server lifecycle is managed centrally.
+**Depends on**: Phase 7 (needs ensemble architecture to have recovery checkpoints)
+**Requirements**: RECOVERY-01, RECOVERY-02, RECOVERY-03, RECOVERY-04
 **Success Criteria** (what must be TRUE):
-  1. Generator instructions require Vite+ skill for all greenfield web projects, latest stable major versions for all dependencies, and committing all generated files -- no orphaned scripts
-  2. Generator-produced applications use browser-agnostic LanguageModel API with feature detection (`typeof LanguageModel`) and no browser-specific strings in user-facing messages
-  3. Playwright e2e tests written by the Generator use accessibility-tree-first selectors (`.getByRole()`, `.getByLabel()`, `.getByText()`) with CSS selectors only as fallback
-  4. On session resume, the Orchestrator detects already-completed steps (git tags, evaluation reports, CLI state) and resumes from the correct position without re-running completed work; anomaly warnings from CLI output are logged by the Orchestrator
-  5. `docs/ARCHITECTURE.md` exists at the repo root documenting all architectural decisions grounded in Anthropic article, GAN, Cybernetics, and Turing test principles -- covering both v1.0 and v1.1
+  1. On `claude --continue`, the orchestrator checks for: observations/summary.json, interactions/summary.json, acceptance-tests.spec.ts, EVALUATION.md. It skips past completed stages.
+  2. Four distinct recovery states work correctly: (1) no observations -> re-spawn both agents; (2) observer done, tester incomplete -> spawn tester only; (3) both done, not compiled -> run compile-evaluation; (4) compiled -> run round-complete
+  3. The orchestrator starts the dev server before evaluation and verifies the port responds. If the port is already in use (from a previous crashed session), the orchestrator detects and reuses the existing server
+  4. Evaluator agent definitions include `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50` recommendation to trigger context compaction earlier
 **Plans**: TBD
+
+## Discriminator Roadmap
+
+Mapping of GAN ensemble discriminator types to current and future milestones.
+See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type taxonomy.
+
+### v1.1 Discriminators (essential, crash-fix release)
+
+| GAN Discriminator | Agent | What it checks |
+|---|---|---|
+| Multi-Scale (Pix2PixHD) | evaluator-observer | Responsive quality at 320/768/1280/1920px |
+| Perceptual/Style (StyleGAN) | evaluator-observer | AI slop detection, design identity |
+| Global (standard) | evaluator-observer | Full-page visual assessment |
+| Projection (cGAN) | appdev-cli (Product Depth) | Features match SPEC.md requirements |
+| ProjectedGAN (feature-space) | evaluator-tester | eval for structured data extraction |
+| Spectral (SSD-GAN) | both agents | Console errors, network failures |
+
+### v1.2 Discriminators (Dutch art museum fixes)
+
+| GAN Discriminator | Agent | What it checks |
+|---|---|---|
+| Perturbation / R-FID | evaluator-robustness (NEW) | Edge cases, error handling, stress testing |
+| Spectral / Frequency | evaluator-robustness (NEW) | Hidden technical issues, performance degradation |
+| Temporal Triplet (TecoGAN) | evaluator-tester (technique) | Navigation A->B->A state preservation |
+| Temporal / Global+Local | evaluator-observer (enhanced) | Visual Coherence: cross-page consistency |
+| Consistency (CR-GAN) | evaluator-tester (write-and-run) | Same data matches across pages |
+
+### v2.0+ Discriminators (future expansion)
+
+| GAN Discriminator | Agent | What it checks |
+|---|---|---|
+| Semantic/Content (StackGAN) | evaluator-content (NEW) | Text accuracy, factual correctness |
+| Graph (MolGAN) | appdev-cli analyze-nav-graph | Navigation structure, orphan pages |
+| PacGAN (packed samples) | evaluator-observer (technique) | Grouped page consistency evaluation |
+| Fairness (FairGAN) | evaluator-accessibility (NEW) | Keyboard nav, screen readers, contrast |
+| BiGAN (encoder-aware) | appdev-cli | Generator manifest cross-reference |
+| Dropout-GAN | orchestrator | Random evaluation variation |
+| Minibatch (diversity) | evaluator-tester (write-and-run) | Cross-feature interaction testing |
+| Contrastive (ContraD) | appdev-cli | Round-over-round comparison |
 
 ## Progress
 
@@ -77,6 +126,6 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 | 3. Evaluator Hardening | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
-| 7. Scoring Pipeline Overhaul | v1.1 | 0/? | Not started | - |
-| 8. Evaluation Quality and Spec-Driven Testing | v1.1 | 0/? | Not started | - |
-| 9. Generator Hardening, Recovery, and Documentation | v1.1 | 0/? | Not started | - |
+| 7. Ensemble Discriminator Architecture | v1.1 | 0/? | Not started | - |
+| 8. Token Efficiency Patterns | v1.1 | 0/? | Not started | - |
+| 9. Crash Recovery | v1.1 | 0/? | Not started | - |
