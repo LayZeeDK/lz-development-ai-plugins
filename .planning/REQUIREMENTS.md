@@ -15,13 +15,13 @@ recover from session crashes.
 
 - [ ] **ENSEMBLE-01**: New `perceptual-critic` agent (Perceptual discriminator) -- scores Visual Design by detecting AI slop, assessing design authenticity, and checking whether the product passes as hand-built. Compact agent definition (detailed, not comprehensive per SkillsBench).
 - [ ] **ENSEMBLE-02**: New `projection-critic` agent (Projection discriminator) -- scores Functionality by verifying SPEC.md feature conformance via write-and-run acceptance tests and AI feature probing. Compact agent definition.
-- [ ] **ENSEMBLE-03**: `appdev-cli compile-evaluation` subcommand (Ensemble aggregator) -- reads perceptual/summary.json + projection/summary.json, computes Product Depth from acceptance test pass/fail, applies ceiling rules, cross-validates scores vs findings, writes EVALUATION.md from template. Fully deterministic.
-- [ ] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
+- [x] **ENSEMBLE-03**: `appdev-cli compile-evaluation` subcommand (Ensemble aggregator) -- reads perceptual/summary.json + projection/summary.json, computes Product Depth from acceptance test pass/fail, applies ceiling rules, cross-validates scores vs findings, writes EVALUATION.md from template. Fully deterministic.
+- [x] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
 - [ ] **ENSEMBLE-05**: Remove monolithic `evaluator.md` -- replaced by perceptual-critic + projection-critic agents
-- [ ] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (projection-critic), Visual Design (perceptual-critic). Code Quality removed.
+- [x] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (projection-critic), Visual Design (perceptual-critic). Code Quality removed.
 - [x] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Perceptual Critic, Projection Critic, CLI Ensemble)
 - [x] **ENSEMBLE-08**: SCORING-CALIBRATION.md updated for 3 dimensions with rubric descriptors, grade ranges, ceiling rules, and few-shot calibration examples aligned with Anthropic pattern
-- [ ] **ENSEMBLE-09**: summary.json schema as extensible contract -- any `evaluation/round-N/*/summary.json` is auto-consumed by compile-evaluation. Directory names match GAN techniques: `perceptual/`, `projection/`, future `perturbation/`, `semantic/`
+- [x] **ENSEMBLE-09**: summary.json schema as extensible contract -- any `evaluation/round-N/*/summary.json` is auto-consumed by compile-evaluation. Directory names match GAN techniques: `perceptual/`, `projection/`, future `perturbation/`, `semantic/`
 - [ ] **ENSEMBLE-10**: Orchestrator evaluation phase: parallel critic spawns with minimal prompts ("This is evaluation round N."), binary file-exists checks, CLI compile + round-complete
 
 ### SPEC Acceptance Criteria (SPEC)

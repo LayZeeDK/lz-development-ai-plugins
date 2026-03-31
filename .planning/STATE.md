@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.1
-milestone_name: Hardening after Dutch art museum website test #1
-status: active
-stopped_at: "Completed 07-02-PLAN.md"
-last_updated: "2026-03-31T11:58:25.000Z"
-last_activity: 2026-03-31 -- Completed 07-02-PLAN.md (EVALUATION-TEMPLATE + SCORING-CALIBRATION + naming)
+milestone_name: Ensemble Discriminator + Crash Recovery
+status: executing
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-31T12:03:09.028Z"
+last_activity: 2026-03-31 -- Completed 07-01-PLAN.md (CLI ensemble aggregator and scoring update)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 4
   completed_plans: 2
-  percent: 14
+  percent: 50
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 Phase: 7 of 9 (Ensemble Discriminator Architecture)
 Plan: 2 of 4 complete
 Status: Executing
-Last activity: 2026-03-31 -- Completed 07-02-PLAN.md (EVALUATION-TEMPLATE + SCORING-CALIBRATION + naming)
+Last activity: 2026-03-31 -- Completed 07-01-PLAN.md (CLI ensemble aggregator and scoring update)
 
-Progress: [##........] 14%
+Progress: [#####.....] 50%
 
 ## Accumulated Context
 
@@ -55,6 +55,14 @@ Progress: [##........] 14%
 - Verdict heading preserved for extractScores() regex compatibility but marked as CLI-computed
 - ROADMAP.md already had technique-based naming from context phase (no changes needed)
 
+### From Phase 7 Plan 01
+- DIMENSIONS constant is single source of truth for dimension names, keys, and thresholds
+- extractScores() regex derived from DIMENSIONS.map(d => d.name) to prevent Pitfall 1
+- computeVerdict() replaces verdict extraction from report -- deterministic per-dimension threshold check
+- compile-evaluation reads */summary.json (auto-discovery, extensible for N critics)
+- install-dep uses mkdirSync mutex with stale lock detection (mtime > 60s)
+- Product Depth computed deterministically from acceptance test pass rate with ceiling rules
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -63,6 +71,6 @@ Progress: [##........] 14%
 
 ## Session Continuity
 
-Last session: 2026-03-31
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-03-31T12:02:48.690Z
+Stopped at: Completed 07-01-PLAN.md
 Resume file: None
