@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-31T13:12:00Z"
-last_activity: 2026-03-31 -- Completed 07-03-PLAN.md (WGAN critic agent definitions)
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-03-31T13:19:16.663Z"
+last_activity: 2026-03-31 -- Completed 07-04-PLAN.md (orchestrator ensemble wiring)
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 7 of 9 (Ensemble Discriminator Architecture)
-Plan: 3 of 4 complete
+Plan: 4 of 4 complete
 Status: Executing
-Last activity: 2026-03-31 -- Completed 07-03-PLAN.md (WGAN critic agent definitions)
+Last activity: 2026-03-31 -- Completed 07-04-PLAN.md (orchestrator ensemble wiring)
 
-Progress: [#######...] 75%
+Progress: [##########] 100%
 
 ## Accumulated Context
 
@@ -71,6 +71,13 @@ Progress: [#######...] 75%
 - install-dep uses mkdirSync mutex with stale lock detection (mtime > 60s)
 - Product Depth computed deterministically from acceptance test pass rate with ceiling rules
 
+### From Phase 7 Plan 04
+- SKILL.md evaluation phase: spawn both critics -> binary check summary.json -> compile-evaluation -> round-complete
+- Per-critic retry on failure (not both critics)
+- All references to monolithic evaluator agent removed from orchestrator
+- SAFETY_CAP wrap-up round uses same ensemble pattern for consistency
+- Architecture section describes 4 agents (Planner, Generator, Perceptual Critic, Projection Critic)
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -79,6 +86,6 @@ Progress: [#######...] 75%
 
 ## Session Continuity
 
-Last session: 2026-03-31T13:12:00Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-03-31T13:19:16.661Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None

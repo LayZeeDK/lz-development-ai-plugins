@@ -29,7 +29,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 **Scope:** Ensemble architecture, Playwright acceptance testing, token efficiency, crash recovery. All other Dutch art museum test issues defer to v1.2.
 
-- [ ] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier
+- [x] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier (completed 2026-03-31)
 - [ ] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference
 - [ ] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, dev server lifecycle
 
@@ -142,6 +142,6 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 3. Evaluator Hardening | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
-| 7. Ensemble Discriminator Architecture | v1.1 | 2/4 | In Progress | - |
+| 7. Ensemble Discriminator Architecture | 4/4 | Complete   | 2026-03-31 | - |
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 0/? | Not started | - |
 | 9. Crash Recovery | v1.1 | 0/? | Not started | - |
