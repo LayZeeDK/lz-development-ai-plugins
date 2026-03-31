@@ -6,11 +6,11 @@ description: >-
   game, develop a full-stack project, or generate a complete working product
   from a description. Handles requests like "build me an app that does X",
   "create a web application for Y", "make a 2D game maker", or "develop a
-  DAW in the browser". Orchestrates three agents (Planner, Generator,
-  Evaluator) in an adversarial generation/evaluation loop with git version
-  control, score-based convergence detection, escalation vocabulary, workflow
-  state management, error recovery, and resumable execution. Runs without user
-  intervention after the initial prompt.
+  DAW in the browser". Orchestrates four agents (Planner, Generator,
+  Perceptual Critic, Projection Critic) in an adversarial generation/evaluation
+  loop with git version control, score-based convergence detection, escalation
+  vocabulary, workflow state management, error recovery, and resumable execution.
+  Runs without user intervention after the initial prompt.
 license: MIT
 compatibility: >-
   Requires @playwright/cli as a project devDependency (installed automatically
@@ -23,8 +23,9 @@ allowed-tools: Agent Read Write Bash(node *appdev-cli*) Bash(git init*) Bash(git
 
 # Autonomous Application Development
 
-Build a complete application from the user's prompt using three specialized
-agents (Planner, Generator, Evaluator) in an adversarial loop.
+Build a complete application from the user's prompt using four specialized
+agents (Planner, Generator, Perceptual Critic, Projection Critic) in an
+adversarial loop.
 
 ## Rules
 
@@ -207,17 +208,35 @@ Update state:
 Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step evaluate --round N)
 ```
 
-Spawn the Evaluator:
+Spawn both critics in parallel:
 
 ```
-Agent(subagent_type: "application-dev:evaluator", prompt: "This is evaluation round N.")
+Agent(subagent_type: "application-dev:perceptual-critic", prompt: "This is evaluation round N.")
+Agent(subagent_type: "application-dev:projection-critic", prompt: "This is evaluation round N.")
 ```
 
-Apply the error recovery pattern.
+Apply the error recovery pattern per critic (see below).
+
+**Binary checks:** Verify both critics produced their summary artifacts:
+
+```
+Bash(ls evaluation/round-N/perceptual/summary.json 2>/dev/null)
+Bash(ls evaluation/round-N/projection/summary.json 2>/dev/null)
+```
+
+If either summary.json is missing, retry the SPECIFIC critic that failed (not
+both) with the same prompt. Counts toward the 2-retry limit per critic.
+
+**Compile evaluation:** After both summary.json files exist, compile the
+ensemble evaluation report:
+
+```
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs compile-evaluation --round N)
+```
 
 **Binary check:** Read `evaluation/round-N/EVALUATION.md` -- verify the file
-exists and contains `## Verdict`. Do NOT assess report quality -- the
-Evaluator self-verifies. If the check fails, retry with the same prompt.
+exists and contains `## Scores`. Do NOT assess report quality -- the CLI
+compiles mechanically from critic summaries.
 
 #### Post-Evaluation Convergence Check
 
@@ -228,7 +247,8 @@ Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs round-complete --round N 
 ```
 
 If appdev-cli returns an error JSON (malformed report, missing scores), treat
-it as an Evaluator failure and apply the retry pattern on the Evaluator.
+it as a compile failure -- check which summary.json is missing or malformed and
+retry that critic.
 
 Act on the JSON response:
 
@@ -287,9 +307,15 @@ Act on the JSON response:
     Agent(subagent_type: "application-dev:generator", prompt: "This is generation round {N+1}.")
     ```
   - Binary check (project files exist)
-  - Spawn Evaluator:
+  - Spawn both critics in parallel:
     ```
-    Agent(subagent_type: "application-dev:evaluator", prompt: "This is evaluation round {N+1}.")
+    Agent(subagent_type: "application-dev:perceptual-critic", prompt: "This is evaluation round {N+1}.")
+    Agent(subagent_type: "application-dev:projection-critic", prompt: "This is evaluation round {N+1}.")
+    ```
+  - Binary checks (both summary.json files exist)
+  - Compile evaluation:
+    ```
+    Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs compile-evaluation --round {N+1})
     ```
   - Run convergence check:
     ```
@@ -373,9 +399,10 @@ All agent spawns follow this pattern:
    successful even if the Agent tool reported failure.
 
 If appdev-cli round-complete returns an error JSON (malformed evaluation
-report, missing scores), treat it as an Evaluator failure and apply the retry
-pattern on the Evaluator. Re-spawn the Evaluator with the same prompt; the
-Evaluator will overwrite its report.
+report, missing scores), treat it as a compile failure -- check which
+summary.json is missing or malformed and retry that specific critic. Re-spawn
+only the failed critic with the same prompt; the critic will overwrite its
+summary.json.
 
 ## Agent Prompt Protocol
 
@@ -388,37 +415,50 @@ failure diagnostics. Each agent's definition handles file reading internally.
 fills in only the round number. No free-form additions, error context,
 diagnostic notes, or "this time make sure to..." instructions.
 
-**Evaluator (all rounds):** `This is evaluation round N.` -- the orchestrator
-fills in only the round number.
+**Perceptual Critic (all rounds):** `This is evaluation round N.` -- the
+orchestrator fills in only the round number.
+
+**Projection Critic (all rounds):** `This is evaluation round N.` -- the
+orchestrator fills in only the round number.
 
 ## File-Based Communication
 
-Agents communicate through two file types:
-- `SPEC.md` -- Planner writes it, Generator and Evaluator read it
-- `evaluation/round-N/EVALUATION.md` -- Evaluator writes per round, Generator
-  reads the prior round's report in subsequent rounds
+Agents communicate through these file types:
+- `SPEC.md` -- Planner writes it, Generator and critics read it
+- `evaluation/round-N/perceptual/summary.json` -- Perceptual Critic writes per
+  round, CLI reads it during compile-evaluation
+- `evaluation/round-N/projection/summary.json` -- Projection Critic writes per
+  round, CLI reads it during compile-evaluation
+- `evaluation/round-N/EVALUATION.md` -- CLI compiles from critic summaries,
+  Generator reads the prior round's report in subsequent rounds
 
 The orchestrator coordinates through one file only:
 - `.appdev-state.json` -- managed exclusively via appdev-cli
 
 No other inter-agent communication paths exist. The orchestrator does not read
-or write SPEC.md or EVALUATION.md except for binary checks and Summary
-presentation.
+or write SPEC.md, summary.json, or EVALUATION.md except for binary checks and
+Summary presentation.
 
 ## Architecture
 
-Three agents with distinct roles:
+Four agents with distinct roles:
 - **Planner**: Expands the user's prompt into an ambitious product specification
 - **Generator**: Builds the full application from the spec
-- **Evaluator**: Critiques the running app with skepticism
+- **Perceptual Critic**: Evaluates visual design quality from the product
+  surface (scores Visual Design)
+- **Projection Critic**: Evaluates functional coverage via write-and-run
+  acceptance tests (scores Functionality, provides Product Depth test data)
 
-The Generator and Evaluator form an adversarial pair -- the Evaluator's honest
-critique drives the Generator to improve. Separating generation from evaluation
-prevents self-praise bias.
+The Generator and critics form an adversarial pair -- the critics' honest
+assessment drives the Generator to improve. Separating generation from
+evaluation prevents self-praise bias. The two critics run in parallel with
+non-overlapping scoring dimensions, and the CLI compiles their outputs into a
+unified EVALUATION.md.
 
 Role boundaries enforced by tool allowlists (agent frontmatter) and prompt
-guards (agent instructions). The orchestrator's output domain is
-.appdev-state.json and .gitignore only.
+guards (agent instructions). Critics cannot read source code (information
+barrier). The orchestrator's output domain is .appdev-state.json and .gitignore
+only.
 
 Convergence detection uses escalation levels (E-0 through E-IV) computed by
 appdev-cli from score trajectory data. The orchestrator acts on the structured
