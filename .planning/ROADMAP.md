@@ -3,8 +3,9 @@
 ## Milestones
 
 - v1.0 **Hardening** -- Phases 1-5 (shipped 2026-03-29)
-- v1.1 **Ensemble Evaluator + Crash Recovery** -- Phases 7-9 (in progress)
+- v1.1 **Ensemble Discriminator + Crash Recovery** -- Phases 7-9 (in progress)
 - v1.2 **Dutch Art Museum Test Fixes** -- Phases 10+ (planned)
+- v2.0 **Advanced Discriminators** -- (future)
 
 ## Phases
 
@@ -22,99 +23,108 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 </details>
 
-### v1.1 Ensemble Evaluator + Crash Recovery
+### v1.1 Ensemble Discriminator + Crash Recovery
 
-**Milestone Goal:** Replace the monolithic Evaluator (which crashes sessions via memory leak + context exhaustion) with an ensemble of specialized sub-agents that stay within safe context limits, use token-efficient Playwright patterns, and recover from crashes.
+**Milestone Goal:** Replace the monolithic Evaluator (which crashes sessions via memory leak + context exhaustion after ~200 tool calls) with a GAN ensemble of specialized WGAN critics. Each critic scores one dimension in its own isolated context. The CLI ensemble aggregator computes Product Depth and assembles the report deterministically.
 
-**Scope:** ONLY the crash fix and ensemble architecture. All other Dutch art museum test issues defer to v1.2.
+**Scope:** Ensemble architecture, Playwright acceptance testing, token efficiency, crash recovery. All other Dutch art museum test issues defer to v1.2.
 
-- [ ] **Phase 7: Ensemble Discriminator Architecture** - Replace monolithic evaluator.md with evaluator-observer + evaluator-tester + appdev-cli compile-evaluation
-- [ ] **Phase 8: Token Efficiency Patterns** - Playwright eval-first patterns, write-and-run acceptance tests, dedicated evaluation reference
-- [ ] **Phase 9: Crash Recovery** - Session resume detection, per-agent recovery states, dev server lifecycle
+- [ ] **Phase 7: Ensemble Discriminator Architecture** - precision-critic + recall-critic + CLI compile-evaluation + install-dep + GAN barrier
+- [ ] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference
+- [ ] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, dev server lifecycle
 
 ### v1.2 Dutch Art Museum Test Fixes (planned)
 
-**Milestone Goal:** Address all remaining issues from the Dutch art museum website test #1: additional discriminators (Robustness, Visual Coherence), convergence logic hardening, planner/generator improvements, architecture documentation.
+**Milestone Goal:** Address all remaining issues from the Dutch art museum website test #1: perturbation-critic (Robustness), scoring convergence logic, planner/generator improvements, Visual Coherence expansion, architecture documentation.
 
-**Requirements:** DISC-01..04, CONV-01..05, SCORE-01..02, PLAN-01..04, GEN-01..05, EVAL-01..02, ORCH-01, DOCS-01
+**Requirements:** CRITIC-01..03, CONV-01..05, SCORE-01..02, PLAN-01..02, GEN-01..04, EVAL-01..02, ORCH-01, DOCS-01
 
 (Phases defined after v1.1 ships)
+
+### v2.0 Advanced Discriminators (future)
+
+**Milestone Goal:** Expand the ensemble with domain-specific critics: semantic-critic (Content Fidelity), accessibility-critic (Fairness), graph analysis (Navigation Structure), and advanced GAN patterns (Dropout, Contrastive, BiGAN, PacGAN).
+
+(Phases defined after v1.2 ships)
 
 ## Phase Details
 
 ### Phase 7: Ensemble Discriminator Architecture
-**Goal**: The monolithic Evaluator is replaced by an ensemble of 2 parallel sub-agents (observer + tester) and a deterministic CLI aggregator. Each sub-agent scores one dimension, the CLI computes the third and assembles the report. No single agent exceeds ~60K context tokens.
+**Goal**: The monolithic Evaluator is replaced by 2 parallel WGAN critics (precision-critic + recall-critic) and a deterministic CLI ensemble aggregator. Each critic scores one dimension in its own context (~60K tokens max). The CLI computes Product Depth and assembles EVALUATION.md. No single agent exceeds safe context limits.
 **Depends on**: Phase 5 (v1.0 complete)
-**Requirements**: ENSEMBLE-01, ENSEMBLE-02, ENSEMBLE-03, ENSEMBLE-04, ENSEMBLE-05, ENSEMBLE-06, ENSEMBLE-07, ENSEMBLE-08, ENSEMBLE-09, ENSEMBLE-10, BARRIER-01, BARRIER-02, BARRIER-03
+**Requirements**: ENSEMBLE-01..10, BARRIER-01..04
 **Success Criteria** (what must be TRUE):
-  1. Two new agent definitions exist (evaluator-observer, evaluator-tester) each under 150 lines -- focused and compact per SkillsBench finding that detailed Skills outperform comprehensive ones
-  2. `appdev-cli compile-evaluation --round N` reads observations/summary.json + interactions/summary.json, computes Product Depth from acceptance test results, applies ceiling rules, and writes EVALUATION.md -- fully deterministic, zero LLM tokens
-  3. `appdev-cli install-dep --dev <packages>` safely handles concurrent calls via file-based mutex -- both sub-agents can request dependencies simultaneously
-  4. The monolithic evaluator.md is removed. The orchestrator evaluation phase spawns 2 parallel agents with prompt "This is evaluation round N." and runs compile-evaluation after both complete
-  5. EVALUATION.md has clear provenance per section (Observer findings, Tester findings, CLI-computed scores) and the summary.json schema is extensible for future discriminators (v1.2 robustness agent writes to robustness/summary.json with zero CLI changes)
+  1. `precision-critic.md` (Precision discriminator, <150 lines) scores Visual Design by detecting AI slop and assessing design authenticity -- it never reads source code, only observes the product surface via playwright-cli
+  2. `recall-critic.md` (Recall discriminator, <150 lines) scores Functionality by writing and running acceptance tests from SPEC.md criteria and probing AI features -- browser interaction happens outside its context via write-and-run
+  3. `appdev-cli compile-evaluation --round N` reads `precision/summary.json` + `recall/summary.json`, computes Product Depth from acceptance test results, applies ceiling rules, and writes EVALUATION.md -- fully deterministic, zero LLM tokens
+  4. `appdev-cli install-dep --dev <packages>` handles concurrent critic requests via file-based mutex -- both critics can install evaluation tooling simultaneously
+  5. The summary.json schema is extensible: adding `perturbation/summary.json` (v1.2) requires zero CLI changes -- compile-evaluation reads all `*/summary.json` directories
 **Plans**: TBD
 
-### Phase 8: Token Efficiency Patterns
-**Goal**: Sub-evaluator agents use token-efficient Playwright patterns that keep each agent's context under 60K tokens total. The Tester generates acceptance tests using playwright-testing skill patterns and runs them deterministically.
+### Phase 8: SPEC Acceptance Criteria + Playwright Patterns
+**Goal**: SPEC.md gains behavioral acceptance criteria per feature. The recall-critic generates acceptance tests from these criteria using playwright-testing skill patterns. Both critics use token-efficient eval-first Playwright patterns documented in a dedicated reference.
 **Depends on**: Phase 7
-**Requirements**: TOKEN-01, TOKEN-02, TOKEN-03, TOKEN-04, TOKEN-05
+**Requirements**: SPEC-01..05, PLAYWRIGHT-01..06, TOKEN-01..05
 **Success Criteria** (what must be TRUE):
-  1. PLAYWRIGHT-EVALUATION.md reference exists teaching eval-first (structured JSON extraction over snapshot), write-and-run (acceptance tests outside context), and snapshot-as-fallback (only for ref IDs needed to click)
-  2. evaluator-observer uses eval for all data extraction and page state checks -- snapshot is only used when interaction ref IDs are needed. Responsive checks use resize + eval, not screenshot at each viewport
-  3. evaluator-tester writes acceptance-tests.spec.ts from SPEC.md using playwright-testing skill patterns (getByRole, getByLabel, getByText), runs via `npx playwright test --reporter=json`, and reads JSON results. The browser interaction for feature testing happens entirely outside the agent's context window
-  4. Both agents use `console error` (not `console`) for filtered console output
-  5. Both agents write structured summary.json files with scores + findings. Raw observation data (snapshots, screenshots) exists on disk but does NOT persist in agent context after the observation step
+  1. SPEC-TEMPLATE.md has `**Acceptance Criteria:**` per feature with >= 3 criteria for Core features -- behavioral and testable, not prescriptive of implementation
+  2. Generator writes its own dev tests (tests/) using playwright-testing Plan->Generate->Heal; recall-critic writes separate acceptance tests (evaluation/round-N/) using the same skill patterns -- independent test suites with independent purposes
+  3. PLAYWRIGHT-EVALUATION.md reference exists teaching eval-first, write-and-run, snapshot-as-fallback patterns -- both critics reference it
+  4. Recall-critic's write-and-run: reads SPEC criteria, takes 1 snapshot, writes acceptance-tests.spec.ts, runs `npx playwright test --reporter=json`, reads JSON results -- ~5 tool calls replace ~30+ interactive calls
+  5. Both critics write structured summary.json and use `console error` (filtered). Raw observation data exists on disk but not in agent context after observation steps (hard GC on agent completion)
 **Plans**: TBD
 
 ### Phase 9: Crash Recovery
-**Goal**: The orchestrator detects completed sub-agent artifacts on resume and recovers from any crash point with minimal rework. Dev server lifecycle is managed centrally.
-**Depends on**: Phase 7 (needs ensemble architecture to have recovery checkpoints)
-**Requirements**: RECOVERY-01, RECOVERY-02, RECOVERY-03, RECOVERY-04
+**Goal**: The orchestrator detects completed critic artifacts on resume (via appdev-cli state JSON + git history + filesystem) and recovers from any crash point with minimal rework. Dev server lifecycle is managed centrally.
+**Depends on**: Phase 7
+**Requirements**: RECOVERY-01..04
 **Success Criteria** (what must be TRUE):
-  1. On `claude --continue`, the orchestrator checks for: observations/summary.json, interactions/summary.json, acceptance-tests.spec.ts, EVALUATION.md. It skips past completed stages.
-  2. Four distinct recovery states work correctly: (1) no observations -> re-spawn both agents; (2) observer done, tester incomplete -> spawn tester only; (3) both done, not compiled -> run compile-evaluation; (4) compiled -> run round-complete
-  3. The orchestrator starts the dev server before evaluation and verifies the port responds. If the port is already in use (from a previous crashed session), the orchestrator detects and reuses the existing server
-  4. Evaluator agent definitions include `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50` recommendation to trigger context compaction earlier
+  1. On `claude --continue`, the orchestrator checks appdev-cli state + filesystem for: precision/summary.json, recall/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags. It resumes from the latest completed checkpoint.
+  2. Four recovery states work: (1) no summaries -> spawn both critics; (2) precision done -> spawn recall-critic only; (3) both done -> compile-evaluation only; (4) compiled -> round-complete only
+  3. Dev server: started before evaluation, port verified, reused on resume if already running
+  4. Critic agent definitions recommend `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50`
 **Plans**: TBD
 
-## Discriminator Roadmap
+## WGAN Critic Roadmap
 
-Mapping of GAN ensemble discriminator types to current and future milestones.
+Mapping of GAN ensemble discriminator types to milestones. Each critic is a
+specialized WGAN critic (continuous 1-10 scoring, not binary real/fake).
 See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type taxonomy.
 
-### v1.1 Discriminators (essential, crash-fix release)
+### v1.1 Critics (essential -- crash-fix release)
 
-| GAN Discriminator | Agent | What it checks |
-|---|---|---|
-| Multi-Scale (Pix2PixHD) | evaluator-observer | Responsive quality at 320/768/1280/1920px |
-| Perceptual/Style (StyleGAN) | evaluator-observer | AI slop detection, design identity |
-| Global (standard) | evaluator-observer | Full-page visual assessment |
-| Projection (cGAN) | appdev-cli (Product Depth) | Features match SPEC.md requirements |
-| ProjectedGAN (feature-space) | evaluator-tester | eval for structured data extraction |
-| Spectral (SSD-GAN) | both agents | Console errors, network failures |
+| Critic agent | GAN discriminator type | Dimension | Method |
+|---|---|---|---|
+| `precision-critic` | Precision (Perceptual + Multi-Scale + Style) | Visual Design | eval-first, screenshots, AI slop checklist, resize+eval responsive |
+| `recall-critic` | Recall/Coverage (Projection + ProjectedGAN) | Functionality | write-and-run acceptance tests, AI probing via eval |
+| CLI compile-evaluation | Ensemble aggregator | Product Depth (computed) | Deterministic merge of per-feature test pass/fail |
 
-### v1.2 Discriminators (Dutch art museum fixes)
+### v1.2 Critics (Dutch art museum fixes)
 
-| GAN Discriminator | Agent | What it checks |
-|---|---|---|
-| Perturbation / R-FID | evaluator-robustness (NEW) | Edge cases, error handling, stress testing |
-| Spectral / Frequency | evaluator-robustness (NEW) | Hidden technical issues, performance degradation |
-| Temporal Triplet (TecoGAN) | evaluator-tester (technique) | Navigation A->B->A state preservation |
-| Temporal / Global+Local | evaluator-observer (enhanced) | Visual Coherence: cross-page consistency |
-| Consistency (CR-GAN) | evaluator-tester (write-and-run) | Same data matches across pages |
+| Critic agent | GAN discriminator type | Dimension | Method |
+|---|---|---|---|
+| `perturbation-critic` (NEW) | Perturbation + Spectral (R-FID) | Robustness | write-and-run adversarial tests, console/network monitoring |
+| `precision-critic` (enhanced) | + Temporal + Global/Local | Visual Coherence | cross-page navigation testing, transition consistency |
+| `recall-critic` (enhanced) | + Temporal Triplet + Consistency | Functionality (deeper) | A->B->A navigation tests, cross-page data matching |
 
-### v2.0+ Discriminators (future expansion)
+### v2.0+ Critics (future expansion)
 
-| GAN Discriminator | Agent | What it checks |
-|---|---|---|
-| Semantic/Content (StackGAN) | evaluator-content (NEW) | Text accuracy, factual correctness |
-| Graph (MolGAN) | appdev-cli analyze-nav-graph | Navigation structure, orphan pages |
-| PacGAN (packed samples) | evaluator-observer (technique) | Grouped page consistency evaluation |
-| Fairness (FairGAN) | evaluator-accessibility (NEW) | Keyboard nav, screen readers, contrast |
-| BiGAN (encoder-aware) | appdev-cli | Generator manifest cross-reference |
-| Dropout-GAN | orchestrator | Random evaluation variation |
-| Minibatch (diversity) | evaluator-tester (write-and-run) | Cross-feature interaction testing |
-| Contrastive (ContraD) | appdev-cli | Round-over-round comparison |
+| Critic agent | GAN discriminator type | Dimension | Method |
+|---|---|---|---|
+| `semantic-critic` (NEW) | Semantic + Content (StackGAN, SeqGAN) | Content Fidelity | eval text extraction, factual accuracy, tone consistency |
+| `accessibility-critic` (NEW) | Fairness (FairGAN) | Accessibility | keyboard nav, screen reader, contrast, WCAG assertions |
+| CLI analyze-nav-graph | Graph (MolGAN) | Navigation Structure | deterministic link crawling, graph connectivity analysis |
+| Dropout-GAN pattern | Dynamic ensemble (Dropout-GAN) | Meta | random critic skip per round to prevent Generator gaming |
+| Contrastive scoring | Contrastive (ContraD) | Meta | round-over-round trajectory comparison in CLI |
+| Build manifest | Encoder-aware (BiGAN) | Meta | Generator manifest vs critic observations cross-reference |
+| Grouped evaluation | Packed samples (PacGAN) | Visual Coherence | precision-critic evaluates page SETS for consistency |
+
+### Scoring dimensions by milestone
+
+| Milestone | Dimensions | Total | Thresholds |
+|-----------|-----------|-------|------------|
+| v1.1 | Product Depth, Functionality, Visual Design | /30 | 7, 7, 6 |
+| v1.2 | + Robustness, Visual Coherence (expands VD) | /40 | 7, 7, 6, 6 |
+| v2.0 | + Content Fidelity, Accessibility | /60 | TBD |
 
 ## Progress
 
@@ -127,5 +137,5 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Ensemble Discriminator Architecture | v1.1 | 0/? | Not started | - |
-| 8. Token Efficiency Patterns | v1.1 | 0/? | Not started | - |
+| 8. SPEC Acceptance Criteria + Playwright | v1.1 | 0/? | Not started | - |
 | 9. Crash Recovery | v1.1 | 0/? | Not started | - |
