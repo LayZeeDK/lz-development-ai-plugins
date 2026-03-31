@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-03-31T12:03:09.028Z"
-last_activity: 2026-03-31 -- Completed 07-01-PLAN.md (CLI ensemble aggregator and scoring update)
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-03-31T13:12:00Z"
+last_activity: 2026-03-31 -- Completed 07-03-PLAN.md (WGAN critic agent definitions)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 7 of 9 (Ensemble Discriminator Architecture)
-Plan: 2 of 4 complete
+Plan: 3 of 4 complete
 Status: Executing
-Last activity: 2026-03-31 -- Completed 07-01-PLAN.md (CLI ensemble aggregator and scoring update)
+Last activity: 2026-03-31 -- Completed 07-03-PLAN.md (WGAN critic agent definitions)
 
-Progress: [#####.....] 50%
+Progress: [#######...] 75%
 
 ## Accumulated Context
 
@@ -55,6 +55,14 @@ Progress: [#####.....] 50%
 - Verdict heading preserved for extractScores() regex compatibility but marked as CLI-computed
 - ROADMAP.md already had technique-based naming from context phase (no changes needed)
 
+### From Phase 7 Plan 03
+- Tool allowlists exclude Glob and Edit to prevent codebase exploration (BARRIER-01 first layer)
+- Prompt guards use WHY-based rationale explaining the GAN information barrier purpose
+- Findings format enforces behavioral symptoms over code-level diagnoses (BARRIER-02)
+- perceptual-critic: eval-first + AI-SLOP-CHECKLIST.md progressive disclosure (111 lines)
+- projection-critic: write-and-run + AI-PROBING-REFERENCE.md progressive disclosure (150 lines)
+- evaluator.md deleted -- replaced by two focused critics
+
 ### From Phase 7 Plan 01
 - DIMENSIONS constant is single source of truth for dimension names, keys, and thresholds
 - extractScores() regex derived from DIMENSIONS.map(d => d.name) to prevent Pitfall 1
@@ -71,6 +79,6 @@ Progress: [#####.....] 50%
 
 ## Session Continuity
 
-Last session: 2026-03-31T12:02:48.690Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-03-31T13:12:00Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
