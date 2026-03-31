@@ -7,21 +7,21 @@
 ## v1.1 Requirements
 
 Replace the monolithic Evaluator with a GAN ensemble discriminator architecture
-using Precision and Recall critics, add acceptance criteria to SPEC.md for
+using Perceptual and Projection critics, add acceptance criteria to SPEC.md for
 Playwright test generation, use token-efficient Playwright patterns, and
 recover from session crashes.
 
 ### Ensemble Discriminator Architecture (ENSEMBLE)
 
-- [ ] **ENSEMBLE-01**: New `precision-critic` agent (Precision discriminator) -- scores Visual Design by detecting AI slop, assessing design authenticity, and checking whether the product passes as hand-built. Compact agent definition (detailed, not comprehensive per SkillsBench).
-- [ ] **ENSEMBLE-02**: New `recall-critic` agent (Recall/Coverage discriminator) -- scores Functionality by verifying SPEC.md feature conformance via write-and-run acceptance tests and AI feature probing. Compact agent definition.
-- [ ] **ENSEMBLE-03**: `appdev-cli compile-evaluation` subcommand (Ensemble aggregator) -- reads precision/summary.json + recall/summary.json, computes Product Depth from acceptance test pass/fail, applies ceiling rules, cross-validates scores vs findings, writes EVALUATION.md from template. Fully deterministic.
+- [ ] **ENSEMBLE-01**: New `perceptual-critic` agent (Perceptual discriminator) -- scores Visual Design by detecting AI slop, assessing design authenticity, and checking whether the product passes as hand-built. Compact agent definition (detailed, not comprehensive per SkillsBench).
+- [ ] **ENSEMBLE-02**: New `projection-critic` agent (Projection discriminator) -- scores Functionality by verifying SPEC.md feature conformance via write-and-run acceptance tests and AI feature probing. Compact agent definition.
+- [ ] **ENSEMBLE-03**: `appdev-cli compile-evaluation` subcommand (Ensemble aggregator) -- reads perceptual/summary.json + projection/summary.json, computes Product Depth from acceptance test pass/fail, applies ceiling rules, cross-validates scores vs findings, writes EVALUATION.md from template. Fully deterministic.
 - [ ] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
-- [ ] **ENSEMBLE-05**: Remove monolithic `evaluator.md` -- replaced by precision-critic + recall-critic agents
-- [ ] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (recall-critic), Visual Design (precision-critic). Code Quality removed.
-- [ ] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Precision Critic, Recall Critic, CLI Ensemble)
+- [ ] **ENSEMBLE-05**: Remove monolithic `evaluator.md` -- replaced by perceptual-critic + projection-critic agents
+- [ ] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (projection-critic), Visual Design (perceptual-critic). Code Quality removed.
+- [ ] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Perceptual Critic, Projection Critic, CLI Ensemble)
 - [ ] **ENSEMBLE-08**: SCORING-CALIBRATION.md updated for 3 dimensions with rubric descriptors, grade ranges, ceiling rules, and few-shot calibration examples aligned with Anthropic pattern
-- [ ] **ENSEMBLE-09**: summary.json schema as extensible contract -- any `evaluation/round-N/*/summary.json` is auto-consumed by compile-evaluation. Directory names match GAN roles: `precision/`, `recall/`, future `perturbation/`, `semantic/`
+- [ ] **ENSEMBLE-09**: summary.json schema as extensible contract -- any `evaluation/round-N/*/summary.json` is auto-consumed by compile-evaluation. Directory names match GAN techniques: `perceptual/`, `projection/`, future `perturbation/`, `semantic/`
 - [ ] **ENSEMBLE-10**: Orchestrator evaluation phase: parallel critic spawns with minimal prompts ("This is evaluation round N."), binary file-exists checks, CLI compile + round-complete
 
 ### SPEC Acceptance Criteria (SPEC)
@@ -35,7 +35,7 @@ recover from session crashes.
 ### Playwright Test Architecture (PLAYWRIGHT)
 
 - [ ] **PLAYWRIGHT-01**: Generator writes dev tests using playwright-testing skill (Plan -> Generate -> Heal) committed to `tests/` as internal CI
-- [ ] **PLAYWRIGHT-02**: Recall-critic writes SEPARATE acceptance tests from SPEC.md criteria committed to `evaluation/round-N/acceptance-tests.spec.ts`
+- [ ] **PLAYWRIGHT-02**: Projection-critic writes SEPARATE acceptance tests from SPEC.md criteria committed to `evaluation/round-N/acceptance-tests.spec.ts`
 - [ ] **PLAYWRIGHT-03**: Acceptance test generation: snapshot for selector discovery + SPEC.md criteria for test logic -- Playwright Generate pattern with accessibility-tree-first selectors (getByRole, getByLabel, getByText)
 - [ ] **PLAYWRIGHT-04**: Acceptance test execution deterministic: `npx playwright test --reporter=json` -- browser interaction entirely outside agent context
 - [ ] **PLAYWRIGHT-05**: Acceptance test healing: Playwright Heal pattern for selector failures; remaining failures are real bugs fed to Functionality score
@@ -44,15 +44,15 @@ recover from session crashes.
 ### Token Efficiency (TOKEN)
 
 - [ ] **TOKEN-01**: Dedicated PLAYWRIGHT-EVALUATION.md reference -- eval-first (structured JSON over snapshot), write-and-run (tests outside context), snapshot-as-fallback (only for interaction ref IDs)
-- [ ] **TOKEN-02**: Precision-critic uses `eval` for page state, `resize` + `eval` for responsive checks, screenshots only at key viewpoints
-- [ ] **TOKEN-03**: Recall-critic uses write-and-run for feature testing -- 5 tool calls (read SPEC, snapshot, write tests, run tests, read results) replace 30+ interactive calls
+- [ ] **TOKEN-02**: Perceptual-critic uses `eval` for page state, `resize` + `eval` for responsive checks, screenshots only at key viewpoints
+- [ ] **TOKEN-03**: Projection-critic uses write-and-run for feature testing -- 5 tool calls (read SPEC, snapshot, write tests, run tests, read results) replace 30+ interactive calls
 - [ ] **TOKEN-04**: Both critics use `console error` (filtered) instead of `console` (all messages)
 - [ ] **TOKEN-05**: Structured summary.json written to files -- agent context holds summaries only; raw data discarded on agent completion (hard GC via process destruction)
 
 ### Crash Recovery (RECOVERY)
 
-- [ ] **RECOVERY-01**: Orchestrator detects completed artifacts on resume via appdev-cli state JSON + filesystem: precision/summary.json, recall/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags
-- [ ] **RECOVERY-02**: Recovery states: (1) no summaries -> re-spawn both critics; (2) precision done, recall incomplete -> spawn recall-critic only; (3) both done, not compiled -> compile-evaluation only; (4) compiled, not round-complete -> round-complete only
+- [ ] **RECOVERY-01**: Orchestrator detects completed artifacts on resume via appdev-cli state JSON + filesystem: perceptual/summary.json, projection/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags
+- [ ] **RECOVERY-02**: Recovery states: (1) no summaries -> re-spawn both critics; (2) perceptual done, projection incomplete -> spawn projection-critic only; (3) both done, not compiled -> compile-evaluation only; (4) compiled, not round-complete -> round-complete only
 - [ ] **RECOVERY-03**: Dev server lifecycle: orchestrator starts before evaluation, verifies port, reuses existing server on resume
 - [ ] **RECOVERY-04**: `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50` recommended in critic agent definitions
 
@@ -61,7 +61,7 @@ recover from session crashes.
 - [ ] **BARRIER-01**: Neither critic reads application source code -- evaluation is product-surface only via playwright-cli
 - [ ] **BARRIER-02**: Findings describe behavioral symptoms, not code diagnoses -- code diagnosis is the Generator's job in rounds 2+
 - [ ] **BARRIER-03**: Critics do not modify application source, config, or deps (except via appdev-cli install-dep for evaluation tooling)
-- [ ] **BARRIER-04**: Generator's dev tests and recall-critic's acceptance tests are independent test suites with separate purposes
+- [ ] **BARRIER-04**: Generator's dev tests and projection-critic's acceptance tests are independent test suites with separate purposes
 
 ## v1.2 Requirements
 
@@ -71,8 +71,8 @@ architecture is validated through testing.
 ### Additional WGAN Critics
 
 - **CRITIC-01**: `perturbation-critic` agent (Perturbation discriminator) -- scores Robustness via edge case probing, error state testing, stress testing. Write-and-run adversarial test suite.
-- **CRITIC-02**: Precision-critic enhanced with Temporal + Global/Local patterns (Visual Coherence expansion) -- cross-page consistency, navigation coherence, transition uniformity
-- **CRITIC-03**: Recall-critic enhanced with Temporal Triplet pattern (A->B->A navigation) and Consistency discriminator (cross-page data matching)
+- **CRITIC-02**: Perceptual-critic enhanced with Temporal + Global/Local patterns (Visual Coherence expansion) -- cross-page consistency, navigation coherence, transition uniformity
+- **CRITIC-03**: Projection-critic enhanced with Temporal Triplet pattern (A->B->A navigation) and Consistency discriminator (cross-page data matching)
 
 ### Scoring Convergence Logic
 
@@ -119,7 +119,7 @@ From the GAN discriminator taxonomy (50+ types, 26 categories):
 - Dropout-GAN evaluation variation -- random critic skip per round to prevent Generator gaming
 - Contrastive scoring (ContraD) -- round-over-round comparison via appdev-cli trajectory analysis
 - BiGAN manifest cross-reference -- Generator BUILD-MANIFEST.json vs critic observations
-- PacGAN grouped page evaluation -- precision-critic evaluates page SETS for consistency
+- PacGAN grouped page evaluation -- perceptual-critic evaluates page SETS for consistency
 
 ## Out of Scope
 
