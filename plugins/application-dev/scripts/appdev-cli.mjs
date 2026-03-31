@@ -891,48 +891,41 @@ function cmdCompileEvaluation(argv) {
 
   var pdResult = computeProductDepth(projectionSummary);
 
-  // Gather scores from summaries
-  var fnScore = null;
-  var fnJustification = "";
-  var vdScore = null;
-  var vdJustification = "";
+  // Gather scores and justifications from summaries, keyed by dimension name
+  var dimScores = {};
+  var dimJustifications = {};
 
   for (var di = 0; di < summaries.length; di++) {
-    if (summaries[di].dimension === "Functionality") {
-      fnScore = summaries[di].score;
-      fnJustification = summaries[di].justification || "";
-    }
+    var dimName = summaries[di].dimension;
 
-    if (summaries[di].dimension === "Visual Design") {
-      vdScore = summaries[di].score;
-      vdJustification = summaries[di].justification || "";
+    if (dimName) {
+      dimScores[dimName] = summaries[di].score;
+      dimJustifications[dimName] = summaries[di].justification || "";
     }
   }
 
-  // If no Functionality score found from summaries, default to 1
-  if (fnScore === null) {
-    fnScore = 1;
-    fnJustification = "No Functionality summary found";
-  }
+  // Build allScores from DIMENSIONS constant (Pitfall 1 prevention)
+  var allScores = {};
 
-  // If no Visual Design score found from summaries, default to 1
-  if (vdScore === null) {
-    vdScore = 1;
-    vdJustification = "No Visual Design summary found";
-  }
+  for (var ki = 0; ki < DIMENSIONS.length; ki++) {
+    var dim = DIMENSIONS[ki];
 
-  var allScores = {
-    product_depth: pdResult.score,
-    functionality: fnScore,
-    visual_design: vdScore,
-  };
+    if (dim.key === "product_depth") {
+      allScores[dim.key] = pdResult.score;
+    } else if (dimScores[dim.name] !== undefined) {
+      allScores[dim.key] = dimScores[dim.name];
+    } else {
+      allScores[dim.key] = 1;
+      dimJustifications[dim.name] = "No " + dim.name + " summary found";
+    }
+  }
 
   var verdict = computeVerdict(allScores);
 
   // Assemble priority fixes
   var fixes = assemblePriorityFixes(summaries);
 
-  // Build status strings
+  // Build status string helper
   function statusStr(score, threshold) {
     return score >= threshold ? "PASS" : "FAIL";
   }
@@ -951,6 +944,26 @@ function cmdCompileEvaluation(argv) {
     }
   }
 
+  // Build scores table rows from DIMENSIONS constant (Pitfall 1 prevention)
+  var scoresTableRows = "";
+  var justTableRows = "";
+
+  for (var ti = 0; ti < DIMENSIONS.length; ti++) {
+    var d = DIMENSIONS[ti];
+    var score = allScores[d.key];
+    var justification = d.key === "product_depth" ? pdResult.justification : (dimJustifications[d.name] || "");
+
+    scoresTableRows += "| " + d.name + " | " + score + "/10 | " + d.threshold + " | " + statusStr(score, d.threshold) + " |\n";
+    justTableRows += "| " + d.name + " | (" + score + " of 10) -- " + justification + " |\n";
+  }
+
+  // Assessment sections map: dimension key -> { source label, justification }
+  var assessmentSections = [
+    { key: "product_depth", name: "Product Depth", source: "CLI Ensemble (computed from acceptance test results)", justification: pdResult.justification, ceiling: pdResult.ceiling_applied },
+    { key: "functionality", name: "Functionality", source: "Projection Critic", justification: dimJustifications["Functionality"] || "" },
+    { key: "visual_design", name: "Visual Design", source: "Perceptual Critic", justification: dimJustifications["Visual Design"] || "" },
+  ];
+
   // Build EVALUATION.md content
   var md = "";
   md += "<!--\n";
@@ -965,29 +978,23 @@ function cmdCompileEvaluation(argv) {
   md += "## Scores\n\n";
   md += "| Criterion | Score | Threshold | Status |\n";
   md += "|-----------|-------|-----------|--------|\n";
-  md += "| Product Depth | " + pdResult.score + "/10 | 7 | " + statusStr(pdResult.score, 7) + " |\n";
-  md += "| Functionality | " + fnScore + "/10 | 7 | " + statusStr(fnScore, 7) + " |\n";
-  md += "| Visual Design | " + vdScore + "/10 | 6 | " + statusStr(vdScore, 6) + " |\n\n";
+  md += scoresTableRows + "\n";
   md += "## Score Justifications\n\n";
   md += "| Criterion | Justification |\n";
   md += "|-----------|---------------|\n";
-  md += "| Product Depth | (" + pdResult.score + " of 10) -- " + pdResult.justification + " |\n";
-  md += "| Functionality | (" + fnScore + " of 10) -- " + fnJustification + " |\n";
-  md += "| Visual Design | (" + vdScore + " of 10) -- " + vdJustification + " |\n\n";
-  md += "## Product Depth Assessment\n";
-  md += "*Source: CLI Ensemble (computed from acceptance test results)*\n\n";
-  md += pdResult.justification + "\n\n";
+  md += justTableRows + "\n";
 
-  if (pdResult.ceiling_applied) {
-    md += "Ceiling applied: " + pdResult.ceiling_applied + "\n\n";
+  for (var ai = 0; ai < assessmentSections.length; ai++) {
+    var sect = assessmentSections[ai];
+    md += "## " + sect.name + " Assessment\n";
+    md += "*Source: " + sect.source + "*\n\n";
+    md += sect.justification + "\n\n";
+
+    if (sect.ceiling) {
+      md += "Ceiling applied: " + sect.ceiling + "\n\n";
+    }
   }
 
-  md += "## Functionality Assessment\n";
-  md += "*Source: Projection Critic*\n\n";
-  md += fnJustification + "\n\n";
-  md += "## Visual Design Assessment\n";
-  md += "*Source: Perceptual Critic*\n\n";
-  md += vdJustification + "\n\n";
   md += "## Priority Fixes for Next Round\n";
   md += "*Source: CLI Ensemble (merged from both critics, severity-ordered)*\n\n";
   md += fixesMd;
