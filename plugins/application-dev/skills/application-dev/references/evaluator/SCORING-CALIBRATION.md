@@ -1,10 +1,10 @@
 # Scoring Calibration Reference
 
-**Loaded at:** Step 12 (Read Calibration + Score) of the evaluation workflow.
+**Loaded by:** perceptual-critic (Visual Design ceilings), projection-critic (Functionality and Product Depth ceilings), CLI compile-evaluation (all ceilings for cross-validation).
 
-**Purpose:** This file anchors scores to concrete scenarios and enforces mechanical ceiling rules. It contains structural/mechanical scoring guidance only -- behavioral guidance ("how to think about scoring") stays in evaluator.md.
+**Purpose:** This file anchors scores to concrete scenarios and enforces mechanical ceiling rules. It contains structural/mechanical scoring guidance only -- behavioral guidance stays in each critic's agent definition.
 
-Read this file AFTER listing all findings (Step 11). Score against these rules, not against gut feeling.
+Read this file AFTER listing all findings. Score against these rules, not against gut feeling.
 
 ---
 
@@ -37,14 +37,6 @@ When a condition is met, the score for that criterion CANNOT exceed the ceiling.
 | No design language match | max 5 |
 | Layout broken on mobile | max 5 |
 
-### Code Quality
-
-| Condition | Ceiling |
-|-----------|---------|
-| Security vulnerability | max 4 |
-| No error handling anywhere | max 5 |
-| Dead code >30% of codebase | max 5 |
-
 ### Browser AI Degradation (Cross-Criterion)
 
 | Condition | Ceiling |
@@ -64,17 +56,17 @@ Example: An app with 1 Critical bug (max 5) and 4 Major bugs (max 6) receives Fu
 
 ### Criteria Are Independent
 
-Each criterion is scored on its own merits. Great code does not compensate for broken features.
+Each criterion is scored on its own merits. Strong visual design does not compensate for broken features.
 
-Example: An app with elegant architecture but a broken core workflow scores Code Quality 7, Functionality 3. The scores are NOT averaged.
+Example: An app with polished design but a broken core workflow scores Visual Design 7, Functionality 3. The scores are NOT averaged.
 
 ### Cross-Criterion Propagation (One Direction Only)
 
 A defect that affects multiple criteria lowers ALL affected scores. But quality in one criterion does NOT raise another.
 
 - A bug that ALSO breaks the visual layout lowers BOTH Functionality and Visual Design.
-- Good code quality does NOT raise Functionality.
-- Clean design does NOT raise Code Quality.
+- High Product Depth does NOT raise Functionality.
+- Clean design does NOT raise Product Depth.
 
 ### No Averaging or Trading
 
@@ -82,7 +74,6 @@ Criteria do not compensate each other. The overall verdict is FAIL if ANY criter
 - Product Depth: 7
 - Functionality: 7
 - Visual Design: 6
-- Code Quality: 6
 
 ---
 
@@ -118,7 +109,7 @@ Each score in the Scores table must cite specific findings from the evaluation. 
 - "Functionality: 5/10 -- 2 Critical bugs (#3, #7), 3 Major bugs, core search broken"
 - "Product Depth: 7/10 -- 8/10 features implemented, 1 Partial (filtering lacks sort), 1 Missing (export)"
 - "Visual Design: 4/10 -- all images are placeholders, generic purple gradient hero, no typography customization"
-- "Code Quality: 8/10 -- clean component architecture, proper error handling, one minor XSS concern in user input rendering"
+- "Product Depth: 8/10 -- 9/10 features implemented, 1 Partial (search lacks multi-field), 0 Missing"
 
 ---
 
@@ -204,28 +195,3 @@ Score: 8/10 -- Strong design identity that clearly matches the spec's "dark, imm
 
 Not 9 because: A 9 requires design excellence throughout. The settings page breaking the design language shows incomplete execution, even though all other pages are strong.
 
-### Code Quality
-
-**Below Threshold: 4/10**
-
-A React application with no error handling anywhere -- API calls use bare `.then()` with no `.catch()`, no try/catch blocks, no error boundaries. A stored XSS vulnerability exists in the user profile name field (renders unsanitized HTML via dangerouslySetInnerHTML). Console shows 12 unhandled promise rejections on the home page alone. No TypeScript or prop validation. Inline styles mixed with CSS modules with no consistency.
-
-Score: 4/10 -- Security vulnerability triggers the ceiling (max 4). Even without the XSS, no error handling anywhere would cap at max 5. The codebase has fundamental safety and reliability gaps.
-
-Not 5 because: A 5 without the security vulnerability would still require some error handling. The XSS pushes the ceiling to max 4, and the complete absence of error handling confirms the score is at that ceiling.
-
-**At Threshold: 6/10**
-
-The same React app with the XSS fixed (user input is sanitized), basic error boundaries at the route level, and try/catch around API calls. TypeScript is used but loosely -- 15% of types are `any`. The component structure is reasonable (features grouped by domain). Some dead code exists (2 unused utility files, ~5% of codebase). One API endpoint accepts user input without validation (missing input sanitization, not XSS but a data integrity concern).
-
-Score: 6/10 -- No security vulnerabilities. Error handling exists at boundaries. The codebase is maintainable if imperfect. Loose typing and minor dead code are quality gaps but not critical. The missing input validation is a concern but scoped.
-
-Not 7 because: A 7 requires consistent code quality. 15% `any` types, dead code, and missing input validation show inconsistent discipline across the codebase.
-
-**Above Threshold: 8/10**
-
-TypeScript strict mode with zero `any` types. Clean component architecture with separation of concerns (data fetching hooks, UI components, utility functions). Error boundaries at route and feature levels. All API calls use a centralized error handling wrapper. Input validation on both client and server. Dependencies are current (no deprecated packages). ESLint and Prettier configuration present. One observation: some components have 200+ lines that could be decomposed further, but the code within them is clean and well-organized.
-
-Score: 8/10 -- Strong code quality with consistent patterns, proper error handling, type safety, and input validation. The long components are a maintainability observation, not a defect.
-
-Not 9 because: A 9 requires code that demonstrates mastery -- comprehensive test coverage, elegant abstractions, excellent documentation. Large components without decomposition show room for improvement in structure.
