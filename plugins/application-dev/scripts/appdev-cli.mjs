@@ -1,13 +1,22 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync, mkdirSync, rmdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { execSync as nodeExecSync, spawnSync } from "node:child_process";
 
 const STATE_FILE = join(process.cwd(), ".appdev-state.json");
 
 const VALID_STEPS = ["plan", "generate", "evaluate", "summary", "complete"];
 const VALID_STATUSES = ["in_progress", "error", "complete"];
 const VALID_EXIT_CONDITIONS = ["PASS", "PLATEAU", "REGRESSION", "SAFETY_CAP"];
+
+const DIMENSIONS = [
+  { name: "Product Depth", key: "product_depth", threshold: 7 },
+  { name: "Functionality", key: "functionality", threshold: 7 },
+  { name: "Visual Design", key: "visual_design", threshold: 6 },
+];
+
+const SEVERITY_ORDER = { Critical: 0, Major: 1, Minor: 2 };
 
 function fail(message) {
   process.stderr.write(JSON.stringify({ error: message }) + "\n");
@@ -89,7 +98,20 @@ function extractScores(reportPath) {
     return { error: "Failed to read report file: " + err.message };
   }
 
-  const scorePattern = /\|\s*(Product Depth|Functionality|Visual Design|Code Quality)\s*\|\s*(\d+)\/10/gi;
+  // Detect old 4-dimension format: reject if Code Quality is present
+  const extraDimPattern = /\|\s*Code Quality\s*\|\s*\d+\/10/gi;
+
+  if (extraDimPattern.test(content)) {
+    return {
+      error: "Could not extract all " + DIMENSIONS.length + " scores from report. Report contains retired dimension 'Code Quality'. Expected " + DIMENSIONS.length + " dimensions: " + DIMENSIONS.map(function (d) { return d.name; }).join(", "),
+    };
+  }
+
+  // Build regex from DIMENSIONS constant to prevent contract drift (Pitfall 1)
+  const dimNames = DIMENSIONS.map(function (d) {
+    return d.name;
+  }).join("|");
+  const scorePattern = new RegExp("\\|\\s*(" + dimNames + ")\\s*\\|\\s*(\\d+)\\/10", "gi");
   const scores = {};
   let match;
 
@@ -98,29 +120,137 @@ function extractScores(reportPath) {
     scores[key] = parseInt(match[2], 10);
   }
 
-  if (Object.keys(scores).length !== 4) {
+  const expectedKeys = DIMENSIONS.map(function (d) {
+    return d.key;
+  });
+
+  if (Object.keys(scores).length !== DIMENSIONS.length) {
     const found = Object.keys(scores);
-    const expected = ["product_depth", "functionality", "visual_design", "code_quality"];
-    const missing = expected.filter(function (k) {
+    const missing = expectedKeys.filter(function (k) {
       return !found.includes(k);
     });
 
     return {
-      error: "Could not extract all 4 scores from report. Missing: " + missing.join(", ") + ". Found: " + found.join(", "),
+      error: "Could not extract all " + DIMENSIONS.length + " scores from report. Missing: " + missing.join(", ") + ". Found: " + found.join(", "),
     };
   }
 
-  scores.total = scores.product_depth + scores.functionality + scores.visual_design + scores.code_quality;
+  scores.total = 0;
 
-  // Extract verdict
-  const verdictMatch = content.match(/##\s*Verdict:\s*(PASS|FAIL)/);
-  const verdict = verdictMatch ? verdictMatch[1] : null;
-
-  if (!verdict) {
-    return { error: "Could not extract verdict from report. Expected '## Verdict: PASS' or '## Verdict: FAIL'" };
+  for (let i = 0; i < expectedKeys.length; i++) {
+    scores.total += scores[expectedKeys[i]];
   }
 
-  return { scores, verdict };
+  // Verdict is now CLI-computed via computeVerdict(), not extracted from report
+  return { scores };
+}
+
+function computeVerdict(scores) {
+  for (let i = 0; i < DIMENSIONS.length; i++) {
+    var dim = DIMENSIONS[i];
+
+    if (scores[dim.key] < dim.threshold) {
+      return "FAIL";
+    }
+  }
+
+  return "PASS";
+}
+
+function computeProductDepth(projectionSummary) {
+  if (!projectionSummary || !projectionSummary.acceptance_tests) {
+    return { score: 1, threshold: 7, pass: false, ceiling_applied: null, pass_rate: 0, justification: "No acceptance test data available" };
+  }
+
+  var tests = projectionSummary.acceptance_tests;
+  var passRate = tests.total > 0 ? tests.passed / tests.total : 0;
+
+  // Map pass rate to 1-10 scale
+  var score = Math.round(passRate * 9) + 1;
+
+  if (score > 10) {
+    score = 10;
+  }
+
+  // Apply ceiling rules
+  var ceiling = 10;
+  var ceilingRule = null;
+
+  // >50% features have failed tests -> max 5
+  if (tests.results && tests.results.length > 0) {
+    var featureNames = [];
+    var failedFeatureNames = [];
+
+    for (var i = 0; i < tests.results.length; i++) {
+      var r = tests.results[i];
+
+      if (featureNames.indexOf(r.feature) === -1) {
+        featureNames.push(r.feature);
+      }
+
+      if (r.status === "failed" && failedFeatureNames.indexOf(r.feature) === -1) {
+        failedFeatureNames.push(r.feature);
+      }
+    }
+
+    if (failedFeatureNames.length > featureNames.length * 0.5) {
+      ceiling = 5;
+      ceilingRule = ">50% features have failing acceptance tests";
+    }
+  }
+
+  // Canned AI feature detected (from projection-critic findings)
+  if (projectionSummary.findings) {
+    for (var j = 0; j < projectionSummary.findings.length; j++) {
+      var f = projectionSummary.findings[j];
+
+      if (f.title && f.title.toLowerCase().includes("canned") && f.severity === "Major") {
+        if (ceiling > 5) {
+          ceiling = 5;
+          ceilingRule = "Canned AI feature detected";
+        }
+
+        break;
+      }
+    }
+  }
+
+  if (score > ceiling) {
+    score = ceiling;
+  }
+
+  return {
+    score: score,
+    threshold: 7,
+    pass: score >= 7,
+    ceiling_applied: ceilingRule,
+    pass_rate: passRate,
+    justification: "Product Depth " + score + "/10 -- " + tests.passed + "/" + tests.total + " acceptance tests passed (" + Math.round(passRate * 100) + "%). " + (ceilingRule ? "Ceiling: " + ceilingRule + "." : "No ceiling applied."),
+  };
+}
+
+function assemblePriorityFixes(summaries) {
+  var allFindings = [];
+
+  for (var i = 0; i < summaries.length; i++) {
+    var s = summaries[i];
+
+    if (s.findings) {
+      for (var j = 0; j < s.findings.length; j++) {
+        allFindings.push(s.findings[j]);
+      }
+    }
+  }
+
+  // Sort by severity (Critical first, then Major, then Minor)
+  allFindings.sort(function (a, b) {
+    var sa = SEVERITY_ORDER[a.severity] !== undefined ? SEVERITY_ORDER[a.severity] : 3;
+    var sb = SEVERITY_ORDER[b.severity] !== undefined ? SEVERITY_ORDER[b.severity] : 3;
+
+    return sa - sb;
+  });
+
+  return allFindings;
 }
 
 function computeEscalation(rounds) {
@@ -315,7 +445,7 @@ function cmdRoundComplete(argv) {
     fail("Invalid round: must be an integer >= 0");
   }
 
-  // Extract scores and verdict from the report file
+  // Extract scores from the report file
   const extracted = extractScores(args.report);
 
   if (extracted.error) {
@@ -323,11 +453,14 @@ function cmdRoundComplete(argv) {
     process.exit(1);
   }
 
+  // Compute verdict mechanically from scores (no longer extracted from report)
+  const computedVerdict = computeVerdict(extracted.scores);
+
   const state = readState();
 
   const entry = {
     round: round,
-    verdict: extracted.verdict,
+    verdict: computedVerdict,
     scores: extracted.scores,
     escalation: null,
     escalation_label: null,
@@ -371,7 +504,7 @@ function cmdRoundComplete(argv) {
   // Build output
   const result = {
     round: round,
-    verdict: extracted.verdict,
+    verdict: computedVerdict,
     scores: extracted.scores,
     escalation: escalation.level,
     escalation_label: escalation.label,
@@ -663,6 +796,288 @@ async function cmdCheckAssets(argv) {
   });
 }
 
+// --- CLI wrappers for extractScores and computeVerdict ---
+
+function cmdExtractScores(argv) {
+  const args = parseArgs(argv);
+
+  if (!args.report || args.report === true) {
+    fail("Missing required argument: --report <path>");
+  }
+
+  const result = extractScores(args.report);
+
+  if (result.error) {
+    output({ error: result.error });
+    process.exit(1);
+  }
+
+  output(result);
+}
+
+function cmdComputeVerdict(argv) {
+  const args = parseArgs(argv);
+  var pd = parseInt(args.pd, 10);
+  var fn = parseInt(args.fn, 10);
+  var vd = parseInt(args.vd, 10);
+
+  if (isNaN(pd) || isNaN(fn) || isNaN(vd)) {
+    fail("Missing required arguments: --pd <N> --fn <N> --vd <N>");
+  }
+
+  var scores = { product_depth: pd, functionality: fn, visual_design: vd };
+  var verdict = computeVerdict(scores);
+
+  output({ verdict: verdict, scores: scores });
+}
+
+// --- compile-evaluation subcommand ---
+
+function cmdCompileEvaluation(argv) {
+  const args = parseArgs(argv);
+
+  if (args.round === undefined || args.round === true) {
+    fail("Missing required argument: --round <N>");
+  }
+
+  var round = parseInt(args.round, 10);
+
+  if (isNaN(round) || round < 0) {
+    fail("Invalid round: must be an integer >= 0");
+  }
+
+  var roundDir = join(process.cwd(), "evaluation", "round-" + round);
+
+  if (!existsSync(roundDir)) {
+    output({ error: "Round directory does not exist: " + roundDir });
+    process.exit(1);
+  }
+
+  // Auto-discover all */summary.json (extensible for N critics)
+  var entries = readdirSync(roundDir);
+  var summaryDirs = [];
+
+  for (var i = 0; i < entries.length; i++) {
+    var candidatePath = join(roundDir, entries[i], "summary.json");
+
+    if (existsSync(candidatePath)) {
+      summaryDirs.push(entries[i]);
+    }
+  }
+
+  if (summaryDirs.length === 0) {
+    output({ error: "No summary.json files found in " + roundDir });
+    process.exit(1);
+  }
+
+  // Read and parse all summaries
+  var summaries = [];
+
+  for (var si = 0; si < summaryDirs.length; si++) {
+    var raw = readFileSync(join(roundDir, summaryDirs[si], "summary.json"), "utf8");
+    summaries.push(JSON.parse(raw));
+  }
+
+  // Find projection summary (has acceptance_tests) for Product Depth
+  var projectionSummary = null;
+
+  for (var pi = 0; pi < summaries.length; pi++) {
+    if (summaries[pi].acceptance_tests) {
+      projectionSummary = summaries[pi];
+
+      break;
+    }
+  }
+
+  var pdResult = computeProductDepth(projectionSummary);
+
+  // Gather scores from summaries
+  var fnScore = null;
+  var fnJustification = "";
+  var vdScore = null;
+  var vdJustification = "";
+
+  for (var di = 0; di < summaries.length; di++) {
+    if (summaries[di].dimension === "Functionality") {
+      fnScore = summaries[di].score;
+      fnJustification = summaries[di].justification || "";
+    }
+
+    if (summaries[di].dimension === "Visual Design") {
+      vdScore = summaries[di].score;
+      vdJustification = summaries[di].justification || "";
+    }
+  }
+
+  // If no Functionality score found from summaries, default to 1
+  if (fnScore === null) {
+    fnScore = 1;
+    fnJustification = "No Functionality summary found";
+  }
+
+  // If no Visual Design score found from summaries, default to 1
+  if (vdScore === null) {
+    vdScore = 1;
+    vdJustification = "No Visual Design summary found";
+  }
+
+  var allScores = {
+    product_depth: pdResult.score,
+    functionality: fnScore,
+    visual_design: vdScore,
+  };
+
+  var verdict = computeVerdict(allScores);
+
+  // Assemble priority fixes
+  var fixes = assemblePriorityFixes(summaries);
+
+  // Build status strings
+  function statusStr(score, threshold) {
+    return score >= threshold ? "PASS" : "FAIL";
+  }
+
+  // Build priority fixes markdown
+  var fixesMd = "";
+
+  if (fixes.length === 0) {
+    fixesMd = "No findings reported.\n";
+  } else {
+    fixesMd = "| # | Severity | ID | Title | Description |\n";
+    fixesMd += "|---|----------|----|-------|-------------|\n";
+
+    for (var fi = 0; fi < fixes.length; fi++) {
+      fixesMd += "| " + (fi + 1) + " | " + fixes[fi].severity + " | " + fixes[fi].id + " | " + fixes[fi].title + " | " + fixes[fi].description + " |\n";
+    }
+  }
+
+  // Build EVALUATION.md content
+  var md = "";
+  md += "<!--\n";
+  md += "WARNING: The scores table format is parsed by appdev-cli.mjs\n";
+  md += "(extractScores function). Do not change the table column structure,\n";
+  md += "criterion names, score format (N/10).\n";
+  md += "Verdict is computed by the CLI, not written by any agent.\n";
+  md += "-->\n\n";
+  md += "# Evaluation Report\n\n";
+  md += "## Generation Round: " + round + "\n\n";
+  md += "## Verdict: " + verdict + "\n\n";
+  md += "## Scores\n\n";
+  md += "| Criterion | Score | Threshold | Status |\n";
+  md += "|-----------|-------|-----------|--------|\n";
+  md += "| Product Depth | " + pdResult.score + "/10 | 7 | " + statusStr(pdResult.score, 7) + " |\n";
+  md += "| Functionality | " + fnScore + "/10 | 7 | " + statusStr(fnScore, 7) + " |\n";
+  md += "| Visual Design | " + vdScore + "/10 | 6 | " + statusStr(vdScore, 6) + " |\n\n";
+  md += "## Score Justifications\n\n";
+  md += "| Criterion | Justification |\n";
+  md += "|-----------|---------------|\n";
+  md += "| Product Depth | (" + pdResult.score + " of 10) -- " + pdResult.justification + " |\n";
+  md += "| Functionality | (" + fnScore + " of 10) -- " + fnJustification + " |\n";
+  md += "| Visual Design | (" + vdScore + " of 10) -- " + vdJustification + " |\n\n";
+  md += "## Product Depth Assessment\n";
+  md += "*Source: CLI Ensemble (computed from acceptance test results)*\n\n";
+  md += pdResult.justification + "\n\n";
+
+  if (pdResult.ceiling_applied) {
+    md += "Ceiling applied: " + pdResult.ceiling_applied + "\n\n";
+  }
+
+  md += "## Functionality Assessment\n";
+  md += "*Source: Projection Critic*\n\n";
+  md += fnJustification + "\n\n";
+  md += "## Visual Design Assessment\n";
+  md += "*Source: Perceptual Critic*\n\n";
+  md += vdJustification + "\n\n";
+  md += "## Priority Fixes for Next Round\n";
+  md += "*Source: CLI Ensemble (merged from both critics, severity-ordered)*\n\n";
+  md += fixesMd;
+
+  writeFileSync(join(roundDir, "EVALUATION.md"), md, "utf8");
+
+  output({ round: round, verdict: verdict, scores: allScores, compiled: true });
+}
+
+// --- install-dep subcommand ---
+
+function cmdInstallDep(argv) {
+  const args = parseArgs(argv);
+  var packageName = args["package"] || "";
+  var cwd = args.cwd || process.cwd();
+  var lockDir = join(cwd, ".appdev-install-lock");
+  var STALE_MS = 60000;
+  var POLL_MS = 500;
+  var MAX_WAIT_MS = 120000;
+
+  if (!packageName) {
+    fail("Missing required argument: --package <name>");
+  }
+
+  // Acquire lock
+  var start = Date.now();
+  var acquired = false;
+
+  while (Date.now() - start < MAX_WAIT_MS) {
+    try {
+      mkdirSync(lockDir);
+      acquired = true;
+
+      break;
+    } catch (err) {
+      if (err.code === "EEXIST") {
+        // Check for stale lock
+        try {
+          var stat = statSync(lockDir);
+
+          if (Date.now() - stat.mtimeMs > STALE_MS) {
+            rmdirSync(lockDir);
+
+            continue;
+          }
+        } catch (e) {
+          // Lock was removed between checks
+          continue;
+        }
+
+        // Wait (synchronous sleep via spawnSync)
+        spawnSync("sleep", ["0.5"], { timeout: 2000 });
+
+        continue;
+      }
+
+      throw err;
+    }
+  }
+
+  if (!acquired) {
+    fail("Timed out waiting for install lock after " + MAX_WAIT_MS + "ms");
+  }
+
+  var installError = null;
+
+  try {
+    nodeExecSync("npm install --save-dev " + packageName, {
+      stdio: "pipe",
+      timeout: 120000,
+      cwd: cwd,
+    });
+  } catch (err) {
+    installError = err;
+  } finally {
+    try {
+      rmdirSync(lockDir);
+    } catch (e) {
+      // Already released
+    }
+  }
+
+  if (installError) {
+    output({ error: "npm install failed: " + (installError.message || String(installError)), installed: packageName, success: false });
+    process.exit(1);
+  }
+
+  output({ installed: packageName, success: true });
+}
+
 // --- Main ---
 
 const subcommand = process.argv[2];
@@ -696,14 +1111,26 @@ switch (subcommand) {
   case "check-assets":
     cmdCheckAssets(subArgs);
     break;
+  case "extract-scores":
+    cmdExtractScores(subArgs);
+    break;
+  case "compute-verdict":
+    cmdComputeVerdict(subArgs);
+    break;
+  case "compile-evaluation":
+    cmdCompileEvaluation(subArgs);
+    break;
+  case "install-dep":
+    cmdInstallDep(subArgs);
+    break;
   default:
     if (!subcommand) {
-      fail("No subcommand provided. Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets");
+      fail("No subcommand provided. Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets, extract-scores, compute-verdict, compile-evaluation, install-dep");
     } else {
       fail(
         "Unknown subcommand: " +
           subcommand +
-          ". Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets"
+          ". Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets, extract-scores, compute-verdict, compile-evaluation, install-dep"
       );
     }
 }
