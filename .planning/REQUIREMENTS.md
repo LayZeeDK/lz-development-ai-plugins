@@ -19,8 +19,8 @@ recover from session crashes.
 - [ ] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
 - [ ] **ENSEMBLE-05**: Remove monolithic `evaluator.md` -- replaced by perceptual-critic + projection-critic agents
 - [ ] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (projection-critic), Visual Design (perceptual-critic). Code Quality removed.
-- [ ] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Perceptual Critic, Projection Critic, CLI Ensemble)
-- [ ] **ENSEMBLE-08**: SCORING-CALIBRATION.md updated for 3 dimensions with rubric descriptors, grade ranges, ceiling rules, and few-shot calibration examples aligned with Anthropic pattern
+- [x] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Perceptual Critic, Projection Critic, CLI Ensemble)
+- [x] **ENSEMBLE-08**: SCORING-CALIBRATION.md updated for 3 dimensions with rubric descriptors, grade ranges, ceiling rules, and few-shot calibration examples aligned with Anthropic pattern
 - [ ] **ENSEMBLE-09**: summary.json schema as extensible contract -- any `evaluation/round-N/*/summary.json` is auto-consumed by compile-evaluation. Directory names match GAN techniques: `perceptual/`, `projection/`, future `perturbation/`, `semantic/`
 - [ ] **ENSEMBLE-10**: Orchestrator evaluation phase: parallel critic spawns with minimal prompts ("This is evaluation round N."), binary file-exists checks, CLI compile + round-complete
 

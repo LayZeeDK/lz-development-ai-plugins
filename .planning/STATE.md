@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Hardening after Dutch art museum website test #1
 status: active
-stopped_at: null
-last_updated: "2026-03-29T23:00:00.000Z"
-last_activity: 2026-03-29 -- Roadmap created for v1.1 (Phases 7-9)
+stopped_at: "Completed 07-02-PLAN.md"
+last_updated: "2026-03-31T11:58:25.000Z"
+last_activity: 2026-03-31 -- Completed 07-02-PLAN.md (EVALUATION-TEMPLATE + SCORING-CALIBRATION + naming)
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 4
+  completed_plans: 2
+  percent: 14
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Current Position
 
-Phase: 7 of 9 (Scoring Pipeline Overhaul)
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-29 -- Roadmap created for v1.1 (Phases 7-9)
+Phase: 7 of 9 (Ensemble Discriminator Architecture)
+Plan: 2 of 4 complete
+Status: Executing
+Last activity: 2026-03-31 -- Completed 07-02-PLAN.md (EVALUATION-TEMPLATE + SCORING-CALIBRATION + naming)
 
-Progress: [..........] 0%
+Progress: [##........] 14%
 
 ## Accumulated Context
 
@@ -49,6 +49,12 @@ Progress: [..........] 0%
 - Generator ignored Vite+ skill, used stale dependency versions
 - Cross-feature bugs (session overwrite, URL desync) missed because features tested in isolation
 
+### From Phase 7 Plan 02
+- EVALUATION-TEMPLATE.md uses {placeholder} syntax for CLI compile-time substitution
+- Code Quality calibration scenarios removed entirely (not redistributed to other dimensions)
+- Verdict heading preserved for extractScores() regex compatibility but marked as CLI-computed
+- ROADMAP.md already had technique-based naming from context phase (no changes needed)
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -57,6 +63,6 @@ Progress: [..........] 0%
 
 ## Session Continuity
 
-Last session: 2026-03-29
-Stopped at: Roadmap created, ready to plan Phase 7
+Last session: 2026-03-31
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None

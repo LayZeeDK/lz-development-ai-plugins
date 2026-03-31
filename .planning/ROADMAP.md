@@ -63,7 +63,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 Plans:
 - [ ] 07-01-PLAN.md -- CLI ensemble aggregator: compile-evaluation, install-dep, 3-dimension scoring (TDD)
-- [ ] 07-02-PLAN.md -- EVALUATION-TEMPLATE.md + SCORING-CALIBRATION.md redesign + ROADMAP naming
+- [x] 07-02-PLAN.md -- EVALUATION-TEMPLATE.md + SCORING-CALIBRATION.md redesign + ROADMAP naming
 - [ ] 07-03-PLAN.md -- Critic agent definitions (perceptual-critic + projection-critic) + evaluator deletion
 - [ ] 07-04-PLAN.md -- Orchestrator evaluation phase rewrite + final review
 
@@ -142,6 +142,6 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 3. Evaluator Hardening | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
-| 7. Ensemble Discriminator Architecture | v1.1 | 0/4 | Planned | - |
+| 7. Ensemble Discriminator Architecture | v1.1 | 1/4 | In Progress | - |
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 0/? | Not started | - |
 | 9. Crash Recovery | v1.1 | 0/? | Not started | - |
