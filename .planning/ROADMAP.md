@@ -29,7 +29,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 **Scope:** Ensemble architecture, Playwright acceptance testing, token efficiency, crash recovery. All other Dutch art museum test issues defer to v1.2.
 
-- [ ] **Phase 7: Ensemble Discriminator Architecture** - precision-critic + recall-critic + CLI compile-evaluation + install-dep + GAN barrier
+- [ ] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier
 - [ ] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference
 - [ ] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, dev server lifecycle
 
@@ -50,26 +50,32 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 ## Phase Details
 
 ### Phase 7: Ensemble Discriminator Architecture
-**Goal**: The monolithic Evaluator is replaced by 2 parallel WGAN critics (precision-critic + recall-critic) and a deterministic CLI ensemble aggregator. Each critic scores one dimension in its own context (~60K tokens max). The CLI computes Product Depth and assembles EVALUATION.md. No single agent exceeds safe context limits.
+**Goal**: The monolithic Evaluator is replaced by 2 parallel WGAN critics (perceptual-critic + projection-critic) and a deterministic CLI ensemble aggregator. Each critic scores one dimension in its own context (~60K tokens max). The CLI computes Product Depth and assembles EVALUATION.md. No single agent exceeds safe context limits.
 **Depends on**: Phase 5 (v1.0 complete)
 **Requirements**: ENSEMBLE-01..10, BARRIER-01..04
 **Success Criteria** (what must be TRUE):
-  1. `precision-critic.md` (Precision discriminator, <150 lines) scores Visual Design by detecting AI slop and assessing design authenticity -- it never reads source code, only observes the product surface via playwright-cli
-  2. `recall-critic.md` (Recall discriminator, <150 lines) scores Functionality by writing and running acceptance tests from SPEC.md criteria and probing AI features -- browser interaction happens outside its context via write-and-run
-  3. `appdev-cli compile-evaluation --round N` reads `precision/summary.json` + `recall/summary.json`, computes Product Depth from acceptance test results, applies ceiling rules, and writes EVALUATION.md -- fully deterministic, zero LLM tokens
+  1. `perceptual-critic.md` (Perceptual discriminator, <150 lines) scores Visual Design by detecting AI slop and assessing design authenticity -- it never reads source code, only observes the product surface via playwright-cli
+  2. `projection-critic.md` (Projection discriminator, <150 lines) scores Functionality by writing and running acceptance tests from SPEC.md criteria and probing AI features -- browser interaction happens outside its context via write-and-run
+  3. `appdev-cli compile-evaluation --round N` reads `perceptual/summary.json` + `projection/summary.json`, computes Product Depth from acceptance test results, applies ceiling rules, and writes EVALUATION.md -- fully deterministic, zero LLM tokens
   4. `appdev-cli install-dep --dev <packages>` handles concurrent critic requests via file-based mutex -- both critics can install evaluation tooling simultaneously
   5. The summary.json schema is extensible: adding `perturbation/summary.json` (v1.2) requires zero CLI changes -- compile-evaluation reads all `*/summary.json` directories
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 07-01-PLAN.md -- CLI ensemble aggregator: compile-evaluation, install-dep, 3-dimension scoring (TDD)
+- [ ] 07-02-PLAN.md -- EVALUATION-TEMPLATE.md + SCORING-CALIBRATION.md redesign + ROADMAP naming
+- [ ] 07-03-PLAN.md -- Critic agent definitions (perceptual-critic + projection-critic) + evaluator deletion
+- [ ] 07-04-PLAN.md -- Orchestrator evaluation phase rewrite + final review
 
 ### Phase 8: SPEC Acceptance Criteria + Playwright Patterns
-**Goal**: SPEC.md gains behavioral acceptance criteria per feature. The recall-critic generates acceptance tests from these criteria using playwright-testing skill patterns. Both critics use token-efficient eval-first Playwright patterns documented in a dedicated reference.
+**Goal**: SPEC.md gains behavioral acceptance criteria per feature. The projection-critic generates acceptance tests from these criteria using playwright-testing skill patterns. Both critics use token-efficient eval-first Playwright patterns documented in a dedicated reference.
 **Depends on**: Phase 7
 **Requirements**: SPEC-01..05, PLAYWRIGHT-01..06, TOKEN-01..05
 **Success Criteria** (what must be TRUE):
   1. SPEC-TEMPLATE.md has `**Acceptance Criteria:**` per feature with >= 3 criteria for Core features -- behavioral and testable, not prescriptive of implementation
-  2. Generator writes its own dev tests (tests/) using playwright-testing Plan->Generate->Heal; recall-critic writes separate acceptance tests (evaluation/round-N/) using the same skill patterns -- independent test suites with independent purposes
+  2. Generator writes its own dev tests (tests/) using playwright-testing Plan->Generate->Heal; projection-critic writes separate acceptance tests (evaluation/round-N/) using the same skill patterns -- independent test suites with independent purposes
   3. PLAYWRIGHT-EVALUATION.md reference exists teaching eval-first, write-and-run, snapshot-as-fallback patterns -- both critics reference it
-  4. Recall-critic's write-and-run: reads SPEC criteria, takes 1 snapshot, writes acceptance-tests.spec.ts, runs `npx playwright test --reporter=json`, reads JSON results -- ~5 tool calls replace ~30+ interactive calls
+  4. Projection-critic's write-and-run: reads SPEC criteria, takes 1 snapshot, writes acceptance-tests.spec.ts, runs `npx playwright test --reporter=json`, reads JSON results -- ~5 tool calls replace ~30+ interactive calls
   5. Both critics write structured summary.json and use `console error` (filtered). Raw observation data exists on disk but not in agent context after observation steps (hard GC on agent completion)
 **Plans**: TBD
 
@@ -78,8 +84,8 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 **Depends on**: Phase 7
 **Requirements**: RECOVERY-01..04
 **Success Criteria** (what must be TRUE):
-  1. On `claude --continue`, the orchestrator checks appdev-cli state + filesystem for: precision/summary.json, recall/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags. It resumes from the latest completed checkpoint.
-  2. Four recovery states work: (1) no summaries -> spawn both critics; (2) precision done -> spawn recall-critic only; (3) both done -> compile-evaluation only; (4) compiled -> round-complete only
+  1. On `claude --continue`, the orchestrator checks appdev-cli state + filesystem for: perceptual/summary.json, projection/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags. It resumes from the latest completed checkpoint.
+  2. Four recovery states work: (1) no summaries -> spawn both critics; (2) perceptual done -> spawn projection-critic only; (3) both done -> compile-evaluation only; (4) compiled -> round-complete only
   3. Dev server: started before evaluation, port verified, reused on resume if already running
   4. Critic agent definitions recommend `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50`
 **Plans**: TBD
@@ -94,17 +100,17 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 
 | Critic agent | GAN discriminator type | Dimension | Method |
 |---|---|---|---|
-| `precision-critic` | Precision (Perceptual + Multi-Scale + Style) | Visual Design | eval-first, screenshots, AI slop checklist, resize+eval responsive |
-| `recall-critic` | Recall/Coverage (Projection + ProjectedGAN) | Functionality | write-and-run acceptance tests, AI probing via eval |
-| CLI compile-evaluation | Ensemble aggregator | Product Depth (computed) | Deterministic merge of per-feature test pass/fail |
+| `perceptual-critic` | Perceptual + Multi-Scale + Style (Section 7.3) | Visual Design | eval-first, screenshots, AI slop checklist, resize+eval responsive |
+| `projection-critic` | Projection + ProjectedGAN (Section 3.3) | Functionality | write-and-run acceptance tests, AI probing via eval |
+| CLI compile-evaluation | Ensemble aggregator (GMAN 12.1) | Product Depth (computed) | Deterministic merge of per-feature test pass/fail |
 
 ### v1.2 Critics (Dutch art museum fixes)
 
 | Critic agent | GAN discriminator type | Dimension | Method |
 |---|---|---|---|
-| `perturbation-critic` (NEW) | Perturbation + Spectral (R-FID) | Robustness | write-and-run adversarial tests, console/network monitoring |
-| `precision-critic` (enhanced) | + Temporal + Global/Local | Visual Coherence | cross-page navigation testing, transition consistency |
-| `recall-critic` (enhanced) | + Temporal Triplet + Consistency | Functionality (deeper) | A->B->A navigation tests, cross-page data matching |
+| `perturbation-critic` (NEW) | Perturbation + Spectral (R-FID, Section 11.1) | Robustness | write-and-run adversarial tests, console/network monitoring |
+| `perceptual-critic` (enhanced) | + Temporal + Global/Local | Visual Coherence | cross-page navigation testing, transition consistency |
+| `projection-critic` (enhanced) | + Temporal Triplet + Consistency | Functionality (deeper) | A->B->A navigation tests, cross-page data matching |
 
 ### v2.0+ Critics (future expansion)
 
@@ -116,7 +122,7 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | Dropout-GAN pattern | Dynamic ensemble (Dropout-GAN) | Meta | random critic skip per round to prevent Generator gaming |
 | Contrastive scoring | Contrastive (ContraD) | Meta | round-over-round trajectory comparison in CLI |
 | Build manifest | Encoder-aware (BiGAN) | Meta | Generator manifest vs critic observations cross-reference |
-| Grouped evaluation | Packed samples (PacGAN) | Visual Coherence | precision-critic evaluates page SETS for consistency |
+| Grouped evaluation | Packed samples (PacGAN) | Visual Coherence | perceptual-critic evaluates page SETS for consistency |
 
 ### Scoring dimensions by milestone
 
@@ -136,6 +142,6 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 3. Evaluator Hardening | v1.0 | 2/2 | Complete | 2026-03-29 |
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
-| 7. Ensemble Discriminator Architecture | v1.1 | 0/? | Not started | - |
+| 7. Ensemble Discriminator Architecture | v1.1 | 0/4 | Planned | - |
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 0/? | Not started | - |
 | 9. Crash Recovery | v1.1 | 0/? | Not started | - |
