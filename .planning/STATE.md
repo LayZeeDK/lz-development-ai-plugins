@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
-status: in-progress
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-04-01T23:29:00.000Z"
-last_activity: 2026-04-02 -- Phase 10 Plan 01 executed, four integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
+status: completed
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-04-01T23:31:54Z"
+last_activity: 2026-04-02 -- Phase 10 Plan 02 executed, stale artifact cleanup and README rewrite for v1.1 ensemble architecture
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 10 of 10 (v1.1 Audit Gap Closure)
-Plan: 1 of 2 complete
-Status: In Progress
-Last activity: 2026-04-02 -- Phase 10 Plan 01 executed, four integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
+Plan: 2 of 2 complete
+Status: v1.1 Milestone Complete
+Last activity: 2026-04-02 -- Phase 10 Plan 02 executed, stale artifact cleanup and README rewrite for v1.1 ensemble architecture
 
-Progress: [######### ] 91%
+Progress: [##########] 100%
 
 ## Accumulated Context
 
@@ -125,6 +125,12 @@ Progress: [######### ] 91%
 - Skeleton acceptance test uses test.use({ baseURL }) with port from static-serve JSON -- no hardcoded ports
 - evaluator-hardening-structure.test.mjs and ASSET-VALIDATION-PROTOCOL.md deleted (stale artifacts)
 
+### From Phase 10 Plan 02
+- AI-PROBING-REFERENCE.md: "projection-critic" for specific agent, "critic" for generic evaluation role
+- Code Quality scoring guidance deleted entirely (not redistributed to other dimensions)
+- README.md rewritten: 4 agents, 3 dimensions, EVALUATION.md protocol, ensemble architecture, npm devDeps
+- All 14 orphaned Phase 7 requirements (ENSEMBLE-01..10, BARRIER-01..04) closeable via verification
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -133,6 +139,6 @@ Progress: [######### ] 91%
 
 ## Session Continuity
 
-Last session: 2026-04-01T23:29:00Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-04-01T23:31:54Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None

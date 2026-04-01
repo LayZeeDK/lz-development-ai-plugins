@@ -32,7 +32,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 - [x] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier (completed 2026-03-31)
 - [x] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference (completed 2026-04-01)
 - [x] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, static production build serving (completed 2026-04-02)
-- [ ] **Phase 10: v1.1 Audit Gap Closure** - Fix integration bugs (install-dep, SAFETY_CAP, @playwright/test, baseURL), clean stale artifacts, close 14 orphaned Phase 7 requirements
+- [x] **Phase 10: v1.1 Audit Gap Closure** - Fix integration bugs (install-dep, SAFETY_CAP, @playwright/test, baseURL), clean stale artifacts, close 14 orphaned Phase 7 requirements (completed 2026-04-02)
 
 ### v1.2 Dutch Art Museum Test Fixes (planned)
 
@@ -118,7 +118,7 @@ Plans:
 
 Plans:
 - [x] 10-01-PLAN.md -- Integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
-- [ ] 10-02-PLAN.md -- Stale artifact cleanup (tests, orphaned files, generator refs, README)
+- [x] 10-02-PLAN.md -- Stale artifact cleanup (tests, orphaned files, generator refs, README)
 
 ## WGAN Critic Roadmap
 
@@ -175,4 +175,4 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 7. Ensemble Discriminator Architecture | v1.1 | 4/4 | Complete | 2026-03-31 |
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 9. Crash Recovery | v1.1 | 2/2 | Complete | 2026-04-02 |
-| 10. v1.1 Audit Gap Closure | 1/2 | In Progress|  | - |
+| 10. v1.1 Audit Gap Closure | v1.1 | 2/2 | Complete | 2026-04-02 |
