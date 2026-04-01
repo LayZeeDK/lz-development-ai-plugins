@@ -51,9 +51,9 @@ recover from session crashes.
 
 ### Crash Recovery (RECOVERY)
 
-- [ ] **RECOVERY-01**: Orchestrator detects completed artifacts on resume via appdev-cli state JSON + filesystem: perceptual/summary.json, projection/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags
-- [ ] **RECOVERY-02**: Recovery states: (1) no summaries -> re-spawn both critics; (2) perceptual done, projection incomplete -> spawn projection-critic only; (3) both done, not compiled -> compile-evaluation only; (4) compiled, not round-complete -> round-complete only
-- [ ] **RECOVERY-03**: Dev server lifecycle: orchestrator starts before evaluation, verifies port, reuses existing server on resume
+- [x] **RECOVERY-01**: Orchestrator detects completed artifacts on resume via appdev-cli state JSON + filesystem: perceptual/summary.json, projection/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags
+- [x] **RECOVERY-02**: Recovery states: (1) no summaries -> re-spawn both critics; (2) perceptual done, projection incomplete -> spawn projection-critic only; (3) both done, not compiled -> compile-evaluation only; (4) compiled, not round-complete -> round-complete only
+- [x] **RECOVERY-03**: Dev server lifecycle: orchestrator starts before evaluation, verifies port, reuses existing server on resume
 - [ ] **RECOVERY-04**: `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50` recommended in critic agent definitions
 
 ### GAN Information Barrier (BARRIER)

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
-status: completed
-stopped_at: Phase 9 context gathered
+status: in_progress
+stopped_at: Phase 9 Plan 01 executed
 last_updated: "2026-04-01T21:26:37.325Z"
-last_activity: 2026-04-01 -- Phase 8 Plan 03 executed, critic agents wired to PLAYWRIGHT-EVALUATION.md + Generator dev test boundary
+last_activity: 2026-04-02 -- Phase 9 Plan 01 executed, resume-check + static-serve + update extensions + server cleanup in appdev-cli.mjs
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 7
-  completed_plans: 7
-  percent: 86
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Current Position
 
-Phase: 8 of 9 (SPEC Acceptance Criteria + Playwright Patterns)
-Plan: 3 of 3 complete
-Status: Phase 8 Complete
-Last activity: 2026-04-01 -- Phase 8 Plan 03 executed, critic agents wired to PLAYWRIGHT-EVALUATION.md + Generator dev test boundary
+Phase: 9 of 9 (Crash Recovery)
+Plan: 1 of 2 complete
+Status: Phase 9 In Progress
+Last activity: 2026-04-02 -- Phase 9 Plan 01 executed, resume-check + static-serve + update extensions + server cleanup in appdev-cli.mjs
 
-Progress: [########--] 86%
+Progress: [########=-] 89%
 
 ## Accumulated Context
 
@@ -100,6 +100,16 @@ Progress: [########--] 86%
 - Generator has mirror boundary statement: tests/ are dev tests, independent from evaluation/round-N/ acceptance tests
 - Phase 8 complete: all 16 requirements addressed (SPEC-01..05, PLAYWRIGHT-01..06, TOKEN-01..05)
 
+### From Phase 9 Plan 01
+- resume-check subcommand validates complete artifact chain per step: plan/generate/evaluate/summary
+- resume-check reads expected critics from state.critics (default ["perceptual", "projection"]) -- extensible for v1.2
+- resume-check cleans up corrupt critic directories (invalid JSON, missing required fields) before returning re-spawn action
+- static-serve spawns detached serve processes with npx, tracks PID/port/SPA in state.servers[]
+- static-serve is idempotent: second call for same dir returns existing entry if PID alive
+- Cross-platform process kill: taskkill /PID /T /F on Windows, process.kill(-pid) on Unix
+- update extended with --build-dir, --spa, --critics flags; --step no longer required with extension flags
+- delete and complete auto-stop all running servers before state changes
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -108,6 +118,6 @@ Progress: [########--] 86%
 
 ## Session Continuity
 
-Last session: 2026-04-01T21:26:37.323Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-crash-recovery/09-CONTEXT.md
+Last session: 2026-04-02T22:03:48Z
+Stopped at: Phase 9 Plan 01 executed
+Resume file: .planning/phases/09-crash-recovery/09-01-SUMMARY.md
