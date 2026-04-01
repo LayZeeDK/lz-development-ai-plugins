@@ -117,7 +117,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md -- Integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
+- [x] 10-01-PLAN.md -- Integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
 - [ ] 10-02-PLAN.md -- Stale artifact cleanup (tests, orphaned files, generator refs, README)
 
 ## WGAN Critic Roadmap
@@ -175,4 +175,4 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 7. Ensemble Discriminator Architecture | v1.1 | 4/4 | Complete | 2026-03-31 |
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 9. Crash Recovery | v1.1 | 2/2 | Complete | 2026-04-02 |
-| 10. v1.1 Audit Gap Closure | v1.1 | 0/2 | Not started | - |
+| 10. v1.1 Audit Gap Closure | 1/2 | In Progress|  | - |

@@ -16,7 +16,7 @@ recover from session crashes.
 - [ ] **ENSEMBLE-01**: New `perceptual-critic` agent (Perceptual discriminator) -- scores Visual Design by detecting AI slop, assessing design authenticity, and checking whether the product passes as hand-built. Compact agent definition (detailed, not comprehensive per SkillsBench).
 - [ ] **ENSEMBLE-02**: New `projection-critic` agent (Projection discriminator) -- scores Functionality by verifying SPEC.md feature conformance via write-and-run acceptance tests and AI feature probing. Compact agent definition.
 - [ ] **ENSEMBLE-03**: `appdev-cli compile-evaluation` subcommand (Ensemble aggregator) -- reads perceptual/summary.json + projection/summary.json, computes Product Depth from acceptance test pass/fail, applies ceiling rules, cross-validates scores vs findings, writes EVALUATION.md from template. Fully deterministic.
-- [ ] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
+- [x] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
 - [ ] **ENSEMBLE-05**: Remove monolithic `evaluator.md` -- replaced by perceptual-critic + projection-critic agents
 - [ ] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (projection-critic), Visual Design (perceptual-critic). Code Quality removed.
 - [ ] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Perceptual Critic, Projection Critic, CLI Ensemble)

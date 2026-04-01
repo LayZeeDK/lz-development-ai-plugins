@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
-status: completed
-stopped_at: Completed 09-02-PLAN.md
-last_updated: "2026-04-01T22:19:45.825Z"
-last_activity: 2026-04-02 -- Phase 9 Plan 02 executed, four-branch resume in SKILL.md, production build in generator, static-serve in critics
+status: in-progress
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-04-01T23:29:00.000Z"
+last_activity: 2026-04-02 -- Phase 10 Plan 01 executed, four integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_plans: 11
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Current Position
 
-Phase: 9 of 9 (Crash Recovery)
-Plan: 2 of 2 complete
-Status: v1.1 Milestone Complete
-Last activity: 2026-04-02 -- Phase 9 Plan 02 executed, four-branch resume in SKILL.md, production build in generator, static-serve in critics
+Phase: 10 of 10 (v1.1 Audit Gap Closure)
+Plan: 1 of 2 complete
+Status: In Progress
+Last activity: 2026-04-02 -- Phase 10 Plan 01 executed, four integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
 
-Progress: [##########] 100%
+Progress: [######### ] 91%
 
 ## Accumulated Context
 
@@ -118,6 +118,13 @@ Progress: [##########] 100%
 - static-serve --stop called in all 5 convergence/continuation paths to prevent stale builds
 - RECOVERY-04 confirmed: AUTOCOMPACT_PCT_OVERRIDE=50 in both critics (not modified)
 
+### From Phase 10 Plan 01
+- install-dep uses --package flag per call (one package per invocation), matching CLI parseArgs consumption model
+- SAFETY_CAP path has static-serve --stop before wrap-up Generator AND after final evaluation (both needed)
+- @playwright/test installed alongside @playwright/cli in Step 0.5 workspace setup
+- Skeleton acceptance test uses test.use({ baseURL }) with port from static-serve JSON -- no hardcoded ports
+- evaluator-hardening-structure.test.mjs and ASSET-VALIDATION-PROTOCOL.md deleted (stale artifacts)
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -126,6 +133,6 @@ Progress: [##########] 100%
 
 ## Session Continuity
 
-Last session: 2026-04-01T22:13:03.793Z
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-04-01T23:29:00Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None
