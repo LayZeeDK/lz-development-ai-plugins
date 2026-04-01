@@ -13,8 +13,9 @@ description: >-
   Runs without user intervention after the initial prompt.
 license: MIT
 compatibility: >-
-  Requires @playwright/cli as a project devDependency (installed automatically
-  in Step 0.5 workspace setup -- no system PATH dependency).
+  Requires @playwright/cli and @playwright/test as project devDependencies
+  (installed automatically in Step 0.5 workspace setup -- no system PATH
+  dependency).
   Sub-agents loaded from the plugin's agents/ directory.
 metadata:
   author: Lars Gyrup Brink Nielsen
@@ -138,10 +139,14 @@ Initialize package.json:
 Bash(npm init -y)
 ```
 
-Install @playwright/cli and serve as dev dependencies:
+Install @playwright/cli, @playwright/test, and serve as dev dependencies:
 
 ```
 Bash(npm install --save-dev @playwright/cli)
+```
+
+```
+Bash(npm install --save-dev @playwright/test)
 ```
 
 ```
@@ -361,6 +366,12 @@ Act on the JSON response:
   ```
   Bash(git tag -a appdev/round-N -m "Round N complete: SAFETY_CAP")
   ```
+- Stop static servers before wrap-up generation:
+  ```
+  Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
+  ```
+  Why: The wrap-up Generator produces a new build. Stopping the old server
+  ensures critics evaluate the fresh build, not the stale one.
 - Run one extra wrap-up round (round N+1, not counted toward the 10-round
   cap):
   - Spawn Generator:

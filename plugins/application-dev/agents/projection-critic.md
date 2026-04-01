@@ -180,7 +180,7 @@ Your acceptance tests in `evaluation/round-N/projection/` are INDEPENDENT from t
 
 If the application has API endpoints, install AJV for JSON schema validation:
 ```
-node *appdev-cli* install-dep --dev ajv
+node *appdev-cli* install-dep --package ajv
 ```
 ## Token Efficiency
 

@@ -83,7 +83,9 @@ Check for: placeholder images, watermark artifacts, stock photo markers, font mi
 
 For asset quality, use `node *appdev-cli* check-assets` for URL validation. For perceptual inspection (duplicate detection, watermark detection), install tooling if needed:
 ```
-node *appdev-cli* install-dep --dev sharp imghash leven
+node *appdev-cli* install-dep --package sharp
+node *appdev-cli* install-dep --package imghash
+node *appdev-cli* install-dep --package leven
 ```
 
 ### SCORE
