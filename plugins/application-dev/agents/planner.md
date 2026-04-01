@@ -64,6 +64,14 @@ Fill in each section with content appropriate to the user's prompt.
 - Include a project management or dashboard feature for organizing work
 - Include an onboarding or getting-started experience
 
+## Writing Acceptance Criteria
+
+Acceptance criteria drive automated acceptance tests that verify each feature works as specified. After writing features with their user stories, read the criteria guide before adding Acceptance Criteria to each feature:
+
+Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/acceptance-criteria-guide.md`
+
+Then add an `**Acceptance Criteria:**` section to every feature, following the SPEC template structure and the guide's tier rules.
+
 ## Guidelines for Visual Design
 
 - Avoid generic descriptions: "clean and modern," "professional look," "sleek interface"
@@ -94,5 +102,7 @@ Before completing, re-read `SPEC.md` and verify it contains all of the following
 4. **Constraints and non-goals** -- a `## Constraints and Non-Goals` section explicitly stating what the product does NOT include
 5. **Visual design language** -- a `## Visual Design Language` section with aesthetic direction, color palette, typography, and layout principles
 6. **AI integration** -- if the user prompt implies AI features, an `## AI Integration` section describing each AI-powered feature from the user's perspective
+7. **Acceptance criteria per feature** -- every feature in the Features section has an `**Acceptance Criteria:**` section with behavioral, testable assertions
+8. **Criteria quality and count** -- Core features have >= 3 criteria (happy path + edge case + error state); Important features have >= 2; Nice-to-have features have >= 1. No vague qualities ("works well"), no UI-prescriptive criteria ("clicking button opens modal"), no implementation details ("saves to localStorage")
 
 If any of these are missing or incomplete, fix the file before completing. This is your inner quality gate -- do not hand off a spec with gaps.
