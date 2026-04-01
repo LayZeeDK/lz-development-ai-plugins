@@ -38,15 +38,10 @@ created: 2026-04-01
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 09-01-01 | 01 | 0 | RECOVERY-01 | unit | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-01-02 | 01 | 0 | RECOVERY-02 | unit | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-01-03 | 01 | 0 | RECOVERY-03 | unit+integration | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-02-01 | 02 | 1 | RECOVERY-01 | unit | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-02-02 | 02 | 1 | RECOVERY-02 | unit | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-03-01 | 03 | 1 | RECOVERY-03 | unit+integration | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-04-01 | 04 | 2 | RECOVERY-01 | integration | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-04-02 | 04 | 2 | RECOVERY-02 | integration | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
-| 09-04-03 | 04 | 2 | RECOVERY-03 | integration | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- Wave 0 | pending |
+| 09-01-F1 | 01 | 1 | RECOVERY-01, RECOVERY-02, RECOVERY-03 | unit (TDD) | `node plugins/application-dev/scripts/test-appdev-cli.mjs` | No -- TDD creates first | pending |
+| 09-02-T1 | 02 | 2 | RECOVERY-03 | read+inspect | Read generator.md + content checks | N/A -- prose | pending |
+| 09-02-T2 | 02 | 2 | RECOVERY-03, RECOVERY-04 | read+inspect | Read critic .md files + content checks | N/A -- prose | pending |
+| 09-02-T3 | 02 | 2 | RECOVERY-01, RECOVERY-02, RECOVERY-03 | read+inspect | Read SKILL.md + content checks | N/A -- prose | pending |
 
 *Status: pending / green / red / flaky*
 
