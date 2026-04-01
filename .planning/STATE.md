@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
-status: in_progress
-stopped_at: Phase 9 Plan 01 executed
-last_updated: "2026-04-01T21:26:37.325Z"
-last_activity: 2026-04-02 -- Phase 9 Plan 01 executed, resume-check + static-serve + update extensions + server cleanup in appdev-cli.mjs
+status: completed
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-04-01T22:13:03.796Z"
+last_activity: 2026-04-02 -- Phase 9 Plan 02 executed, four-branch resume in SKILL.md, production build in generator, static-serve in critics
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 8
-  percent: 89
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 9 of 9 (Crash Recovery)
-Plan: 1 of 2 complete
-Status: Phase 9 In Progress
-Last activity: 2026-04-02 -- Phase 9 Plan 01 executed, resume-check + static-serve + update extensions + server cleanup in appdev-cli.mjs
+Plan: 2 of 2 complete
+Status: v1.1 Milestone Complete
+Last activity: 2026-04-02 -- Phase 9 Plan 02 executed, four-branch resume in SKILL.md, production build in generator, static-serve in critics
 
-Progress: [########=-] 89%
+Progress: [##########] 100%
 
 ## Accumulated Context
 
@@ -110,6 +110,14 @@ Progress: [########=-] 89%
 - update extended with --build-dir, --spa, --critics flags; --step no longer required with extension flags
 - delete and complete auto-stop all running servers before state changes
 
+### From Phase 9 Plan 02
+- Generator requires production builds and records build-dir/spa in state before ending each round
+- Both critics start static-serve as first step (Step 0) using build_dir from state
+- SKILL.md Step 0 has four-branch resume logic: no-prompt+state auto-resumes via resume-check, prompt+state asks user, prompt+no-state starts fresh, no-prompt+no-state errors
+- Evaluation phase sets expected critics via update --critics before spawning
+- static-serve --stop called in all 5 convergence/continuation paths to prevent stale builds
+- RECOVERY-04 confirmed: AUTOCOMPACT_PCT_OVERRIDE=50 in both critics (not modified)
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -118,6 +126,6 @@ Progress: [########=-] 89%
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:03:48Z
-Stopped at: Phase 9 Plan 01 executed
-Resume file: .planning/phases/09-crash-recovery/09-01-SUMMARY.md
+Last session: 2026-04-01T22:13:03.793Z
+Stopped at: Completed 09-02-PLAN.md
+Resume file: None

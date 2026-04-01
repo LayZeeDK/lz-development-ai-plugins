@@ -96,8 +96,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 09-01-PLAN.md -- CLI crash recovery and static serve foundation (TDD)
-- [ ] 09-02-PLAN.md -- Agent definitions and orchestrator wiring for crash recovery
+- [x] 09-01-PLAN.md -- CLI crash recovery and static serve foundation (TDD)
+- [x] 09-02-PLAN.md -- Agent definitions and orchestrator wiring for crash recovery
 
 ## WGAN Critic Roadmap
 
