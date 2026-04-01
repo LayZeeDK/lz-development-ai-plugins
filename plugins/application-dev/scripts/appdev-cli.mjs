@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync, mkdirSync, rmdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync, mkdirSync, rmdirSync, statSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { execSync as nodeExecSync, spawnSync } from "node:child_process";
+import { execSync as nodeExecSync, spawnSync, spawn } from "node:child_process";
+import { Socket } from "node:net";
 
 const STATE_FILE = join(process.cwd(), ".appdev-state.json");
 
@@ -351,6 +352,111 @@ function determineExit(rounds, escalation, maxRounds) {
   return { exit_condition: null, should_continue: true };
 }
 
+// --- Validation helpers for resume-check ---
+
+function validateSummary(summaryPath) {
+  if (!existsSync(summaryPath)) {
+    return false;
+  }
+
+  try {
+    var raw = readFileSync(summaryPath, "utf8");
+    var data = JSON.parse(raw);
+
+    // Required fields per CONTEXT.md validation depth
+    if (!data.critic || !data.dimension || data.score === undefined) {
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function validateEvaluation(evalPath) {
+  if (!existsSync(evalPath)) {
+    return false;
+  }
+
+  try {
+    var content = readFileSync(evalPath, "utf8");
+
+    return content.includes("## Scores");
+  } catch (e) {
+    return false;
+  }
+}
+
+function cleanCriticDir(dirPath) {
+  if (existsSync(dirPath)) {
+    rmSync(dirPath, { recursive: true, force: true });
+  }
+}
+
+// --- Process lifecycle helpers for static-serve ---
+
+function isPidAlive(pid) {
+  try {
+    process.kill(pid, 0);
+
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function killProcess(pid) {
+  try {
+    if (process.platform === "win32") {
+      nodeExecSync("taskkill /PID " + pid + " /T /F", { stdio: "pipe" });
+    } else {
+      process.kill(-pid, "SIGTERM");
+    }
+  } catch (e) {
+    // Process already dead -- safe to ignore
+  }
+}
+
+function stopAllServers(state) {
+  if (!state.servers || state.servers.length === 0) {
+    return;
+  }
+
+  for (var i = 0; i < state.servers.length; i++) {
+    killProcess(state.servers[i].pid);
+  }
+
+  state.servers = [];
+}
+
+function isPortInUse(port) {
+  return new Promise(function (resolve) {
+    var socket = new Socket();
+    socket.setTimeout(1000);
+    socket.on("connect", function () { socket.destroy(); resolve(true); });
+    socket.on("timeout", function () { socket.destroy(); resolve(false); });
+    socket.on("error", function () { socket.destroy(); resolve(false); });
+    socket.connect(port, "127.0.0.1");
+  });
+}
+
+async function findAvailablePort(startPort) {
+  var port = startPort;
+
+  for (var i = 0; i < 100; i++) {
+    var inUse = await isPortInUse(port);
+
+    if (!inUse) {
+      return port;
+    }
+
+    port++;
+  }
+
+  return port;
+}
+
 // --- Subcommands ---
 
 function cmdInit(argv) {
@@ -385,11 +491,14 @@ function cmdGet() {
 function cmdUpdate(argv) {
   const args = parseArgs(argv);
 
-  if (!args.step) {
+  // --step is required unless --build-dir, --spa, or --critics is provided
+  var hasExtensionFlags = args["build-dir"] !== undefined || args.spa !== undefined || args.critics !== undefined;
+
+  if (!args.step && !hasExtensionFlags) {
     fail("Missing required argument: --step <step>");
   }
 
-  if (!VALID_STEPS.includes(args.step)) {
+  if (args.step && !VALID_STEPS.includes(args.step)) {
     fail(
       "Invalid step: " +
         args.step +
@@ -399,7 +508,10 @@ function cmdUpdate(argv) {
   }
 
   const state = readState();
-  state.step = args.step;
+
+  if (args.step) {
+    state.step = args.step;
+  }
 
   if (args.round !== undefined && args.round !== true) {
     const round = parseInt(args.round, 10);
@@ -422,6 +534,19 @@ function cmdUpdate(argv) {
     }
 
     state.status = args.status;
+  }
+
+  // Extension flags
+  if (args["build-dir"] !== undefined && args["build-dir"] !== true) {
+    state.build_dir = args["build-dir"];
+  }
+
+  if (args.spa !== undefined) {
+    state.spa = args.spa === "true";
+  }
+
+  if (args.critics !== undefined && args.critics !== true) {
+    state.critics = args.critics.split(",");
   }
 
   writeState(state);
@@ -566,6 +691,10 @@ function cmdComplete(argv) {
   }
 
   const state = readState();
+
+  // Stop all running servers before finalizing state
+  stopAllServers(state);
+
   state.status = "complete";
   state.exit_condition = args["exit-condition"];
 
@@ -574,7 +703,15 @@ function cmdComplete(argv) {
 }
 
 function cmdDelete() {
+  // Stop all running servers before deleting state
   if (existsSync(STATE_FILE)) {
+    try {
+      var state = JSON.parse(readFileSync(STATE_FILE, "utf8"));
+      stopAllServers(state);
+    } catch (e) {
+      // State file corrupt -- still delete it
+    }
+
     unlinkSync(STATE_FILE);
   }
 
@@ -583,6 +720,244 @@ function cmdDelete() {
 
 function cmdExists() {
   output({ exists: existsSync(STATE_FILE) });
+}
+
+function cmdResumeCheck() {
+  var state = readState();
+  var round = state.round || 0;
+  var step = state.step;
+  var expectedCritics = state.critics || ["perceptual", "projection"];
+
+  if (step === "plan") {
+    var specPath = join(process.cwd(), "SPEC.md");
+
+    if (!existsSync(specPath) || !readFileSync(specPath, "utf8").includes("## Features")) {
+      output({ next_action: "plan", round: round, details: "SPEC.md missing or incomplete" });
+
+      return;
+    }
+
+    output({ next_action: "generate", round: round || 1, details: "Planning complete, proceed to generation" });
+
+    return;
+  }
+
+  if (step === "generate") {
+    if (!state.build_dir || !existsSync(join(process.cwd(), state.build_dir))) {
+      output({ next_action: "generate", round: round, details: "Build output missing" });
+
+      return;
+    }
+
+    output({ next_action: "evaluate", round: round, details: "Build exists, proceed to evaluation" });
+
+    return;
+  }
+
+  if (step === "evaluate") {
+    var roundDir = join(process.cwd(), "evaluation", "round-" + round);
+    var valid = [];
+    var invalid = [];
+
+    for (var i = 0; i < expectedCritics.length; i++) {
+      var critic = expectedCritics[i];
+      var summaryPath = join(roundDir, critic, "summary.json");
+
+      if (validateSummary(summaryPath)) {
+        valid.push(critic);
+      } else {
+        invalid.push(critic);
+        cleanCriticDir(join(roundDir, critic));
+      }
+    }
+
+    if (invalid.length === expectedCritics.length) {
+      output({ next_action: "spawn-both-critics", round: round, skip: [], details: "No valid summaries" });
+
+      return;
+    }
+
+    if (invalid.length > 0) {
+      output({ next_action: "spawn-" + invalid[0] + "-critic", round: round, skip: valid, details: invalid[0] + " summary missing/corrupt" });
+
+      return;
+    }
+
+    // Both summaries valid -- check EVALUATION.md
+    var evalPath = join(roundDir, "EVALUATION.md");
+
+    if (!validateEvaluation(evalPath)) {
+      output({ next_action: "compile-evaluation", round: round, details: "Both summaries valid, EVALUATION.md missing" });
+
+      return;
+    }
+
+    // Check git tag
+    var tagCheck = "";
+
+    try {
+      tagCheck = nodeExecSync("git tag -l \"appdev/round-" + round + "\"", { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).trim();
+    } catch (e) {
+      // Git command failed -- treat as no tag
+    }
+
+    if (!tagCheck) {
+      output({ next_action: "round-complete", round: round, details: "EVALUATION.md valid, git tag missing" });
+
+      return;
+    }
+
+    // Round fully complete -- move to next round
+    output({ next_action: "generate", round: round + 1, details: "Round " + round + " complete, next round" });
+
+    return;
+  }
+
+  // summary or complete step
+  output({ next_action: step, round: round, details: "At " + step + " step" });
+}
+
+async function cmdStaticServe(argv) {
+  var args = parseArgs(argv);
+
+  // --stop: kill all tracked servers and clear state
+  if (args.stop) {
+    var state = readState();
+    stopAllServers(state);
+    writeState(state);
+    output({ stopped: true, servers: [] });
+
+    return;
+  }
+
+  if (!args.dir) {
+    fail("Missing required argument: --dir <path>");
+  }
+
+  var dir = args.dir;
+  var absDir = join(process.cwd(), dir);
+
+  if (!existsSync(absDir)) {
+    fail("Directory does not exist: " + dir);
+  }
+
+  var spa = args.spa === "true";
+  var requestedPort = args.port ? parseInt(args.port, 10) : 5173;
+
+  var state = readState();
+
+  if (!state.servers) {
+    state.servers = [];
+  }
+
+  // Idempotent: check if server already running for this dir
+  for (var i = 0; i < state.servers.length; i++) {
+    var existing = state.servers[i];
+
+    if (existing.dir === dir && isPidAlive(existing.pid)) {
+      output({ server: existing, reused: true });
+
+      return;
+    }
+
+    // Stale entry -- remove it
+    if (existing.dir === dir) {
+      state.servers.splice(i, 1);
+      i--;
+    }
+  }
+
+  // Mutex for concurrent start safety
+  var lockDir = join(process.cwd(), ".appdev-serve-lock");
+  var STALE_MS = 60000;
+  var POLL_MS = 500;
+  var MAX_WAIT_MS = 30000;
+  var start = Date.now();
+  var acquired = false;
+
+  while (Date.now() - start < MAX_WAIT_MS) {
+    try {
+      mkdirSync(lockDir);
+      acquired = true;
+
+      break;
+    } catch (err) {
+      if (err.code === "EEXIST") {
+        try {
+          var stat = statSync(lockDir);
+
+          if (Date.now() - stat.mtimeMs > STALE_MS) {
+            rmdirSync(lockDir);
+
+            continue;
+          }
+        } catch (e) {
+          continue;
+        }
+
+        spawnSync("sleep", ["0.5"], { timeout: 2000 });
+
+        continue;
+      }
+
+      throw err;
+    }
+  }
+
+  if (!acquired) {
+    fail("Timed out waiting for serve lock after " + MAX_WAIT_MS + "ms");
+  }
+
+  try {
+    // Find available port
+    var port = await findAvailablePort(requestedPort);
+
+    // Spawn serve process
+    var serveArgs = [absDir, "-l", String(port)];
+
+    if (spa) {
+      serveArgs.push("-s");
+    }
+
+    // Use npx serve for cross-platform compatibility
+    var child = spawn("npx", ["serve"].concat(serveArgs), {
+      detached: true,
+      stdio: "ignore",
+      cwd: process.cwd(),
+      shell: true,
+    });
+
+    child.unref();
+
+    var entry = { dir: dir, pid: child.pid, port: port, spa: spa };
+
+    // Record PID immediately (before health check) to prevent orphans
+    state.servers.push(entry);
+    writeState(state);
+
+    // Health check: wait up to 5 seconds for port to respond
+    var healthy = false;
+
+    for (var attempt = 0; attempt < 10; attempt++) {
+      await new Promise(function (r) { setTimeout(r, 500); });
+
+      var inUse = await isPortInUse(port);
+
+      if (inUse) {
+        healthy = true;
+
+        break;
+      }
+    }
+
+    output({ server: entry, started: true, healthy: healthy });
+  } finally {
+    try {
+      rmdirSync(lockDir);
+    } catch (e) {
+      // Already released
+    }
+  }
 }
 
 // --- Asset checking ---
@@ -1130,14 +1505,20 @@ switch (subcommand) {
   case "install-dep":
     cmdInstallDep(subArgs);
     break;
+  case "resume-check":
+    cmdResumeCheck();
+    break;
+  case "static-serve":
+    cmdStaticServe(subArgs);
+    break;
   default:
     if (!subcommand) {
-      fail("No subcommand provided. Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets, extract-scores, compute-verdict, compile-evaluation, install-dep");
+      fail("No subcommand provided. Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets, extract-scores, compute-verdict, compile-evaluation, install-dep, resume-check, static-serve");
     } else {
       fail(
         "Unknown subcommand: " +
           subcommand +
-          ". Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets, extract-scores, compute-verdict, compile-evaluation, install-dep"
+          ". Valid subcommands: init, get, update, round-complete, get-trajectory, complete, delete, exists, check-assets, extract-scores, compute-verdict, compile-evaluation, install-dep, resume-check, static-serve"
       );
     }
 }

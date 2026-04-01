@@ -914,8 +914,10 @@ describe("resume-check", function () {
     }));
     writeFileSync(join(roundDir, "EVALUATION.md"), "# Eval\n\n## Scores\n\n| Criterion | Score |\n");
 
-    // Initialize git repo and create the tag
+    // Initialize git repo, create initial commit, then tag
     execSync("git init", { cwd: tmpDir, stdio: "pipe" });
+    execSync("git add .", { cwd: tmpDir, stdio: "pipe" });
+    execSync("git commit -m init --allow-empty", { cwd: tmpDir, stdio: "pipe" });
     execSync("git tag appdev/round-1", { cwd: tmpDir, stdio: "pipe" });
 
     const result = runCLI("resume-check", { cwd: tmpDir });
