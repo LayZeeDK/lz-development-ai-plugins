@@ -43,6 +43,10 @@ assertions execute in Playwright's process, not the agent's context window.
 // evaluation/round-N/projection/acceptance-tests.spec.ts
 import { test, expect } from '@playwright/test';
 
+// Configure baseURL from the static-serve port.
+// Read the port from the static-serve JSON response and substitute below.
+test.use({ baseURL: 'http://localhost:PORT' });
+
 test.describe('Feature 1: Artwork Gallery [Core]', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -76,6 +80,8 @@ Key patterns in the skeleton:
 - `test.describe` per feature, `test()` per criterion
 - Accessibility-tree-first selectors: `getByRole`, `getByLabel`, `getByText`,
   `getByPlaceholder` -- resilient to DOM restructuring between rounds
+- `test.use({ baseURL })` configured from static-serve port -- ensures tests
+  hit the correct server regardless of which port was assigned
 
 ## snapshot-as-fallback
 

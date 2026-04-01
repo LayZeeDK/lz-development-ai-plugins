@@ -65,7 +65,8 @@ Use the write-and-run pattern for token efficiency. This replaces 30+ interactiv
 
 1. Read SPEC.md acceptance criteria (already done in UNDERSTAND)
 2. Take one snapshot for selector discovery: `npx playwright-cli snapshot`
-3. Write acceptance tests to `evaluation/round-N/projection/acceptance-tests.spec.ts`
+3. Write acceptance tests to `evaluation/round-N/projection/acceptance-tests.spec.ts`.
+   Substitute the static-serve port into `test.use({ baseURL: 'http://localhost:<port>' })` at the top of the test file.
 4. Run: `npx playwright test evaluation/round-N/projection/acceptance-tests.spec.ts --reporter=json`
 5. Read the JSON results file
 
