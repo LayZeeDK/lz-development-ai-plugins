@@ -148,5 +148,5 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Ensemble Discriminator Architecture | v1.1 | 4/4 | Complete | 2026-03-31 |
-| 8. SPEC Acceptance Criteria + Playwright | v1.1 | 0/3 | Not started | - |
+| 8. SPEC Acceptance Criteria + Playwright | 2/3 | In Progress|  | - |
 | 9. Crash Recovery | v1.1 | 0/? | Not started | - |

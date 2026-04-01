@@ -36,14 +36,14 @@ recover from session crashes.
 
 - [ ] **PLAYWRIGHT-01**: Generator writes dev tests using playwright-testing skill (Plan -> Generate -> Heal) committed to `tests/` as internal CI
 - [ ] **PLAYWRIGHT-02**: Projection-critic writes SEPARATE acceptance tests from SPEC.md criteria committed to `evaluation/round-N/acceptance-tests.spec.ts`
-- [ ] **PLAYWRIGHT-03**: Acceptance test generation: snapshot for selector discovery + SPEC.md criteria for test logic -- Playwright Generate pattern with accessibility-tree-first selectors (getByRole, getByLabel, getByText)
-- [ ] **PLAYWRIGHT-04**: Acceptance test execution deterministic: `npx playwright test --reporter=json` -- browser interaction entirely outside agent context
-- [ ] **PLAYWRIGHT-05**: Acceptance test healing: Playwright Heal pattern for selector failures; remaining failures are real bugs fed to Functionality score
-- [ ] **PLAYWRIGHT-06**: Rounds 2+: existing acceptance tests re-run first; only regenerated if app structure changed significantly
+- [x] **PLAYWRIGHT-03**: Acceptance test generation: snapshot for selector discovery + SPEC.md criteria for test logic -- Playwright Generate pattern with accessibility-tree-first selectors (getByRole, getByLabel, getByText)
+- [x] **PLAYWRIGHT-04**: Acceptance test execution deterministic: `npx playwright test --reporter=json` -- browser interaction entirely outside agent context
+- [x] **PLAYWRIGHT-05**: Acceptance test healing: Playwright Heal pattern for selector failures; remaining failures are real bugs fed to Functionality score
+- [x] **PLAYWRIGHT-06**: Rounds 2+: existing acceptance tests re-run first; only regenerated if app structure changed significantly
 
 ### Token Efficiency (TOKEN)
 
-- [ ] **TOKEN-01**: Dedicated PLAYWRIGHT-EVALUATION.md reference -- eval-first (structured JSON over snapshot), write-and-run (tests outside context), snapshot-as-fallback (only for interaction ref IDs)
+- [x] **TOKEN-01**: Dedicated PLAYWRIGHT-EVALUATION.md reference -- eval-first (structured JSON over snapshot), write-and-run (tests outside context), snapshot-as-fallback (only for interaction ref IDs)
 - [ ] **TOKEN-02**: Perceptual-critic uses `eval` for page state, `resize` + `eval` for responsive checks, screenshots only at key viewpoints
 - [ ] **TOKEN-03**: Projection-critic uses write-and-run for feature testing -- 5 tool calls (read SPEC, snapshot, write tests, run tests, read results) replace 30+ interactive calls
 - [ ] **TOKEN-04**: Both critics use `console error` (filtered) instead of `console` (all messages)

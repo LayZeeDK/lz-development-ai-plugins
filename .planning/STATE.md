@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
 status: executing
-stopped_at: Phase 7 complete (checkpoint approved)
-last_updated: "2026-04-01"
-last_activity: 2026-04-01 -- Phase 7 checkpoint approved, all 4 plans executed
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-04-01T12:08:01.777Z"
+last_activity: 2026-04-01 -- Phase 8 Plan 02 executed, PLAYWRIGHT-EVALUATION.md created
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_plans: 7
+  completed_plans: 6
+  percent: 71
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Current Position
 
-Phase: 7 of 9 (Ensemble Discriminator Architecture)
-Plan: 4 of 4 complete
-Status: Phase 7 complete (checkpoint approved)
-Last activity: 2026-04-01 -- Phase 7 checkpoint approved, all 4 plans executed
+Phase: 8 of 9 (SPEC Acceptance Criteria + Playwright Patterns)
+Plan: 2 of 3 complete
+Status: Executing Phase 8
+Last activity: 2026-04-01 -- Phase 8 Plan 02 executed, PLAYWRIGHT-EVALUATION.md created
 
-Progress: [##########] 100%
+Progress: [#######---] 71%
 
 ## Accumulated Context
 
@@ -78,6 +78,13 @@ Progress: [##########] 100%
 - SAFETY_CAP wrap-up round uses same ensemble pattern for consistency
 - Architecture section describes 4 agents (Planner, Generator, Perceptual Critic, Projection Critic)
 
+### From Phase 8 Plan 02
+- PLAYWRIGHT-EVALUATION.md created as shared technique-pure reference (174 lines, 7 sections)
+- Follows ProjectedGAN shared-feature-extractor pattern: shared lower-level techniques, independent higher-level scoring
+- Used `viewport` command name matching existing perceptual-critic.md for consistency
+- Skeleton acceptance test demonstrates 1:1 criteria-to-test mapping with accessibility-tree-first selectors
+- Round 2+ decision tree: reuse (pass or assertion-only failures), heal (1-2 selector timeouts), regenerate (multiple timeouts or >50%)
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -86,6 +93,6 @@ Progress: [##########] 100%
 
 ## Session Continuity
 
-Last session: 2026-03-31T13:19:16.661Z
-Stopped at: Completed 07-04-PLAN.md
+Last session: 2026-04-01T12:08:01.156Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
