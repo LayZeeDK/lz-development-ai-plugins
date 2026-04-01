@@ -1,14 +1,15 @@
 # application-dev
 
-Autonomous application development plugin for Claude Code, using a GAN-inspired three-agent architecture.
+Autonomous application development plugin for Claude Code, using a GAN-inspired four-agent ensemble architecture.
 
 ## Overview
 
-This plugin orchestrates long-running application development from a short prompt (1-4 sentences). It uses three specialized agents in an adversarial feedback loop:
+This plugin orchestrates long-running application development from a short prompt (1-4 sentences). It uses four specialized agents in an adversarial feedback loop:
 
 - **Planner**: Expands your prompt into an ambitious product specification (10-16+ features, visual design language, AI integration points)
 - **Generator**: Builds the full application from the spec, choosing the optimal tech stack
-- **Evaluator**: QAs the running app via `playwright-cli` with skepticism, driving the Generator to improve
+- **Perceptual Critic**: Scores Visual Design by detecting AI slop and assessing whether the product passes as hand-built. Evaluates via browser screenshots and interaction.
+- **Projection Critic**: Scores Functionality by writing and running acceptance tests against SPEC.md criteria. Tests execute outside agent context for token efficiency.
 
 The workflow runs continuously and autonomously -- no user input is required after the initial prompt.
 
@@ -34,14 +35,14 @@ If your prompt mentions a specific tech stack (e.g., "using React" or "with the 
 
 2. **Build** -- The Generator builds the complete application. It picks the tech stack, implements all features, and follows the visual design language.
 
-3. **Evaluate** -- The Evaluator starts the app, navigates it via `playwright-cli` like a real user, and grades it against four criteria with hard thresholds.
+3. **Evaluate** -- Both critics evaluate the running app in parallel -- the Perceptual Critic observes visual quality, the Projection Critic runs acceptance tests. The CLI compiles their findings into a single evaluation report.
 
-4. **Iterate** -- If any criterion falls below its threshold, the Generator receives the Evaluator's detailed feedback and improves the application. Up to 3 build/QA rounds.
+4. **Iterate** -- If any dimension falls below its threshold, the Generator receives the evaluation report and improves the application. Up to 10 generation/evaluation rounds.
 
 ## Prerequisites
 
-- `playwright-cli` binary installed and on PATH (the Evaluator embeds its own usage instructions, so the playwright-cli skill is not required -- only the CLI tool itself)
 - Claude Code with Opus model access (recommended for best results)
+- Node.js (npm used for devDependencies during workspace setup)
 
 ## Design Quality
 
@@ -51,8 +52,9 @@ The Planner and Generator use bundled frontend design principles (derived from A
 
 Inspired by Generative Adversarial Networks (GANs):
 
-- The Generator and Evaluator form an adversarial pair
-- The Evaluator is calibrated to be skeptical -- finding issues, not praising work
+- The Generator and critic ensemble form an adversarial pair
+- The critics are calibrated to be skeptical -- finding issues, not praising work
+- Two specialized critics (Perceptual + Projection) evaluate in parallel, each in its own isolated context. The CLI aggregates their findings deterministically.
 - Multiple rounds create an improvement loop where critique drives quality
 - Separation of generation and evaluation prevents the self-praise bias seen when models judge their own output
 
@@ -60,21 +62,21 @@ Based on: [Harness design for long-running application development](https://www.
 
 ## Evaluation Criteria
 
-| Criterion | Threshold | What It Measures |
+| Dimension | Threshold | What It Measures |
 |-----------|-----------|------------------|
-| Product Depth | 7/10 | Feature completeness vs. spec |
-| Functionality | 7/10 | Does it actually work when used? |
-| Visual Design | 6/10 | Coherent identity, not AI-slop |
-| Code Quality | 6/10 | Structure, consistency, maintainability |
+| Product Depth | 7/10 | Feature completeness vs. spec (CLI-computed from acceptance tests) |
+| Functionality | 7/10 | Does it actually work when used? (Projection Critic) |
+| Visual Design | 6/10 | Coherent identity, not AI-slop (Perceptual Critic) |
 
 ## File Protocol
 
-Agents communicate via two files in the working directory:
+Agents communicate via structured files in the working directory:
 
 | File | Writer | Reader | Purpose |
 |------|--------|--------|---------|
-| `SPEC.md` | Planner | Generator, Evaluator | Product specification |
-| `QA-REPORT.md` | Evaluator | Generator (next round) | QA findings and scores |
+| `SPEC.md` | Planner | Generator, Critics | Product specification |
+| `evaluation/round-N/EVALUATION.md` | CLI (compile-evaluation) | Generator (next round) | Compiled evaluation report |
+| `evaluation/round-N/*/summary.json` | Each critic | CLI (compile-evaluation) | Per-critic scoring data |
 
 ## License
 

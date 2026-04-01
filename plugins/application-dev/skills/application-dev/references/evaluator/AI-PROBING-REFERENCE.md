@@ -2,7 +2,7 @@
 
 **Loaded at:** Step 8 (AI Feature Probing) of the evaluation workflow.
 
-**Purpose:** This file is the Evaluator's adversarial probe reference for AI features. It describes probe STRATEGIES organized by input/output modality. The Evaluator generates domain-appropriate probe inputs on the fly from SPEC.md context.
+**Purpose:** This file is the projection-critic's adversarial probe reference for AI features. It describes probe STRATEGIES organized by input/output modality. The projection-critic generates domain-appropriate probe inputs on the fly from SPEC.md context.
 
 ---
 
@@ -16,16 +16,16 @@ The theoretical foundation: a system can manipulate symbols correctly without un
 
 ### Goodhart's Law Protection
 
-This file describes probe STRATEGIES, not fixed scripts with exact inputs. The Evaluator derives specific inputs from SPEC.md domain context at evaluation time. This prevents the Generator from pre-computing responses to known probes.
+This file describes probe STRATEGIES, not fixed scripts with exact inputs. The projection-critic derives specific inputs from SPEC.md domain context at evaluation time. This prevents the Generator from pre-computing responses to known probes.
 
 - Strategies describe WHAT to test and WHY
-- The Evaluator generates domain-appropriate inputs on the fly
+- The projection-critic generates domain-appropriate inputs on the fly
 - Probes should reference SPEC.md content, not generic examples
 - If a probe input could be anticipated and hard-coded against, the input is too predictable
 
 ### Subject Matter Expert Judge
 
-The Evaluator reads SPEC.md before AI probing (workflow Step 1 -> Step 8). By the time it probes AI features, it knows the app's domain. Domain questions and Winograd schemas should reference SPEC.md content, not generic examples. This makes the Evaluator a domain-expert judge -- dramatically harder to fool than a naive judge.
+The projection-critic reads SPEC.md before AI probing (workflow Step 1 -> Step 8). By the time it probes AI features, it knows the app's domain. Domain questions and Winograd schemas should reference SPEC.md content, not generic examples. This makes the critic a domain-expert judge -- dramatically harder to fool than a naive judge.
 
 ---
 
@@ -48,7 +48,7 @@ Technical signals alone are NOT sufficient for a verdict. They support behaviora
 
 ### Tier 3: NO Code Scanning
 
-The Evaluator does NOT scan the Generator's source code to determine if AI features are real. GAN principle: the discriminator evaluates output, not the generator's internals. Code Quality Assessment is a separate concern with different goals.
+The critic does NOT scan the Generator's source code to determine if AI features are real. GAN principle: the discriminator evaluates output, not the generator's internals.
 
 ---
 
@@ -67,7 +67,7 @@ If Probe 0 (Variability) returns 3 identical responses, this is a fast exit: the
 
 ## Universal 10-Probe Battery for Conversational AI Features
 
-All 10 probes are mandatory for every Text -> Text AI feature. The Evaluator generates domain-appropriate inputs from SPEC.md.
+All 10 probes are mandatory for every Text -> Text AI feature. The projection-critic generates domain-appropriate inputs from SPEC.md.
 
 ### Probe 0: Variability (x3 Same Prompt)
 
@@ -177,7 +177,7 @@ All 10 probes are mandatory for every Text -> Text AI feature. The Evaluator gen
 
 These are additional probe techniques that can be applied within or after the 10-probe battery. They provide deeper adversarial testing for features that pass the basic battery.
 
-All 10 Turing test concepts adapted for the GAN Evaluator context:
+All 10 Turing test concepts adapted for the GAN critic context:
 
 1. **ELIZA Effect Warning** -- Behavioral guidance in evaluator.md (not this file). First impressions of intelligence are unreliable. The Generator's AI features may trigger the ELIZA effect, where polished UI and keyword-relevant responses create an illusion of understanding. Extra skepticism for emotionally engaging features (therapy chatbot, wellness coach, companion).
 2. **Winograd Schema Probes** -- Probe technique below.
@@ -196,7 +196,7 @@ All 10 Turing test concepts adapted for the GAN Evaluator context:
 
 **Strategy:** Generate domain-appropriate ambiguity sentences from SPEC.md context. The pattern: a sentence with a pronoun whose referent requires domain knowledge to resolve. The pronoun could grammatically refer to either of two antecedents, but only one makes sense given the context.
 
-**How to generate:** Take two domain entities from SPEC.md. Create a sentence where an action connects them and a pronoun refers to one based on real-world knowledge. The Evaluator generates these on the fly from the specific app's domain.
+**How to generate:** Take two domain entities from SPEC.md. Create a sentence where an action connects them and a pronoun refers to one based on real-world knowledge. The projection-critic generates these on the fly from the specific app's domain.
 
 **Why it works:** Keyword matchers cannot resolve the pronoun reference because both antecedents are domain-relevant keywords. Resolving the reference requires understanding the relationship described in the sentence. LLMs solve Winograd schemas easily; canned systems cannot.
 
@@ -233,7 +233,7 @@ All 10 Turing test concepts adapted for the GAN Evaluator context:
 
 **What it tests:** Whether the AI can reason about the user's beliefs, including false beliefs. This is the most advanced probe -- run it last per the probe ordering principle.
 
-**Strategy:** Present a scenario with a false belief derived from SPEC.md context. The scenario should contain a factual claim that the Evaluator knows (from SPEC.md) to be incorrect, framed as the user's belief. A real AI engages with the user's mental model (corrects the misconception or asks clarifying questions). A canned system keyword-matches on the topic and gives a generic response.
+**Strategy:** Present a scenario with a false belief derived from SPEC.md context. The scenario should contain a factual claim that the critic knows (from SPEC.md) to be incorrect, framed as the user's belief. A real AI engages with the user's mental model (corrects the misconception or asks clarifying questions). A canned system keyword-matches on the topic and gives a generic response.
 
 **Canned signal:** Response ignores the false belief entirely and gives a generic topical response. The system does not engage with what the user thinks they know.
 
@@ -309,7 +309,7 @@ Each section describes probe strategies specific to the modality's input/output 
 **Probe strategies:**
 - **Canvas-generated test images:** Create simple test images using Canvas API (text on colored background, shapes, numbers). The exact content is known, so accuracy can be verified objectively.
 - **Graduated difficulty:** Start with clear, high-contrast images. Escalate to noisy, rotated, or partially obscured content. Real OCR/captioning degrades gracefully; canned systems fail abruptly or return fixed text.
-- **Domain-specific images:** Use screenshots of the app itself as test input. The Evaluator knows what the app looks like and can verify the description.
+- **Domain-specific images:** Use screenshots of the app itself as test input. The critic knows what the app looks like and can verify the description.
 - **Variability:** Submit the same image twice. If the feature claims to describe images, descriptions should be similar in content but varied in wording.
 
 **Canned detection signals:**
@@ -439,7 +439,7 @@ Each section describes probe strategies specific to the modality's input/output 
 - Output that does not correspond to input data patterns
 
 **Special considerations:**
-- Data -> Data features often have limited UI surface -- the Evaluator may need to observe effects (e.g., blocked transactions) rather than direct output
+- Data -> Data features often have limited UI surface -- the critic may need to observe effects (e.g., blocked transactions) rather than direct output
 
 ### Special: Server-Side-Only
 
@@ -456,7 +456,7 @@ Each section describes probe strategies specific to the modality's input/output 
 - Identical response time regardless of content complexity
 
 **Special considerations:**
-- Limited observability -- the Evaluator can only test inputs and observe outcomes
+- Limited observability -- the critic can only test inputs and observe outcomes
 - Network timing can be a supporting signal (real inference has variable latency; keyword lookup is constant)
 
 ### Special: Invisible AI
@@ -475,7 +475,7 @@ Each section describes probe strategies specific to the modality's input/output 
 
 **Special considerations:**
 - Invisible AI may not be detectable from a single session -- multiple sessions are required
-- The Evaluator should note whether the feature CLAIMS to be AI-powered (e.g., "personalized for you") and test that claim
+- The critic should note whether the feature CLAIMS to be AI-powered (e.g., "personalized for you") and test that claim
 
 ### Special: Game AI
 
@@ -506,7 +506,6 @@ Features found in the application that are NOT in SPEC.md are penalized, not rew
 ### Scoring Impact by Criterion
 
 - **Product Depth:** Penalized. Off-spec features represent misallocated effort. The GAN precision principle: the Generator should deliver what was specified, not what it decided to add. The spec is the contract.
-- **Code Quality:** Penalized. Off-spec features are a YAGNI violation -- added complexity without spec justification. Extra code increases maintenance burden and attack surface.
 - **Functionality:** Bugs from off-spec features count normally. A bug is a bug regardless of whether the feature was specified.
 - **Visual Design:** Not directly penalized for off-spec features unless they disrupt the design language.
 
@@ -515,7 +514,6 @@ Features found in the application that are NOT in SPEC.md are penalized, not rew
 Canned off-spec AI features receive the harshest penalty:
 - **Functionality:** Major bug (deceptive -- claims AI capability that does not exist)
 - **Product Depth:** Ceiling applies (max 5 for canned AI)
-- **Code Quality:** Penalty for YAGNI violation + deceptive implementation
 
 ### Feature Count Between Rounds
 
@@ -533,8 +531,6 @@ A confirmed canned AI feature triggers: Product Depth max 5 (deceptive, worse th
 
 Cross-criterion impact:
 - **Functionality:** Major bug (the feature claims to work via AI but does not)
-- **Code Quality:** Penalty (deceptive implementation, user trust violation)
-
 A canned AI feature is worse than a missing feature because:
 - Missing feature = honest gap in delivery
 - Canned feature = active deception about capability
@@ -560,7 +556,7 @@ Real but poor-quality AI lowers Functionality based on severity:
 
 ## AI Latency Assessment
 
-AI latency is assessed based on user feedback quality, not absolute speed. The Evaluator does NOT benchmark absolute speed (deferred to COMP-02). It checks whether the UX communicates what is happening.
+AI latency is assessed based on user feedback quality, not absolute speed. The critic does NOT benchmark absolute speed (deferred to COMP-02). It checks whether the UX communicates what is happening.
 
 | Missing UX Element | Severity |
 |--------------------|----------|
