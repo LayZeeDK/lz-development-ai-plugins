@@ -740,3 +740,512 @@ describe("roundComplete integration with 3 dimensions", function () {
     assert.equal(parsed.scores.code_quality, undefined, "Should not have code_quality");
   });
 });
+
+// =============================================================================
+// resume-check subcommand
+// =============================================================================
+
+describe("resume-check", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("resumeCheck");
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  function writeState(state) {
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify(state, null, 2)
+    );
+  }
+
+  it("should return next_action=plan when step is plan and SPEC.md missing", function () {
+    writeState({ prompt: "Test", step: "plan", round: 0, status: "in_progress", exit_condition: null, rounds: [] });
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "plan");
+  });
+
+  it("should return next_action=generate when step is plan and SPEC.md exists with ## Features", function () {
+    writeState({ prompt: "Test", step: "plan", round: 0, status: "in_progress", exit_condition: null, rounds: [] });
+    writeFileSync(join(tmpDir, "SPEC.md"), "# Spec\n\n## Features\n\n- Feature 1\n");
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "generate");
+  });
+
+  it("should return next_action=generate when step is generate and build output missing", function () {
+    writeState({ prompt: "Test", step: "generate", round: 1, status: "in_progress", exit_condition: null, rounds: [] });
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "generate");
+  });
+
+  it("should return next_action=evaluate when step is generate and build output exists", function () {
+    writeState({ prompt: "Test", step: "generate", round: 1, status: "in_progress", exit_condition: null, rounds: [], build_dir: "dist" });
+    mkdirSync(join(tmpDir, "dist"), { recursive: true });
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "evaluate");
+  });
+
+  it("should return next_action=spawn-both-critics when step is evaluate and no valid summaries", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+    // No evaluation directory at all
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-both-critics");
+  });
+
+  it("should return spawn-perceptual-critic when projection valid but perceptual missing", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const projDir = join(roundDir, "projection");
+    mkdirSync(projDir, { recursive: true });
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-perceptual-critic");
+  });
+
+  it("should return spawn-projection-critic when perceptual valid but projection missing", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    mkdirSync(percDir, { recursive: true });
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design", score: 6,
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-projection-critic");
+  });
+
+  it("should return compile-evaluation when both summaries valid but EVALUATION.md missing", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    const projDir = join(roundDir, "projection");
+    mkdirSync(percDir, { recursive: true });
+    mkdirSync(projDir, { recursive: true });
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design", score: 6,
+    }));
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "compile-evaluation");
+  });
+
+  it("should return round-complete when EVALUATION.md valid but git tag missing", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    const projDir = join(roundDir, "projection");
+    mkdirSync(percDir, { recursive: true });
+    mkdirSync(projDir, { recursive: true });
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design", score: 6,
+    }));
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+    writeFileSync(join(roundDir, "EVALUATION.md"), "# Eval\n\n## Scores\n\n| Criterion | Score |\n");
+
+    // Initialize a git repo in tmpDir so git tag -l works
+    execSync("git init", { cwd: tmpDir, stdio: "pipe" });
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "round-complete");
+  });
+
+  it("should return generate with round+1 when current round fully complete", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    const projDir = join(roundDir, "projection");
+    mkdirSync(percDir, { recursive: true });
+    mkdirSync(projDir, { recursive: true });
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design", score: 6,
+    }));
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+    writeFileSync(join(roundDir, "EVALUATION.md"), "# Eval\n\n## Scores\n\n| Criterion | Score |\n");
+
+    // Initialize git repo and create the tag
+    execSync("git init", { cwd: tmpDir, stdio: "pipe" });
+    execSync("git tag appdev/round-1", { cwd: tmpDir, stdio: "pipe" });
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "generate");
+    assert.equal(parsed.round, 2, "Should advance to round 2");
+  });
+
+  it("should read expected critics from state.critics (not hardcoded)", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["alpha", "beta"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const alphaDir = join(roundDir, "alpha");
+    mkdirSync(alphaDir, { recursive: true });
+    writeFileSync(join(alphaDir, "summary.json"), JSON.stringify({
+      critic: "alpha", dimension: "Quality", score: 8,
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-beta-critic", "Should use critic name from state.critics");
+  });
+
+  it("should clean up corrupt critic directory when summary.json is invalid JSON", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    const projDir = join(roundDir, "projection");
+    mkdirSync(percDir, { recursive: true });
+    mkdirSync(projDir, { recursive: true });
+
+    // Write valid projection summary
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+
+    // Write corrupt perceptual summary (truncated JSON)
+    writeFileSync(join(percDir, "summary.json"), '{"critic": "perceptual", "dimens');
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-perceptual-critic");
+    assert.ok(!existsSync(percDir), "Corrupt perceptual directory should be deleted");
+  });
+
+  it("should clean up critic directory when summary.json is missing required fields", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    const projDir = join(roundDir, "projection");
+    mkdirSync(percDir, { recursive: true });
+    mkdirSync(projDir, { recursive: true });
+
+    // Write valid projection summary
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+
+    // Write perceptual summary missing required 'score' field
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design",
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-perceptual-critic");
+    assert.ok(!existsSync(percDir), "Perceptual directory with missing fields should be deleted");
+  });
+
+  it("should return next_action=summary when step is summary", function () {
+    writeState({ prompt: "Test", step: "summary", round: 3, status: "in_progress", exit_condition: null, rounds: [] });
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "summary");
+  });
+
+  it("should default critics to [perceptual, projection] when state.critics is unset", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [] });
+    // No critics field in state
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-both-critics", "Should default to both critics");
+  });
+});
+
+// =============================================================================
+// update extensions (--build-dir, --spa, --critics)
+// =============================================================================
+
+describe("update extensions", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("updateExt");
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "generate",
+        round: 1,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("should set state.build_dir when --build-dir is provided", function () {
+    const result = runCLI("update --step generate --build-dir dist", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.build_dir, "dist");
+  });
+
+  it("should set state.spa to true when --spa true is provided", function () {
+    const result = runCLI("update --step generate --spa true", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.spa, true);
+  });
+
+  it("should set state.spa to false when --spa false is provided", function () {
+    const result = runCLI("update --step generate --spa false", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.spa, false);
+  });
+
+  it("should set state.critics as comma-split array when --critics is provided", function () {
+    const result = runCLI("update --step evaluate --critics perceptual,projection", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.critics, ["perceptual", "projection"]);
+  });
+
+  it("should allow update without --step when --build-dir is provided", function () {
+    const result = runCLI("update --build-dir dist", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed without --step. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.build_dir, "dist");
+    assert.equal(parsed.step, "generate", "Step should remain unchanged");
+  });
+
+  it("should allow update without --step when --spa is provided", function () {
+    const result = runCLI("update --spa true", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed without --step. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.spa, true);
+  });
+
+  it("should allow update without --step when --critics is provided", function () {
+    const result = runCLI("update --critics perceptual,projection", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed without --step. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.critics, ["perceptual", "projection"]);
+  });
+});
+
+// =============================================================================
+// delete/complete server cleanup
+// =============================================================================
+
+describe("delete/complete server cleanup", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("serverCleanup");
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("should clear servers array when completing", function () {
+    // Write state with servers array (PIDs will be dead, that is fine)
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "summary",
+        round: 3,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+        servers: [{ dir: "dist", pid: 99999, port: 5173, spa: true }],
+      })
+    );
+
+    const result = runCLI("complete --exit-condition PASS", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.servers, [], "Servers should be cleared after complete");
+  });
+
+  it("should attempt to stop servers before deleting state", function () {
+    // Write state with servers array
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 1,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+        servers: [{ dir: "dist", pid: 99999, port: 5173, spa: true }],
+      })
+    );
+
+    const result = runCLI("delete", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.deleted, true);
+    // State file should be gone
+    assert.ok(!existsSync(join(tmpDir, ".appdev-state.json")), "State file should be deleted");
+  });
+});
+
+// =============================================================================
+// static-serve subcommand
+// =============================================================================
+
+describe("static-serve", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("staticServe");
+    // Create state file
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 1,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+        servers: [],
+      })
+    );
+    // Create a dist directory with a minimal index.html
+    mkdirSync(join(tmpDir, "dist"), { recursive: true });
+    writeFileSync(join(tmpDir, "dist", "index.html"), "<html><body>Hello</body></html>");
+  });
+
+  afterEach(function () {
+    // Stop any servers that were started
+    try {
+      runCLI("static-serve --stop", { cwd: tmpDir });
+    } catch (e) {
+      // Ignore
+    }
+
+    cleanTempDir(tmpDir);
+  });
+
+  it("should return error when --dir is not provided and not stopping", function () {
+    const result = runCLI("static-serve", { cwd: tmpDir });
+
+    assert.notEqual(result.exitCode, 0, "Should fail without --dir");
+
+    const parsed = JSON.parse(result.stderr || result.stdout);
+    assert.ok(parsed.error, "Should have error message");
+  });
+
+  it("should stop all servers and clear state.servers when --stop is provided", function () {
+    // Write state with a fake server entry (dead PID is fine)
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 1,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+        servers: [{ dir: "dist", pid: 99999, port: 5173, spa: false }],
+      })
+    );
+
+    const result = runCLI("static-serve --stop", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.servers, [], "Servers array should be empty after stop");
+    assert.equal(parsed.stopped, true, "Should report stopped: true");
+  });
+
+  it("should return error when --dir points to non-existent directory", function () {
+    const result = runCLI("static-serve --dir nonexistent", { cwd: tmpDir });
+
+    assert.notEqual(result.exitCode, 0, "Should fail for non-existent dir");
+
+    const parsed = JSON.parse(result.stderr || result.stdout);
+    assert.ok(parsed.error, "Should have error message");
+  });
+
+  it("should recognize the static-serve subcommand (not unknown)", function () {
+    // Even if it fails for other reasons, it should not say 'Unknown subcommand'
+    const result = runCLI("static-serve --stop", { cwd: tmpDir });
+    const allOutput = (result.stdout || "") + (result.stderr || "");
+    assert.ok(!allOutput.includes("Unknown subcommand"), "Should recognize static-serve subcommand");
+  });
+});
