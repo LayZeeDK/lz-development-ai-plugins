@@ -30,7 +30,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 **Scope:** Ensemble architecture, Playwright acceptance testing, token efficiency, crash recovery. All other Dutch art museum test issues defer to v1.2.
 
 - [x] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier (completed 2026-03-31)
-- [ ] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference
+- [x] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference (completed 2026-04-01)
 - [ ] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, dev server lifecycle
 
 ### v1.2 Dutch Art Museum Test Fixes (planned)
@@ -80,9 +80,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01-PLAN.md -- SPEC-TEMPLATE.md acceptance criteria + acceptance-criteria-guide.md + planner.md updates
-- [ ] 08-02-PLAN.md -- PLAYWRIGHT-EVALUATION.md shared evaluation techniques reference
-- [ ] 08-03-PLAN.md -- Critic agent definition wiring + Generator test boundary clarification
+- [x] 08-01-PLAN.md -- SPEC-TEMPLATE.md acceptance criteria + acceptance-criteria-guide.md + planner.md updates
+- [x] 08-02-PLAN.md -- PLAYWRIGHT-EVALUATION.md shared evaluation techniques reference
+- [x] 08-03-PLAN.md -- Critic agent definition wiring + Generator test boundary clarification
 
 ### Phase 9: Crash Recovery
 **Goal**: The orchestrator detects completed critic artifacts on resume (via appdev-cli state JSON + git history + filesystem) and recovers from any crash point with minimal rework. Dev server lifecycle is managed centrally.
@@ -148,5 +148,5 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Ensemble Discriminator Architecture | v1.1 | 4/4 | Complete | 2026-03-31 |
-| 8. SPEC Acceptance Criteria + Playwright | 2/3 | In Progress|  | - |
+| 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 9. Crash Recovery | v1.1 | 0/? | Not started | - |

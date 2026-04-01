@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
 status: executing
-stopped_at: Completed 08-01-PLAN.md
+stopped_at: Completed 08-03-PLAN.md
 last_updated: "2026-04-01T12:08:49.167Z"
-last_activity: 2026-04-01 -- Phase 8 Plan 02 executed, PLAYWRIGHT-EVALUATION.md created
+last_activity: 2026-04-01 -- Phase 8 complete, all 3 plans executed
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
-  percent: 71
+  completed_plans: 7
+  percent: 86
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 8 of 9 (SPEC Acceptance Criteria + Playwright Patterns)
-Plan: 2 of 3 complete
-Status: Executing Phase 8
-Last activity: 2026-04-01 -- Phase 8 Plan 02 executed, PLAYWRIGHT-EVALUATION.md created
+Plan: 3 of 3 complete
+Status: Phase 8 Complete
+Last activity: 2026-04-01 -- Phase 8 Plan 03 executed, critic agents wired to PLAYWRIGHT-EVALUATION.md + Generator dev test boundary
 
-Progress: [#######---] 71%
+Progress: [########--] 86%
 
 ## Accumulated Context
 
@@ -93,6 +93,13 @@ Progress: [#######---] 71%
 - Skeleton acceptance test demonstrates 1:1 criteria-to-test mapping with accessibility-tree-first selectors
 - Round 2+ decision tree: reuse (pass or assertion-only failures), heal (1-2 selector timeouts), regenerate (multiple timeouts or >50%)
 
+### From Phase 8 Plan 03
+- Both critics wired to PLAYWRIGHT-EVALUATION.md with section-specific Read instructions (progressive disclosure)
+- Console filtering uses explicit `npx playwright-cli console error` command in both critics
+- Projection-critic has Round 2+ Test Reuse subsection with mechanical reuse/heal/regenerate decision tree
+- Generator has mirror boundary statement: tests/ are dev tests, independent from evaluation/round-N/ acceptance tests
+- Phase 8 complete: all 16 requirements addressed (SPEC-01..05, PLAYWRIGHT-01..06, TOKEN-01..05)
+
 ### Key v1.1 Constraints
 - Scoring dimension rename + CLI regex must be updated atomically (PITFALLS.md Pitfall 1)
 - Rising thresholds deferred to v1.2 -- infrastructure only, thresholds flat
@@ -101,6 +108,6 @@ Progress: [#######---] 71%
 
 ## Session Continuity
 
-Last session: 2026-04-01T12:08:29.846Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-04-01T12:12:39Z
+Stopped at: Completed 08-03-PLAN.md (Phase 8 complete)
 Resume file: None
