@@ -31,7 +31,7 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 - [x] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier (completed 2026-03-31)
 - [x] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference (completed 2026-04-01)
-- [ ] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, dev server lifecycle
+- [ ] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, static production build serving
 
 ### v1.2 Dutch Art Museum Test Fixes (planned)
 
@@ -85,15 +85,19 @@ Plans:
 - [x] 08-03-PLAN.md -- Critic agent definition wiring + Generator test boundary clarification
 
 ### Phase 9: Crash Recovery
-**Goal**: The orchestrator detects completed critic artifacts on resume (via appdev-cli state JSON + git history + filesystem) and recovers from any crash point with minimal rework. Dev server lifecycle is managed centrally.
+**Goal**: The orchestrator detects completed critic artifacts on resume (via appdev-cli state JSON + filesystem) and recovers from any crash point with minimal rework. Dev server lifecycle is replaced by static production builds served through appdev-cli static-serve.
 **Depends on**: Phase 7
 **Requirements**: RECOVERY-01..04
 **Success Criteria** (what must be TRUE):
-  1. On `claude --continue`, the orchestrator checks appdev-cli state + filesystem for: perceptual/summary.json, projection/summary.json, acceptance-tests.spec.ts, EVALUATION.md, git tags. It resumes from the latest completed checkpoint.
+  1. On `claude --continue`, the orchestrator checks appdev-cli state + filesystem for: perceptual/summary.json, projection/summary.json, EVALUATION.md, git tags. It resumes from the latest completed checkpoint.
   2. Four recovery states work: (1) no summaries -> spawn both critics; (2) perceptual done -> spawn projection-critic only; (3) both done -> compile-evaluation only; (4) compiled -> round-complete only
-  3. Dev server: started before evaluation, port verified, reused on resume if already running
+  3. Static production build: Generator produces production build, critics evaluate via static-serve, orchestrator stops between rounds
   4. Critic agent definitions recommend `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50`
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md -- CLI crash recovery and static serve foundation (TDD)
+- [ ] 09-02-PLAN.md -- Agent definitions and orchestrator wiring for crash recovery
 
 ## WGAN Critic Roadmap
 
@@ -149,4 +153,4 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Ensemble Discriminator Architecture | v1.1 | 4/4 | Complete | 2026-03-31 |
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
-| 9. Crash Recovery | v1.1 | 0/? | Not started | - |
+| 9. Crash Recovery | v1.1 | 0/2 | Not started | - |
