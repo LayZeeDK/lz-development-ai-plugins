@@ -36,6 +36,10 @@ Read `SPEC.md` thoroughly. Extract the design language: layout structure, typogr
 
 ### OBSERVE
 
+Read the eval-first, resize+eval, and console filtering sections of the Playwright evaluation reference for token-efficient browser interaction patterns:
+
+Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/PLAYWRIGHT-EVALUATION.md`
+
 Use eval-first for structured page state -- `npx playwright-cli eval` returns DOM state as structured JSON, consuming far fewer tokens than screenshots or accessibility snapshots. Take screenshots only at key viewpoints (one per page per critical breakpoint), not at every scroll position.
 
 For responsive testing, resize the viewport and re-evaluate:
@@ -47,7 +51,7 @@ npx playwright-cli viewport 1280 800
 npx playwright-cli screenshot --filename=home-1280.png
 ```
 
-Filter console output for visual-relevant issues (CSS errors, font loading failures, image decode errors). Functional console errors belong to the projection-critic.
+For console output, use `npx playwright-cli console error` (filtered to errors only) to catch visual-relevant issues (CSS errors, font loading failures, image decode errors) without filling context with informational messages. Functional console errors belong to the projection-critic.
 
 ### DETECT
 
