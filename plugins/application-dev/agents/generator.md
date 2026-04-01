@@ -155,15 +155,39 @@ Run e2e tests, fix what breaks. The healing loop is: run -> diagnose -> fix -> r
 
 Run the full CI suite in sequence:
 1. Build (`npm run build`, or `vp build` if using Vite+)
-2. Typecheck (`npx tsc --noEmit`, or `vp check` if using Vite+)
-3. Lint (`npx eslint .`, or `vp check` if using Vite+ -- `vp check` combines lint + format + typecheck in one pass)
-4. Unit tests (`npx vitest run --project unit`, or `vp test`)
-5. Browser tests (`npx vitest run --project browser`) -- if applicable
-6. E2e tests (`npx playwright test`) -- if applicable
+2. Production build state recording (see below)
+3. Typecheck (`npx tsc --noEmit`, or `vp check` if using Vite+)
+4. Lint (`npx eslint .`, or `vp check` if using Vite+ -- `vp check` combines lint + format + typecheck in one pass)
+5. Unit tests (`npx vitest run --project unit`, or `vp test`)
+6. Browser tests (`npx vitest run --project browser`) -- if applicable
+7. E2e tests (`npx playwright test`) -- if applicable
+
+**Production Build and State Update (after step 1 succeeds):**
+
+After a successful build, record the build output directory and whether the app
+uses client-side routing (SPA). Run:
+
+```
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step generate --build-dir <build-output-dir> --spa <true|false>)
+```
+
+Determine the build output directory from the project's build configuration.
+Common build directories: `dist` (Vite, Rollup), `build` (CRA, Parcel),
+`.next` (Next.js static export), `out` (Astro). If the app uses a client-side
+router (React Router, Vue Router, etc.), set `--spa true`. If it serves static
+pages without client-side routing, set `--spa false`.
+
+Why: Critics evaluate a production build, not a dev server -- production builds
+catch broken imports and missing assets that dev servers mask with HMR
+fallbacks. This also strengthens the GAN information barrier: minified bundles
+are opaque to critics even if tool allowlists fail.
+
+The build MUST succeed before exiting the round. If the build fails, fix the
+issue and re-run the build. Build failure = Generator failure. The state update
+with --build-dir must record a valid build directory that contains the
+production output.
 
 Fix quick wins in one pass (things that take less than 2 minutes each). Document remaining issues (do not iterate indefinitely -- this is a diagnostic, not a gate).
-
-When the app does not start (build fails): document the failure and hand off to the Evaluator anyway. The Evaluator's Step 10 (Review Code) still runs. No special "build failed" path.
 
 **Step 9: Visual self-assessment.**
 
@@ -200,7 +224,7 @@ Then:
 4. **Minimize blast radius.** Do not remove working functionality that exceeds the spec -- the spec defines minimum scope, not maximum. Preserve working code paths unless a refactor is required. When modifying a file, make targeted changes -- do not rewrite unrelated sections. Minimize changes outside the affected feature to reduce accidental regressions. Do not change API request/response shapes, endpoint paths, or data model schemas unless the fix specifically requires it -- API contract changes cascade. Fix the specific issue without inventing new abstractions, generic patterns, custom hooks, or helper utilities beyond what the refactor plan calls for. Run the application after each significant change to verify nothing broke.
 5. **Prioritize threshold failures.** If Product Depth or Functionality are below 7, focus on making features work. If Visual Design is below 6, focus on the design system. If Code Quality is below 6, refactor.
 6. **Commit your fixes.** Commit with conventional commit messages scoped to the feature or area fixed, e.g., `fix(editor): resolve canvas click handler`, `fix(design): restore typography hierarchy`. Commit after each logical fix, not all at once.
-7. **After completing fixes, run the full diagnostic battery** from Phase 4 Step 8 to verify the application still builds, passes lint/typecheck, and tests pass before completing. Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs check-assets` if any asset URLs were changed. Do not skip this step in later rounds -- regressions from fixes are common.
+7. **After completing fixes, run the full diagnostic battery** from Phase 4 Step 8 to verify the application still builds, passes lint/typecheck, and tests pass before completing. The production build and state update (`update --build-dir --spa`) must be repeated -- the build directory or SPA mode may change if the tech stack was restructured during fixes. Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs check-assets` if any asset URLs were changed. Do not skip this step in later rounds -- regressions from fixes are common.
 
 ## Testing Skills
 
@@ -234,7 +258,7 @@ Two testing skills are available for writing and running tests:
 ## Architecture Principles
 
 - Start with a clear project structure -- separate concerns early
-- Set up the build/dev toolchain before writing feature code
+- Set up the build toolchain and produce a production build before writing feature code
 - Keep the application runnable at all times -- never leave it in a broken state between features
 - Prefer simplicity over cleverness -- readable, maintainable code over clever abstractions
 - For AI features: build proper tool-use agents with error handling, not hardcoded API calls
