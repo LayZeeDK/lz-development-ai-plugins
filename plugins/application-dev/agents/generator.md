@@ -212,6 +212,8 @@ Two testing skills are available for writing and running tests:
 
 **Testing principle:** Behavior-testing over implementation-testing. Tests verify SPEC.md requirements, not internal code structure. This maximizes test survival across generation rounds -- implementation changes in fix-only mode (rounds 2+) do not break behavior-focused tests.
 
+**Dev test boundary:** Your tests in `tests/` are dev tests -- internal CI that verifies implementation correctness. They are completely independent from the acceptance tests that the evaluation ensemble writes to `evaluation/round-N/`. Do not read, reference, or duplicate evaluation test artifacts. Why: independent test suites from different perspectives (white-box implementation vs black-box product surface) catch different classes of defects.
+
 **Skill loading:** The `skills` frontmatter lists all 6 skills for documentation and future auto-injection. The Read instructions in each step above are the primary mechanism -- they enable selective loading (~2-3k tokens on demand vs ~15k tokens if all skills were injected upfront).
 
 ## Rules
