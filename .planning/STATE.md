@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-04-01T12:08:01.777Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-04-01T12:08:49.167Z"
 last_activity: 2026-04-01 -- Phase 8 Plan 02 executed, PLAYWRIGHT-EVALUATION.md created
 progress:
   total_phases: 3
@@ -78,6 +78,14 @@ Progress: [#######---] 71%
 - SAFETY_CAP wrap-up round uses same ensemble pattern for consistency
 - Architecture section describes 4 agents (Planner, Generator, Perceptual Critic, Projection Critic)
 
+### From Phase 8 Plan 01
+- SPEC-TEMPLATE.md gains Acceptance Criteria section between User Stories and Data Model with inline good/bad examples
+- acceptance-criteria-guide.md (~70 lines) teaches testable behavioral criteria across 5 sections, consumer-agnostic (no Playwright/critic mentions)
+- Planner reads criteria guide after writing features, before adding criteria (progressive disclosure)
+- Planner self-verification expanded to 8 items: items 7 (criteria presence) and 8 (criteria quality/count)
+- Acceptance criteria use bullet format with 1:1 mapping to automated test assertions
+- Tier minimums: Core >= 3 (happy path + edge case + error state), Important >= 2, Nice-to-have >= 1
+
 ### From Phase 8 Plan 02
 - PLAYWRIGHT-EVALUATION.md created as shared technique-pure reference (174 lines, 7 sections)
 - Follows ProjectedGAN shared-feature-extractor pattern: shared lower-level techniques, independent higher-level scoring
@@ -93,6 +101,6 @@ Progress: [#######---] 71%
 
 ## Session Continuity
 
-Last session: 2026-04-01T12:08:01.156Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-04-01T12:08:29.846Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None

@@ -26,11 +26,11 @@ recover from session crashes.
 
 ### SPEC Acceptance Criteria (SPEC)
 
-- [ ] **SPEC-01**: SPEC-TEMPLATE.md includes `**Acceptance Criteria:**` per feature -- behavioral, testable, not prescriptive of implementation
-- [ ] **SPEC-02**: Core features >= 3 criteria (happy path, edge case, error state); Important >= 2; Nice-to-have >= 1
-- [ ] **SPEC-03**: Criteria use measurable thresholds ("at least 12 artworks", "adapts to 320px") -- no vague qualities ("works well")
-- [ ] **SPEC-04**: Planner agent updated with compact reference on writing testable behavioral criteria (good vs bad examples)
-- [ ] **SPEC-05**: Planner self-verification checklist checks acceptance criteria presence and quality per feature
+- [x] **SPEC-01**: SPEC-TEMPLATE.md includes `**Acceptance Criteria:**` per feature -- behavioral, testable, not prescriptive of implementation
+- [x] **SPEC-02**: Core features >= 3 criteria (happy path, edge case, error state); Important >= 2; Nice-to-have >= 1
+- [x] **SPEC-03**: Criteria use measurable thresholds ("at least 12 artworks", "adapts to 320px") -- no vague qualities ("works well")
+- [x] **SPEC-04**: Planner agent updated with compact reference on writing testable behavioral criteria (good vs bad examples)
+- [x] **SPEC-05**: Planner self-verification checklist checks acceptance criteria presence and quality per feature
 
 ### Playwright Test Architecture (PLAYWRIGHT)
 
