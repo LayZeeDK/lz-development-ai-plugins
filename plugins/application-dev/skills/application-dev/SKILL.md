@@ -55,23 +55,65 @@ Execute these steps in order. Do not deviate from this sequence.
 
 ### Step 0: Resume Check
 
-Check for an existing workflow state file:
+Determine workflow entry point using two signals: whether the user provided a
+prompt (the argument to /application-dev) and whether state exists.
 
-```
-Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs exists)
-```
+1. Check if the user provided a prompt (the argument to /application-dev).
+2. Check state existence:
+   ```
+   Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs exists)
+   ```
 
-- If `{"exists": true}`:
-  1. Read the current state:
-     ```
-     Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs get)
-     ```
-  2. Show the user the original prompt and which steps have been completed
-  3. Use AskUserQuestion with two options:
-     - "Resume from [current step]" -- skip completed steps and continue
-     - "Start fresh (deletes previous progress)" -- run `delete`, then
-       proceed to Step 0.5
-- If `{"exists": false}`: proceed to Step 0.5
+Four-branch dispatch:
+
+| Prompt? | State? | Action |
+|---------|--------|--------|
+| No | Yes | Auto-resume: read state, call resume-check, show context, jump to action |
+| Yes | Yes | Ask user: resume existing or start fresh with new prompt |
+| Yes | No | Start fresh: proceed to Step 0.5 |
+| No | No | Error: nothing to resume and no prompt given -- inform user and stop |
+
+**Auto-resume (No prompt + State exists):**
+
+Read the current state and show the user what survived:
+```
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs get)
+```
+Show: original prompt, current round, current step.
+
+Call resume-check to determine the correct recovery action:
+```
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs resume-check)
+```
+Output the recovery context to the user (what artifacts survived, what action
+will be taken). Then jump directly to the action returned by resume-check:
+
+- `plan` -> Step 1
+- `generate` -> Step 2 Generation Phase (use round from response)
+- `evaluate` -> Step 2 Evaluation Phase (set critics first via update --critics)
+- `spawn-both-critics` -> Step 2 Evaluation Phase (spawn both critics)
+- `spawn-perceptual-critic` -> Step 2 Evaluation Phase (spawn only perceptual critic)
+- `spawn-projection-critic` -> Step 2 Evaluation Phase (spawn only projection critic)
+- `compile-evaluation` -> Step 2 compile-evaluation call
+- `round-complete` -> Step 2 round-complete call
+- `summary` -> Step 3
+
+If the response includes a `skip` array, those critics already produced valid
+summary.json files -- do not re-spawn them.
+
+**Prompt + State exists:**
+
+Use AskUserQuestion with two options:
+- "Resume from [current step]" -- follow the auto-resume flow above
+- "Start fresh with new prompt" -- run `delete`, then proceed to Step 0.5
+
+**Prompt + No state:**
+
+Proceed to Step 0.5 (start fresh).
+
+**No prompt + No state:**
+
+Nothing to resume and no prompt given. Inform the user and stop.
 
 ### Step 0.5: Git Workspace Setup
 
@@ -96,11 +138,18 @@ Initialize package.json:
 Bash(npm init -y)
 ```
 
-Install @playwright/cli as a dev dependency:
+Install @playwright/cli and serve as dev dependencies:
 
 ```
 Bash(npm install --save-dev @playwright/cli)
 ```
+
+```
+Bash(npm install --save-dev serve)
+```
+
+The `serve` package is the static file server used by critics during evaluation
+of production builds.
 
 Seed .gitignore with harness infrastructure (use Write tool):
 
@@ -202,10 +251,10 @@ Output: `[2/3] Generating (round N)... done`
 
 Output: `[2/3] Evaluating (round N)...`
 
-Update state:
+Update state and set expected critics:
 
 ```
-Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step evaluate --round N)
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step evaluate --critics perceptual,projection --round N)
 ```
 
 Spawn both critics in parallel:
@@ -262,6 +311,10 @@ Act on the JSON response:
   ```
   Bash(git tag -a appdev/final -m "Final result: PASS after N rounds")
   ```
+- Stop static servers:
+  ```
+  Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
+  ```
 - Break -> Step 3 (Summary)
 
 **If `exit_condition` is `"PLATEAU"`:**
@@ -273,6 +326,10 @@ Act on the JSON response:
 - Tag the final result:
   ```
   Bash(git tag -a appdev/final -m "Final result: PLATEAU after N rounds")
+  ```
+- Stop static servers:
+  ```
+  Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
   ```
 - Break -> Step 3 (Summary). No wrap-up round. Plateau means natural
   convergence.
@@ -290,6 +347,10 @@ Act on the JSON response:
 - Tag the final result:
   ```
   Bash(git tag -a appdev/final -m "Final result: REGRESSION rollback to round {best_round}")
+  ```
+- Stop static servers:
+  ```
+  Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
   ```
 - Break -> Step 3 (Summary). Use `evaluation/round-{best_round}/EVALUATION.md`
   for the summary.
@@ -329,6 +390,10 @@ Act on the JSON response:
     ```
     Bash(git tag -a appdev/final -m "Final result: SAFETY_CAP with wrap-up round")
     ```
+  - Stop static servers:
+    ```
+    Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
+    ```
 - Break -> Step 3 (Summary)
 
 **If `should_continue` is true (no exit condition):**
@@ -337,6 +402,12 @@ Act on the JSON response:
   ```
   Bash(git tag -a appdev/round-N -m "Round N complete: {escalation_label}")
   ```
+- Stop static servers before the next generation round:
+  ```
+  Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
+  ```
+  Why: Each evaluation phase gets a fresh server from the new build. Stopping
+  between rounds ensures critics never evaluate a stale build.
 - Continue to next round
 
 ### Step 3: Summary
@@ -434,6 +505,14 @@ Agents communicate through these file types:
 
 The orchestrator coordinates through one file only:
 - `.appdev-state.json` -- managed exclusively via appdev-cli
+  - `build_dir`: production build output directory (set by Generator via
+    `update --build-dir`)
+  - `spa`: whether the app uses client-side routing (set by Generator via
+    `update --spa`)
+  - `critics`: expected critic list for the current evaluation (set by
+    orchestrator via `update --critics`)
+  - `servers[]`: running static server entries with PID, port, directory
+    (managed by `static-serve` subcommand -- not written directly by any agent)
 
 No other inter-agent communication paths exist. The orchestrator does not read
 or write SPEC.md, summary.json, or EVALUATION.md except for binary checks and
