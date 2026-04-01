@@ -1250,4 +1250,81 @@ describe("static-serve", function () {
     const allOutput = (result.stdout || "") + (result.stderr || "");
     assert.ok(!allOutput.includes("Unknown subcommand"), "Should recognize static-serve subcommand");
   });
+
+  it("should record server entry in state.servers[] when server starts successfully", function () {
+    // Arrange: beforeEach provides state with servers=[] and dist/index.html
+    // Act: start server against the dist directory
+    // The health check polls up to 5s; use a longer timeout to accommodate
+    const result = runCLI("static-serve --dir dist", { cwd: tmpDir, timeout: 20000 });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.started, true, "Should report started: true");
+    assert.ok(parsed.server, "Should return a server entry");
+    assert.equal(parsed.server.dir, "dist", "Server entry should record the dir");
+    assert.equal(typeof parsed.server.pid, "number", "Server entry should record a numeric pid");
+    assert.equal(typeof parsed.server.port, "number", "Server entry should record a numeric port");
+    assert.equal(parsed.server.spa, false, "Server entry should record spa: false by default");
+
+    // Verify state file was updated
+    const stateAfter = JSON.parse(readFileSync(join(tmpDir, ".appdev-state.json"), "utf8"));
+    assert.equal(stateAfter.servers.length, 1, "State should have one server entry");
+    assert.equal(stateAfter.servers[0].dir, "dist", "State server entry should record the dir");
+  });
+
+  it("should return existing server entry without spawning a new process when server is already running for that dir", function () {
+    // Arrange: write state with an existing server entry using the test runner's own PID
+    // (which is guaranteed to be alive while this test runs)
+    const alivePid = process.pid;
+    const stateWithServer = {
+      prompt: "Test",
+      step: "evaluate",
+      round: 1,
+      status: "in_progress",
+      exit_condition: null,
+      rounds: [],
+      servers: [{ dir: "dist", pid: alivePid, port: 5173, spa: false }],
+    };
+
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify(stateWithServer)
+    );
+
+    // Act: call static-serve for the same dir -- should detect alive PID and reuse
+    const result = runCLI("static-serve --dir dist", { cwd: tmpDir, timeout: 10000 });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.reused, true, "Should report reused: true for idempotent call");
+    assert.ok(parsed.server, "Should return the existing server entry");
+    assert.equal(parsed.server.pid, alivePid, "Should return the original PID, not a new one");
+    assert.equal(parsed.server.dir, "dist", "Should return the original dir");
+
+    // Clear servers array so afterEach --stop does not attempt to kill the test runner process
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({ ...stateWithServer, servers: [] })
+    );
+  });
+
+  it("should set spa: true in state.servers[] entry when --spa true flag is provided", function () {
+    // Arrange: beforeEach provides state with servers=[] and dist/index.html
+    // Act: start server with SPA mode enabled
+    const result = runCLI("static-serve --dir dist --spa true", { cwd: tmpDir, timeout: 20000 });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.started, true, "Should report started: true");
+    assert.ok(parsed.server, "Should return a server entry");
+    assert.equal(parsed.server.spa, true, "Server entry should record spa: true when --spa true passed");
+
+    // Verify state file reflects spa: true
+    const stateAfter = JSON.parse(readFileSync(join(tmpDir, ".appdev-state.json"), "utf8"));
+    assert.equal(stateAfter.servers.length, 1, "State should have one server entry");
+    assert.equal(stateAfter.servers[0].spa, true, "State server entry should record spa: true");
+  });
 });
