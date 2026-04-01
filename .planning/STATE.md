@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Ensemble Discriminator + Crash Recovery
-status: executing
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-04-01T12:08:49.167Z"
-last_activity: 2026-04-01 -- Phase 8 complete, all 3 plans executed
+status: completed
+stopped_at: Completed 08-03-PLAN.md (Phase 8 complete)
+last_updated: "2026-04-01T12:20:03.174Z"
+last_activity: 2026-04-01 -- Phase 8 Plan 03 executed, critic agents wired to PLAYWRIGHT-EVALUATION.md + Generator dev test boundary
 progress:
   total_phases: 3
   completed_phases: 2
