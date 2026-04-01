@@ -77,7 +77,12 @@ Plans:
   3. PLAYWRIGHT-EVALUATION.md reference exists teaching eval-first, write-and-run, snapshot-as-fallback patterns -- both critics reference it
   4. Projection-critic's write-and-run: reads SPEC criteria, takes 1 snapshot, writes acceptance-tests.spec.ts, runs `npx playwright test --reporter=json`, reads JSON results -- ~5 tool calls replace ~30+ interactive calls
   5. Both critics write structured summary.json and use `console error` (filtered). Raw observation data exists on disk but not in agent context after observation steps (hard GC on agent completion)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 08-01-PLAN.md -- SPEC-TEMPLATE.md acceptance criteria + acceptance-criteria-guide.md + planner.md updates
+- [ ] 08-02-PLAN.md -- PLAYWRIGHT-EVALUATION.md shared evaluation techniques reference
+- [ ] 08-03-PLAN.md -- Critic agent definition wiring + Generator test boundary clarification
 
 ### Phase 9: Crash Recovery
 **Goal**: The orchestrator detects completed critic artifacts on resume (via appdev-cli state JSON + git history + filesystem) and recovers from any crash point with minimal rework. Dev server lifecycle is managed centrally.
@@ -143,5 +148,5 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 4. Generator Hardening and Skills | v1.0 | 4/4 | Complete | 2026-03-29 |
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Ensemble Discriminator Architecture | v1.1 | 4/4 | Complete | 2026-03-31 |
-| 8. SPEC Acceptance Criteria + Playwright | v1.1 | 0/? | Not started | - |
+| 8. SPEC Acceptance Criteria + Playwright | v1.1 | 0/3 | Not started | - |
 | 9. Crash Recovery | v1.1 | 0/? | Not started | - |
