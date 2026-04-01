@@ -13,16 +13,16 @@ recover from session crashes.
 
 ### Ensemble Discriminator Architecture (ENSEMBLE)
 
-- [x] **ENSEMBLE-01**: New `perceptual-critic` agent (Perceptual discriminator) -- scores Visual Design by detecting AI slop, assessing design authenticity, and checking whether the product passes as hand-built. Compact agent definition (detailed, not comprehensive per SkillsBench).
-- [x] **ENSEMBLE-02**: New `projection-critic` agent (Projection discriminator) -- scores Functionality by verifying SPEC.md feature conformance via write-and-run acceptance tests and AI feature probing. Compact agent definition.
-- [x] **ENSEMBLE-03**: `appdev-cli compile-evaluation` subcommand (Ensemble aggregator) -- reads perceptual/summary.json + projection/summary.json, computes Product Depth from acceptance test pass/fail, applies ceiling rules, cross-validates scores vs findings, writes EVALUATION.md from template. Fully deterministic.
-- [x] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
-- [x] **ENSEMBLE-05**: Remove monolithic `evaluator.md` -- replaced by perceptual-critic + projection-critic agents
-- [x] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (projection-critic), Visual Design (perceptual-critic). Code Quality removed.
-- [x] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Perceptual Critic, Projection Critic, CLI Ensemble)
-- [x] **ENSEMBLE-08**: SCORING-CALIBRATION.md updated for 3 dimensions with rubric descriptors, grade ranges, ceiling rules, and few-shot calibration examples aligned with Anthropic pattern
-- [x] **ENSEMBLE-09**: summary.json schema as extensible contract -- any `evaluation/round-N/*/summary.json` is auto-consumed by compile-evaluation. Directory names match GAN techniques: `perceptual/`, `projection/`, future `perturbation/`, `semantic/`
-- [x] **ENSEMBLE-10**: Orchestrator evaluation phase: parallel critic spawns with minimal prompts ("This is evaluation round N."), binary file-exists checks, CLI compile + round-complete
+- [ ] **ENSEMBLE-01**: New `perceptual-critic` agent (Perceptual discriminator) -- scores Visual Design by detecting AI slop, assessing design authenticity, and checking whether the product passes as hand-built. Compact agent definition (detailed, not comprehensive per SkillsBench).
+- [ ] **ENSEMBLE-02**: New `projection-critic` agent (Projection discriminator) -- scores Functionality by verifying SPEC.md feature conformance via write-and-run acceptance tests and AI feature probing. Compact agent definition.
+- [ ] **ENSEMBLE-03**: `appdev-cli compile-evaluation` subcommand (Ensemble aggregator) -- reads perceptual/summary.json + projection/summary.json, computes Product Depth from acceptance test pass/fail, applies ceiling rules, cross-validates scores vs findings, writes EVALUATION.md from template. Fully deterministic.
+- [ ] **ENSEMBLE-04**: `appdev-cli install-dep` subcommand -- file-based mutex for concurrent-safe npm installs. Critics manage their own evaluation tooling dependencies.
+- [ ] **ENSEMBLE-05**: Remove monolithic `evaluator.md` -- replaced by perceptual-critic + projection-critic agents
+- [ ] **ENSEMBLE-06**: 3 scoring dimensions: Product Depth (CLI-computed), Functionality (projection-critic), Visual Design (perceptual-critic). Code Quality removed.
+- [ ] **ENSEMBLE-07**: EVALUATION-TEMPLATE.md redesigned as CLI-compiled output with clear provenance per section (Perceptual Critic, Projection Critic, CLI Ensemble)
+- [ ] **ENSEMBLE-08**: SCORING-CALIBRATION.md updated for 3 dimensions with rubric descriptors, grade ranges, ceiling rules, and few-shot calibration examples aligned with Anthropic pattern
+- [ ] **ENSEMBLE-09**: summary.json schema as extensible contract -- any `evaluation/round-N/*/summary.json` is auto-consumed by compile-evaluation. Directory names match GAN techniques: `perceptual/`, `projection/`, future `perturbation/`, `semantic/`
+- [ ] **ENSEMBLE-10**: Orchestrator evaluation phase: parallel critic spawns with minimal prompts ("This is evaluation round N."), binary file-exists checks, CLI compile + round-complete
 
 ### SPEC Acceptance Criteria (SPEC)
 
@@ -58,10 +58,10 @@ recover from session crashes.
 
 ### GAN Information Barrier (BARRIER)
 
-- [x] **BARRIER-01**: Neither critic reads application source code -- evaluation is product-surface only via playwright-cli
-- [x] **BARRIER-02**: Findings describe behavioral symptoms, not code diagnoses -- code diagnosis is the Generator's job in rounds 2+
-- [x] **BARRIER-03**: Critics do not modify application source, config, or deps (except via appdev-cli install-dep for evaluation tooling)
-- [x] **BARRIER-04**: Generator's dev tests and projection-critic's acceptance tests are independent test suites with separate purposes
+- [ ] **BARRIER-01**: Neither critic reads application source code -- evaluation is product-surface only via playwright-cli
+- [ ] **BARRIER-02**: Findings describe behavioral symptoms, not code diagnoses -- code diagnosis is the Generator's job in rounds 2+
+- [ ] **BARRIER-03**: Critics do not modify application source, config, or deps (except via appdev-cli install-dep for evaluation tooling)
+- [ ] **BARRIER-04**: Generator's dev tests and projection-critic's acceptance tests are independent test suites with separate purposes
 
 ## v1.2 Requirements
 
@@ -138,8 +138,8 @@ From the GAN discriminator taxonomy (50+ types, 26 categories):
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENSEMBLE-01..10 | Phase 7 | Pending |
-| BARRIER-01..04 | Phase 7 | Pending |
+| ENSEMBLE-01..10 | Phase 7 + Phase 10 | Pending |
+| BARRIER-01..04 | Phase 7 + Phase 10 | Pending |
 | SPEC-01..05 | Phase 8 | Pending |
 | PLAYWRIGHT-01..06 | Phase 8 | Pending |
 | TOKEN-01..05 | Phase 8 | Pending |

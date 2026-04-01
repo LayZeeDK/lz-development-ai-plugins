@@ -3,7 +3,7 @@
 ## Milestones
 
 - v1.0 **Hardening** -- Phases 1-5 (shipped 2026-03-29)
-- v1.1 **Ensemble Discriminator + Crash Recovery** -- Phases 7-9 (in progress)
+- v1.1 **Ensemble Discriminator + Crash Recovery** -- Phases 7-10 (in progress)
 - v1.2 **Dutch Art Museum Test Fixes** -- Phases 10+ (planned)
 - v2.0 **Advanced Discriminators** -- (future)
 
@@ -31,7 +31,8 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 - [x] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier (completed 2026-03-31)
 - [x] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference (completed 2026-04-01)
-- [ ] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, static production build serving
+- [x] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, static production build serving (completed 2026-04-02)
+- [ ] **Phase 10: v1.1 Audit Gap Closure** - Fix integration bugs (install-dep, SAFETY_CAP, @playwright/test, baseURL), clean stale artifacts, close 14 orphaned Phase 7 requirements
 
 ### v1.2 Dutch Art Museum Test Fixes (planned)
 
@@ -99,6 +100,26 @@ Plans:
 - [x] 09-01-PLAN.md -- CLI crash recovery and static serve foundation (TDD)
 - [x] 09-02-PLAN.md -- Agent definitions and orchestrator wiring for crash recovery
 
+### Phase 10: v1.1 Audit Gap Closure
+**Goal:** Fix all integration bugs found by the v1.1 milestone audit, clean up stale artifacts from the evaluator->ensemble migration, and close the Phase 7 verification gap for 14 orphaned ENSEMBLE/BARRIER requirements.
+**Depends on**: Phase 9
+**Requirements**: ENSEMBLE-01..10, BARRIER-01..04 (re-verification), plus integration fixes for ENSEMBLE-04, RECOVERY-03, PLAYWRIGHT-02, PLAYWRIGHT-04
+**Gap Closure:** Closes all gaps from v1.1-MILESTONE-AUDIT.md
+**Success Criteria** (what must be TRUE):
+  1. `appdev-cli install-dep` accepts the calling convention used by both critic agents -- no argument mismatch errors at runtime
+  2. SAFETY_CAP wrap-up path calls `static-serve --stop` before spawning the wrap-up Generator -- no stale build served
+  3. `@playwright/test` is installed in SKILL.md Step 0.5 alongside `@playwright/cli` -- projection-critic `npx playwright test` works for all app types
+  4. Projection-critic acceptance tests have explicit baseURL configuration pointing to the static-serve port -- no port mismatch
+  5. `evaluator-hardening-structure.test.mjs` either updated for ensemble architecture or removed -- no failing tests referencing deleted evaluator.md
+  6. `ASSET-VALIDATION-PROTOCOL.md` either has a consumer or is removed -- no orphaned reference shipped to users
+  7. `generator.md` has no stale Code Quality or monolithic Evaluator references
+  8. `README.md` reflects v1.1 architecture (4 agents, 3 dimensions, ensemble workflow)
+**Plans**: 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md -- Integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
+- [ ] 10-02-PLAN.md -- Stale artifact cleanup (tests, orphaned files, generator refs, README)
+
 ## WGAN Critic Roadmap
 
 Mapping of GAN ensemble discriminator types to milestones. Each critic is a
@@ -153,4 +174,5 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 5. Optimize Agent Definitions | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Ensemble Discriminator Architecture | v1.1 | 4/4 | Complete | 2026-03-31 |
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
-| 9. Crash Recovery | v1.1 | 0/2 | Not started | - |
+| 9. Crash Recovery | v1.1 | 2/2 | Complete | 2026-04-02 |
+| 10. v1.1 Audit Gap Closure | v1.1 | 0/2 | Not started | - |
