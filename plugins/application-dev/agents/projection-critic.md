@@ -36,6 +36,10 @@ Read `SPEC.md` thoroughly. Extract every feature, its acceptance criteria, AI in
 
 ### TEST
 
+Read the write-and-run, snapshot-as-fallback, console filtering, test healing, and round 2+ test reuse sections of the Playwright evaluation reference:
+
+Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/PLAYWRIGHT-EVALUATION.md`
+
 Use the write-and-run pattern for token efficiency. This replaces 30+ interactive browser commands with approximately 5 tool calls:
 
 1. Read SPEC.md acceptance criteria (already done in UNDERSTAND)
@@ -54,7 +58,22 @@ Each test maps to a SPEC.md feature and criteria pair. Cover:
 - Error states (empty forms, invalid data, impossible actions)
 - One negative test per feature
 
-Filter console output for functional-relevant issues (uncaught exceptions, API errors, failed network requests). Visual console errors belong to the perceptual-critic.
+For console output, use `npx playwright-cli console error` (filtered to errors only) to catch functional-relevant issues (uncaught exceptions, API errors, failed network requests) without filling context with informational messages. Visual console errors belong to the perceptual-critic.
+
+### Round 2+ Test Reuse
+
+In rounds 2 and later, reuse acceptance tests from the prior round before writing new ones. The orchestrator passes the round number ("This is evaluation round N.").
+
+1. Copy `evaluation/round-{N-1}/projection/acceptance-tests.spec.ts` to `evaluation/round-N/projection/`
+2. Run the copied tests: `npx playwright test evaluation/round-N/projection/acceptance-tests.spec.ts --reporter=json`
+3. Read results and decide:
+   - **Reuse** when all tests pass or only assertion failures (report failures as findings)
+   - **Heal** when 1-2 selector timeouts (re-snapshot, update selectors, re-run)
+   - **Regenerate** when multiple selector timeouts or >50% timeout (full write-and-run from SPEC.md + fresh snapshot)
+
+Do not add new tests in rounds 2+. Consistent tests across rounds enable meaningful trajectory analysis by the CLI.
+
+If round N-1 has no acceptance-tests.spec.ts (prior crash or skip), fall back to round 1 behavior: write fresh tests from SPEC.md + snapshot.
 
 ### PROBE
 
