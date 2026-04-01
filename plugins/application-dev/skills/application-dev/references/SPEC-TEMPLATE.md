@@ -62,6 +62,28 @@ List features in priority order within three tiers:
 - As a user, I want to <action>, so that <benefit>
 - ...
 
+**Acceptance Criteria:**
+<!--
+Behavioral, testable assertions. Each bullet = one automated test.
+
+Good: "Gallery displays at least 12 artworks on initial load"
+  -- Observable outcome with a natural numeric threshold from the spec.
+Good: "User can filter artworks by artist name"
+  -- User action producing a verifiable result.
+Good: "Created artwork persists after page refresh"
+  -- Persistence stated as user-facing behavior, no mechanism named.
+
+Bad:  "The gallery looks good on mobile"
+  -- Vague quality with no observable threshold.
+Bad:  "Clicking Add opens a modal with a form"
+  -- Prescribes specific UI elements instead of describing behavior.
+Bad:  "Data is saved to localStorage"
+  -- Exposes implementation mechanism instead of user-facing outcome.
+-->
+- <observable outcome with measurable threshold if natural>
+- <observable outcome>
+- <observable outcome>
+
 **Data Model:** (if applicable)
 <Describe the key data entities, their fields, and their relationships to other entities.>
 
