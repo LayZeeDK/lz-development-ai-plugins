@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Claude Code marketplace plugin that turns a short prompt (1-4 sentences) into a complete, working application through autonomous multi-agent development. Uses a GAN-inspired three-agent architecture (Planner, Generator, Evaluator) in an adversarial feedback loop with score-based convergence detection.
+A Claude Code marketplace plugin that turns a short prompt (1-4 sentences) into a complete, working application through autonomous multi-agent development. Uses a GAN-inspired four-agent ensemble architecture (Planner, Generator, Perceptual Critic, Projection Critic) with a deterministic CLI aggregator in an adversarial feedback loop with score-based convergence detection.
 
 ## Core Value
 
@@ -19,67 +19,77 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 - v1.0: Adversarial evaluator with asset validation, AI probing, calibrated scoring (EVAL-01..05)
 - v1.0: Generator with progressive CI, AI skills, asset pipeline, Vite+ preference (GEN-01..06, SKILL-01)
 - v1.0: Optimized agent definitions with progressive disclosure (OPT-01..05)
+- v1.1: GAN ensemble architecture with perceptual-critic + projection-critic + CLI aggregator (ENSEMBLE-01..10)
+- v1.1: GAN information barrier enforced at tool allowlist and prompt guard layers (BARRIER-01..04)
+- v1.1: Behavioral acceptance criteria in SPEC-TEMPLATE.md with testable tier minimums (SPEC-01..05)
+- v1.1: Token-efficient Playwright evaluation patterns with write-and-run and eval-first (PLAYWRIGHT-01..06, TOKEN-01..05)
+- v1.1: Crash recovery via resume-check artifact detection and static production build serving (RECOVERY-01..04)
 
 ### Active
 
-<!-- Current scope: v1.1 Hardening after Dutch art museum website test #1 -->
+<!-- Current scope: v1.2 Dutch Art Museum Test Fixes -->
 
-(Defining with milestone v1.1 -- see REQUIREMENTS.md)
+(Defining with milestone v1.2 -- see REQUIREMENTS.md)
 
 ### Out of Scope
 
 - Budget/balanced/quality profiles -- configuration complexity; deferred to v2
-- Static production build output -- dev server output acceptable; production builds are a deliverable concern
-- Accessibility compliance (WCAG) -- valuable but not core to current pain points
+- Accessibility compliance (WCAG) -- valuable, planned for v2.0 accessibility-critic
 - Web Core Vitals optimization -- valuable but not core to current pain points
-- Chrome DevTools MCP/browser-agent integration -- explore after Evaluator proves out
+- Chrome DevTools MCP/browser-agent integration -- explore after ensemble proves out
 - Dedicated AI image generation tool -- Generator can use available packages and browser AI
 - Configurable round count / target grade -- score-based exit handles this
 - Autopoietic learning -- requires multi-session infrastructure beyond single-run architecture
 - Context rotation (Ralph Loop) -- monolithic pattern; GAN architecture uses fresh context per agent spawn
 - VSM dashboard (cybernetics) -- monitoring infrastructure beyond current scope
+- Separate cross-validation gate -- combinatorial explosion: N features -> N*(N-1)/2 pairs
+- Agent teams (experimental Claude Code feature) -- critical bugs (#30499, #24316, #31977)
 
-## Current Milestone: v1.1 Hardening after Dutch art museum website test #1
+## Current Milestone: v1.2 Dutch Art Museum Test Fixes
 
-**Goal:** Fix issues surfaced by the first real-world test (Dutch art museum website) -- scoring dimension restructuring, GAN information barrier enforcement, orchestrator crash recovery, and generator quality improvements.
+**Goal:** Address all remaining issues from the Dutch art museum website test #1: perturbation-critic (Robustness), scoring convergence logic, planner/generator improvements, Visual Coherence expansion, architecture documentation.
 
 **Target features:**
-- Planner: acceptance test plan in SPEC.md, tech constraints, asset strategy, measurability rule
-- Orchestrator: CLI-decided verdict, convergence logic hardening, session resume recovery
-- Generator: Vite+ adoption, dependency freshness, browser-agnostic LanguageModel, test style
-- Evaluator: Robustness dimension (replaces Code Quality), Visual Coherence (expands Visual Design), GAN information barrier (no source code), cross-feature interaction testing, commit hygiene
-- Browser: Edge-first for AI-feature applications
+- New perturbation-critic for Robustness dimension (adversarial testing)
+- Enhanced perceptual-critic for Visual Coherence (cross-page consistency)
+- Enhanced projection-critic for deeper Functionality (A->B->A navigation)
+- CLI-decided verdict with convergence logic hardening
+- Generator improvements: Vite+ adoption, dependency freshness, browser-agnostic LanguageModel
+- Architecture documentation grounded in GAN/Cybernetics/Turing test principles
 
 ## Context
 
-### Current State (post v1.0)
+### Current State (post v1.1)
 
-Shipped v1.0 hardening with 5,881 lines across 33 plugin files.
+Shipped v1.1 ensemble discriminator + crash recovery with 8,188 lines across 30 plugin files.
 
 Tech stack:
-- Orchestrator: SKILL.md (415 lines) with appdev-cli.mjs (709 lines, 9 subcommands)
-- Agents: planner.md (98 lines), generator.md (253 lines), evaluator.md (392 lines)
+- Orchestrator: SKILL.md with appdev-cli.mjs (13 subcommands including compile-evaluation, install-dep, resume-check, static-serve)
+- Agents: planner.md, generator.md, perceptual-critic.md, projection-critic.md (4 agents)
+- Scoring: 3 dimensions (Product Depth CLI-computed, Functionality, Visual Design), thresholds 7/7/6
 - Skills: 6 bundled (browser-prompt-api, browser-webllm, browser-webnn, playwright-testing, vitest-browser, vite-plus)
-- References: 8 files (templates, calibration, probing, asset validation, slop checklist)
+- References: 9 files (templates, calibration, probing, slop checklist, Playwright evaluation, acceptance criteria guide)
+- Tests: 57 tests passing (~17.5s)
 
-### Plugin structure (post v1.0)
+### Plugin structure (post v1.1)
 
 ```
 plugins/application-dev/
   .claude-plugin/plugin.json
   commands/application-dev.md
   skills/application-dev/
-    SKILL.md                              Orchestrator (415 lines)
+    SKILL.md                              Orchestrator with crash recovery
     references/
       frontend-design-principles.md
       SPEC-TEMPLATE.md
       ASSETS-TEMPLATE.md
+      acceptance-criteria-guide.md
       evaluator/
         EVALUATION-TEMPLATE.md
         SCORING-CALIBRATION.md
         AI-PROBING-REFERENCE.md
         AI-SLOP-CHECKLIST.md
-        ASSET-VALIDATION-PROTOCOL.md
+        PLAYWRIGHT-EVALUATION.md
   skills/playwright-testing/
     SKILL.md + references/ (3 files)
   skills/vitest-browser/SKILL.md
@@ -90,8 +100,10 @@ plugins/application-dev/
   agents/
     planner.md
     generator.md
-    evaluator.md
+    perceptual-critic.md
+    projection-critic.md
   scripts/appdev-cli.mjs
+  scripts/test-appdev-cli.mjs
   README.md
 ```
 
@@ -125,8 +137,9 @@ Key principle: improve quality by strengthening both sides. The Generator needs 
 
 - **Distribution model**: Everything in `plugins/application-dev/` ships to users via GitHub clone. No test files, scratch files, or build tooling in the plugin directory.
 - **Tech stack agnostic**: Generator chooses any tech stack. Preferences (Vite+) are nudges, not mandates.
-- **playwright-cli dependency**: Evaluator requires playwright-cli binary on PATH.
+- **playwright-cli dependency**: Critics require playwright-cli binary on PATH.
 - **Model compatibility**: Plugin works with `model: inherit`. Opus 4.6 1M recommended.
+- **Zero npm dependencies**: appdev-cli.mjs uses only Node.js built-ins. Critics install evaluation tooling at runtime via install-dep.
 
 ## Key Decisions
 
@@ -142,6 +155,13 @@ Key principle: improve quality by strengthening both sides. The Generator needs 
 | Progressive disclosure for agent defs | Reference files for protocol-heavy content (>30 lines, single-step relevance) | Good -- -9% lines, cleaner context |
 | WHY-based rationale over ALL-CAPS emphasis | Concrete consequences more effective than shouting | Good -- zero MUST/NEVER/ALWAYS remaining |
 | Cybernetics damping principle for fix-only mode | Unconstrained changes cause oscillation between rounds | Good -- Generator stays focused in rounds 2+ |
+| Ensemble critics over monolithic evaluator | Evaluator crashed sessions via memory leak + context exhaustion (~200 tool calls) | Good -- each critic isolated to ~60K tokens |
+| Deterministic CLI aggregator for Product Depth | Separates grading from gating (Anthropic evals pattern) | Good -- zero LLM tokens for scoring math |
+| DIMENSIONS constant as single source of truth | Prevents contract drift between extractScores regex and CLI | Good -- structurally prevents Pitfall 1 |
+| Write-and-run acceptance tests | 30+ interactive tool calls replaced by ~5 calls | Good -- massive token savings |
+| Artifact-based crash recovery | resume-check reads state JSON + filesystem for 4 recovery states | Good -- survives any crash point |
+| Static production builds over dev servers | Dev servers are fragile, leak ports, and can't be resumed | Good -- static-serve is idempotent |
+| Per-critic retry on failure | Retrying both critics wastes the successful one's work | Good -- targeted recovery |
 
 ---
-*Last updated: 2026-03-29 after v1.1 milestone start*
+*Last updated: 2026-04-02 after v1.1 milestone completion*

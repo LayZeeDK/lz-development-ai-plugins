@@ -3,8 +3,8 @@
 ## Milestones
 
 - v1.0 **Hardening** -- Phases 1-5 (shipped 2026-03-29)
-- v1.1 **Ensemble Discriminator + Crash Recovery** -- Phases 7-10 (in progress)
-- v1.2 **Dutch Art Museum Test Fixes** -- Phases 10+ (planned)
+- v1.1 **Ensemble Discriminator + Crash Recovery** -- Phases 7-10 (shipped 2026-04-02)
+- v1.2 **Dutch Art Museum Test Fixes** -- Phases 11+ (planned)
 - v2.0 **Advanced Discriminators** -- (future)
 
 ## Phases
@@ -23,16 +23,17 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 </details>
 
-### v1.1 Ensemble Discriminator + Crash Recovery
+<details>
+<summary>v1.1 Ensemble Discriminator + Crash Recovery (4 phases, 11 plans) -- SHIPPED 2026-04-02</summary>
 
-**Milestone Goal:** Replace the monolithic Evaluator (which crashes sessions via memory leak + context exhaustion after ~200 tool calls) with a GAN ensemble of specialized WGAN critics. Each critic scores one dimension in its own isolated context. The CLI ensemble aggregator computes Product Depth and assembles the report deterministically.
+- [x] Phase 7: Ensemble Discriminator Architecture (4/4 plans) -- completed 2026-03-31
+- [x] Phase 8: SPEC Acceptance Criteria + Playwright (3/3 plans) -- completed 2026-04-01
+- [x] Phase 9: Crash Recovery (2/2 plans) -- completed 2026-04-02
+- [x] Phase 10: v1.1 Audit Gap Closure (2/2 plans) -- completed 2026-04-02
 
-**Scope:** Ensemble architecture, Playwright acceptance testing, token efficiency, crash recovery. All other Dutch art museum test issues defer to v1.2.
+See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 
-- [x] **Phase 7: Ensemble Discriminator Architecture** - perceptual-critic + projection-critic + CLI compile-evaluation + install-dep + GAN barrier (completed 2026-03-31)
-- [x] **Phase 8: SPEC Acceptance Criteria + Playwright Patterns** - Acceptance criteria in SPEC.md, write-and-run test generation, token-efficient evaluation reference (completed 2026-04-01)
-- [x] **Phase 9: Crash Recovery** - Session resume from appdev-cli state + filesystem, per-critic recovery, static production build serving (completed 2026-04-02)
-- [x] **Phase 10: v1.1 Audit Gap Closure** - Fix integration bugs (install-dep, SAFETY_CAP, @playwright/test, baseURL), clean stale artifacts, close 14 orphaned Phase 7 requirements (completed 2026-04-02)
+</details>
 
 ### v1.2 Dutch Art Museum Test Fixes (planned)
 
@@ -48,85 +49,13 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
 (Phases defined after v1.2 ships)
 
-## Phase Details
-
-### Phase 7: Ensemble Discriminator Architecture
-**Goal**: The monolithic Evaluator is replaced by 2 parallel WGAN critics (perceptual-critic + projection-critic) and a deterministic CLI ensemble aggregator. Each critic scores one dimension in its own context (~60K tokens max). The CLI computes Product Depth and assembles EVALUATION.md. No single agent exceeds safe context limits.
-**Depends on**: Phase 5 (v1.0 complete)
-**Requirements**: ENSEMBLE-01..10, BARRIER-01..04
-**Success Criteria** (what must be TRUE):
-  1. `perceptual-critic.md` (Perceptual discriminator, <150 lines) scores Visual Design by detecting AI slop and assessing design authenticity -- it never reads source code, only observes the product surface via playwright-cli
-  2. `projection-critic.md` (Projection discriminator, <150 lines) scores Functionality by writing and running acceptance tests from SPEC.md criteria and probing AI features -- browser interaction happens outside its context via write-and-run
-  3. `appdev-cli compile-evaluation --round N` reads `perceptual/summary.json` + `projection/summary.json`, computes Product Depth from acceptance test results, applies ceiling rules, and writes EVALUATION.md -- fully deterministic, zero LLM tokens
-  4. `appdev-cli install-dep --dev <packages>` handles concurrent critic requests via file-based mutex -- both critics can install evaluation tooling simultaneously
-  5. The summary.json schema is extensible: adding `perturbation/summary.json` (v1.2) requires zero CLI changes -- compile-evaluation reads all `*/summary.json` directories
-**Plans**: 4 plans
-
-Plans:
-- [x] 07-01-PLAN.md -- CLI ensemble aggregator: compile-evaluation, install-dep, 3-dimension scoring (TDD)
-- [x] 07-02-PLAN.md -- EVALUATION-TEMPLATE.md + SCORING-CALIBRATION.md redesign + ROADMAP naming
-- [x] 07-03-PLAN.md -- Critic agent definitions (perceptual-critic + projection-critic) + evaluator deletion
-- [x] 07-04-PLAN.md -- Orchestrator evaluation phase rewrite + final review
-
-### Phase 8: SPEC Acceptance Criteria + Playwright Patterns
-**Goal**: SPEC.md gains behavioral acceptance criteria per feature. The projection-critic generates acceptance tests from these criteria using playwright-testing skill patterns. Both critics use token-efficient eval-first Playwright patterns documented in a dedicated reference.
-**Depends on**: Phase 7
-**Requirements**: SPEC-01..05, PLAYWRIGHT-01..06, TOKEN-01..05
-**Success Criteria** (what must be TRUE):
-  1. SPEC-TEMPLATE.md has `**Acceptance Criteria:**` per feature with >= 3 criteria for Core features -- behavioral and testable, not prescriptive of implementation
-  2. Generator writes its own dev tests (tests/) using playwright-testing Plan->Generate->Heal; projection-critic writes separate acceptance tests (evaluation/round-N/) using the same skill patterns -- independent test suites with independent purposes
-  3. PLAYWRIGHT-EVALUATION.md reference exists teaching eval-first, write-and-run, snapshot-as-fallback patterns -- both critics reference it
-  4. Projection-critic's write-and-run: reads SPEC criteria, takes 1 snapshot, writes acceptance-tests.spec.ts, runs `npx playwright test --reporter=json`, reads JSON results -- ~5 tool calls replace ~30+ interactive calls
-  5. Both critics write structured summary.json and use `console error` (filtered). Raw observation data exists on disk but not in agent context after observation steps (hard GC on agent completion)
-**Plans**: 3 plans
-
-Plans:
-- [x] 08-01-PLAN.md -- SPEC-TEMPLATE.md acceptance criteria + acceptance-criteria-guide.md + planner.md updates
-- [x] 08-02-PLAN.md -- PLAYWRIGHT-EVALUATION.md shared evaluation techniques reference
-- [x] 08-03-PLAN.md -- Critic agent definition wiring + Generator test boundary clarification
-
-### Phase 9: Crash Recovery
-**Goal**: The orchestrator detects completed critic artifacts on resume (via appdev-cli state JSON + filesystem) and recovers from any crash point with minimal rework. Dev server lifecycle is replaced by static production builds served through appdev-cli static-serve.
-**Depends on**: Phase 7
-**Requirements**: RECOVERY-01..04
-**Success Criteria** (what must be TRUE):
-  1. On `claude --continue`, the orchestrator checks appdev-cli state + filesystem for: perceptual/summary.json, projection/summary.json, EVALUATION.md, git tags. It resumes from the latest completed checkpoint.
-  2. Four recovery states work: (1) no summaries -> spawn both critics; (2) perceptual done -> spawn projection-critic only; (3) both done -> compile-evaluation only; (4) compiled -> round-complete only
-  3. Static production build: Generator produces production build, critics evaluate via static-serve, orchestrator stops between rounds
-  4. Critic agent definitions recommend `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50`
-**Plans**: 2 plans
-
-Plans:
-- [x] 09-01-PLAN.md -- CLI crash recovery and static serve foundation (TDD)
-- [x] 09-02-PLAN.md -- Agent definitions and orchestrator wiring for crash recovery
-
-### Phase 10: v1.1 Audit Gap Closure
-**Goal:** Fix all integration bugs found by the v1.1 milestone audit, clean up stale artifacts from the evaluator->ensemble migration, and close the Phase 7 verification gap for 14 orphaned ENSEMBLE/BARRIER requirements.
-**Depends on**: Phase 9
-**Requirements**: ENSEMBLE-01..10, BARRIER-01..04 (re-verification), plus integration fixes for ENSEMBLE-04, RECOVERY-03, PLAYWRIGHT-02, PLAYWRIGHT-04
-**Gap Closure:** Closes all gaps from v1.1-MILESTONE-AUDIT.md
-**Success Criteria** (what must be TRUE):
-  1. `appdev-cli install-dep` accepts the calling convention used by both critic agents -- no argument mismatch errors at runtime
-  2. SAFETY_CAP wrap-up path calls `static-serve --stop` before spawning the wrap-up Generator -- no stale build served
-  3. `@playwright/test` is installed in SKILL.md Step 0.5 alongside `@playwright/cli` -- projection-critic `npx playwright test` works for all app types
-  4. Projection-critic acceptance tests have explicit baseURL configuration pointing to the static-serve port -- no port mismatch
-  5. `evaluator-hardening-structure.test.mjs` either updated for ensemble architecture or removed -- no failing tests referencing deleted evaluator.md
-  6. `ASSET-VALIDATION-PROTOCOL.md` either has a consumer or is removed -- no orphaned reference shipped to users
-  7. `generator.md` has no stale Code Quality or monolithic Evaluator references
-  8. `README.md` reflects v1.1 architecture (4 agents, 3 dimensions, ensemble workflow)
-**Plans**: 2 plans
-
-Plans:
-- [x] 10-01-PLAN.md -- Integration bug fixes (install-dep, SAFETY_CAP, @playwright/test, baseURL)
-- [x] 10-02-PLAN.md -- Stale artifact cleanup (tests, orphaned files, generator refs, README)
-
 ## WGAN Critic Roadmap
 
 Mapping of GAN ensemble discriminator types to milestones. Each critic is a
 specialized WGAN critic (continuous 1-10 scoring, not binary real/fake).
 See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type taxonomy.
 
-### v1.1 Critics (essential -- crash-fix release)
+### v1.1 Critics (shipped 2026-04-02)
 
 | Critic agent | GAN discriminator type | Dimension | Method |
 |---|---|---|---|
