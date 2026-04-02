@@ -1,7 +1,7 @@
 {
   "name": "application-dev",
   "version": "0.1.0",
-  "description": "Autonomous application development using a GAN-inspired three-agent architecture (Planner, Generator, Evaluator)",
+  "description": "Autonomous application development using a GAN-inspired four-agent ensemble architecture (Planner, Generator, Perceptual Critic, Projection Critic)",
   "author": {
     "name": "Lars Gyrup Brink Nielsen"
   },

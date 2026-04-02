@@ -179,7 +179,7 @@ These are additional probe techniques that can be applied within or after the 10
 
 All 10 Turing test concepts adapted for the GAN critic context:
 
-1. **ELIZA Effect Warning** -- Behavioral guidance in evaluator.md (not this file). First impressions of intelligence are unreliable. The Generator's AI features may trigger the ELIZA effect, where polished UI and keyword-relevant responses create an illusion of understanding. Extra skepticism for emotionally engaging features (therapy chatbot, wellness coach, companion).
+1. **ELIZA Effect Warning** -- First impressions of intelligence are unreliable. The Generator's AI features may trigger the ELIZA effect, where polished UI and keyword-relevant responses create an illusion of understanding. Extra skepticism for emotionally engaging features (therapy chatbot, wellness coach, companion).
 2. **Winograd Schema Probes** -- Probe technique below.
 3. **Total Turing Test (Multimodal)** -- If SPEC.md claims an AI feature with multiple modalities (e.g., text + voice), test EACH modality independently. A chatbot that passes text probes but plays pre-recorded audio clips fails the voice modality. Do not let one strong modality mask a fake in another.
 4. **Functional Turing Test** -- Non-conversational AI features (OCR, classification, recommendations, image generation) are tested by whether they perform their claimed FUNCTION, not by conversation quality. The modality-based probe batteries below implement this principle -- each tests function, not imitation.
