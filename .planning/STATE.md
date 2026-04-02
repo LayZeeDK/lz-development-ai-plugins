@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Ensemble Discriminator + Crash Recovery
-status: shipped
-stopped_at: Milestone v1.1 shipped
-last_updated: "2026-04-02T02:45:00Z"
-last_activity: 2026-04-02 -- v1.1 milestone archived and tagged
+milestone: v1.2
+milestone_name: Dutch Art Museum Test Fixes
+status: active
+stopped_at: null
+last_updated: "2026-04-02T12:00:00Z"
+last_activity: 2026-04-02 -- Milestone v1.2 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application.
-**Current focus:** Planning next milestone (v1.2 Dutch Art Museum Test Fixes)
+**Current focus:** v1.2 Dutch Art Museum Test Fixes
 
 ## Current Position
 
-Phase: Milestone complete
-Plan: All complete
-Status: v1.1 SHIPPED -- planning v1.2
-Last activity: 2026-04-02 -- v1.1 milestone archived and tagged
+Phase: Not started (defining requirements)
+Plan: --
+Status: Defining requirements
+Last activity: 2026-04-02 -- Milestone v1.2 started
 
-Progress: [##########] 100%
+Progress: [..........] 0%
 
 ## Accumulated Context
 
@@ -59,5 +59,5 @@ Progress: [##########] 100%
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: v1.1 milestone shipped
+Stopped at: Defining v1.2 requirements
 Resume file: None
