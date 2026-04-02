@@ -16,11 +16,11 @@ Requirements for the Dutch Art Museum Test Fixes milestone. Addresses all remain
 
 ### Convergence Logic
 
-- [ ] **CONV-01**: Plateau threshold scaled with DIMENSIONS.length (derived from maxTotal, not hardcoded <= 1)
-- [ ] **CONV-02**: Crisis threshold (E-IV Catastrophic) scaled with DIMENSIONS.length (derived from maxTotal, not hardcoded <= 5)
+- [x] **CONV-01**: Plateau threshold scaled with DIMENSIONS.length (derived from maxTotal, not hardcoded <= 1)
+- [x] **CONV-02**: Crisis threshold (E-IV Catastrophic) scaled with DIMENSIONS.length (derived from maxTotal, not hardcoded <= 5)
 - [ ] **CONV-03**: Per-dimension pass/fail status included in round-complete output (informational, not gating)
 - [ ] **CONV-04**: Per-dimension scores included in get-trajectory output for Summary step enrichment
-- [ ] **CONV-05**: EMA-smoothed score trajectory for convergence detection (backward-compatible: alpha=1.0 degenerates to raw scores)
+- [x] **CONV-05**: EMA-smoothed score trajectory for convergence detection (backward-compatible: alpha=1.0 degenerates to raw scores)
 
 ### Orchestrator Integration
 
@@ -91,11 +91,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CRITIC-02 | Phase 11 | Complete |
 | CRITIC-03 | Phase 11 | Complete |
 | CRITIC-04 | Phase 11 | Complete |
-| CONV-01 | Phase 12 | Pending |
-| CONV-02 | Phase 12 | Pending |
+| CONV-01 | Phase 12 | Complete |
+| CONV-02 | Phase 12 | Complete |
 | CONV-03 | Phase 12 | Pending |
 | CONV-04 | Phase 12 | Pending |
-| CONV-05 | Phase 12 | Pending |
+| CONV-05 | Phase 12 | Complete |
 | ORCH-01 | Phase 13 | Pending |
 | ORCH-02 | Phase 13 | Pending |
 | ORCH-03 | Phase 13 | Pending |

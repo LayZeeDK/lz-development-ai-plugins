@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
-status: completed
-stopped_at: Completed 11-01-PLAN.md and 11-02-PLAN.md (Phase 11 complete)
-last_updated: "2026-04-02T09:26:20.502Z"
-last_activity: 2026-04-02 -- Completed plan 11-01 (4-dimension scoring foundation)
+status: executing
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-04-02T11:26:01.729Z"
+last_activity: 2026-04-02 -- Completed plan 12-01 (threshold scaling + EMA smoothing)
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application.
-**Current focus:** v1.2 Dutch Art Museum Test Fixes -- Phase 11 (Scoring Foundation + Perturbation Critic)
+**Current focus:** v1.2 Dutch Art Museum Test Fixes -- Phase 12 (Convergence Logic Hardening)
 
 ## Current Position
 
-Phase: 11 of 16 (Scoring Foundation + Perturbation Critic)
-Plan: 2 of 2 (all complete)
-Status: Phase 11 complete
-Last activity: 2026-04-02 -- Completed plan 11-01 (4-dimension scoring foundation)
+Phase: 12 of 16 (Convergence Logic Hardening)
+Plan: 1 of 2 (12-01 complete)
+Status: Phase 12 in progress
+Last activity: 2026-04-02 -- Completed plan 12-01 (threshold scaling + EMA smoothing)
 
-Progress: [||||||||||] 100%
+Progress: [||||||||--] 75%
 
 ## Accumulated Context
 
@@ -61,6 +61,12 @@ Progress: [||||||||||] 100%
 - Perturbation Critic ceiling applied within summary.json, not by CLI (matches Functionality/VD pattern)
 - DIMENSIONS constant extended to 4 entries -- auto-propagates to extractScores, computeVerdict, compile-evaluation
 
+### From Phase 12, Plan 01 (Threshold Scaling + EMA Smoothing)
+- EMA alpha=0.4 default with opts parameter for testability
+- Asymmetric E-0/E-II thresholds (2.5% vs 5%) per Schmitt trigger hysteresis
+- E-II plateau threshold at N=3 changes from <=1 to <=2 (intentional per ISA-18.2 5% deadband)
+- Dual-path signal architecture: safety=raw (E-IV, PASS), hybrid=raw+EMA (E-III), trend=EMA (E-II, E-I, E-0)
+
 ### v1.2 Phase Dependencies
 - Sequential: Phase 11 -> Phase 12 -> Phase 13
 - Independent (after Phase 11): Phase 14, Phase 15, Phase 16
@@ -71,6 +77,6 @@ Progress: [||||||||||] 100%
 
 ## Session Continuity
 
-Last session: 2026-04-02T09:18:07Z
-Stopped at: Completed 11-01-PLAN.md and 11-02-PLAN.md (Phase 11 complete)
+Last session: 2026-04-02T11:26:01.727Z
+Stopped at: Completed 12-01-PLAN.md
 Resume file: None
