@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Tests for appdev-cli.mjs Phase 7 changes:
- * - extractScores() updated from 4 to 3 dimensions
- * - computeVerdict() new function
- * - compile-evaluation subcommand
+ * Tests for appdev-cli.mjs:
+ * - extractScores() updated to 4 dimensions (PD, Fn, VD, Rb)
+ * - computeVerdict() with 4-dimension thresholds
+ * - compile-evaluation subcommand with perturbation critic
  * - install-dep subcommand
- * - roundComplete integration with 3 dimensions
+ * - roundComplete integration with 4 dimensions
  */
 
 import { describe, it, beforeEach, afterEach, mock } from "node:test";
@@ -61,8 +61,8 @@ function cleanTempDir(dir) {
   }
 }
 
-// Helper: create a 3-dimension EVALUATION.md report
-function make3DimReport(pd, fn, vd) {
+// Helper: create a 4-dimension EVALUATION.md report
+function makeReport(pd, fn, vd, rb) {
   return [
     "# Evaluation Report",
     "",
@@ -75,12 +75,13 @@ function make3DimReport(pd, fn, vd) {
     "| Product Depth | " + pd + "/10 | 7 | " + (pd >= 7 ? "PASS" : "FAIL") + " |",
     "| Functionality | " + fn + "/10 | 7 | " + (fn >= 7 ? "PASS" : "FAIL") + " |",
     "| Visual Design | " + vd + "/10 | 6 | " + (vd >= 6 ? "PASS" : "FAIL") + " |",
+    "| Robustness | " + rb + "/10 | 6 | " + (rb >= 6 ? "PASS" : "FAIL") + " |",
     "",
   ].join("\n");
 }
 
-// Helper: create a 4-dimension report (old format)
-function make4DimReport(pd, fn, vd, cq) {
+// Helper: create a Code Quality report (old format -- tests rejection)
+function makeCodeQualityReport(pd, fn, vd, cq) {
   return [
     "# Evaluation Report",
     "",
@@ -129,8 +130,23 @@ function makeProjectionSummary(score, tests, findings) {
   };
 }
 
+// Helper: create a summary.json for perturbation critic
+function makePerturbationSummary(score, findings) {
+  return {
+    critic: "perturbation",
+    dimension: "Robustness",
+    score: score,
+    threshold: 6,
+    pass: score >= 6,
+    findings: findings || [],
+    ceiling_applied: null,
+    justification: "Robustness " + score + "/10",
+    off_spec_features: [],
+  };
+}
+
 // =============================================================================
-// extractScores -- 3-dimension update
+// extractScores -- 4-dimension update
 // =============================================================================
 
 describe("extractScores", function () {
@@ -144,9 +160,9 @@ describe("extractScores", function () {
     cleanTempDir(tmpDir);
   });
 
-  it("should parse 3 dimensions (PD 7, Fn 7, VD 6) and return scores with total 20", function () {
+  it("should parse 4 dimensions (PD 7, Fn 7, VD 6, Rb 6) and return scores with total 26", function () {
     const reportPath = join(tmpDir, "EVALUATION.md");
-    writeFileSync(reportPath, make3DimReport(7, 7, 6));
+    writeFileSync(reportPath, makeReport(7, 7, 6, 6));
 
     const result = runCLI("extract-scores --report " + JSON.stringify(reportPath));
     const parsed = JSON.parse(result.stdout);
@@ -154,24 +170,25 @@ describe("extractScores", function () {
     assert.equal(parsed.scores.product_depth, 7);
     assert.equal(parsed.scores.functionality, 7);
     assert.equal(parsed.scores.visual_design, 6);
-    assert.equal(parsed.scores.total, 20);
+    assert.equal(parsed.scores.robustness, 6);
+    assert.equal(parsed.scores.total, 26);
     assert.equal(result.exitCode, 0);
   });
 
   it("should reject old 4-dimension report with Code Quality", function () {
     const reportPath = join(tmpDir, "EVALUATION.md");
-    writeFileSync(reportPath, make4DimReport(7, 7, 6, 8));
+    writeFileSync(reportPath, makeCodeQualityReport(7, 7, 6, 8));
 
     const result = runCLI("extract-scores --report " + JSON.stringify(reportPath));
     const parsed = JSON.parse(result.stderr || result.stdout);
 
     assert.ok(
-      parsed.error && parsed.error.includes("3 scores"),
-      "Error message should mention 3 scores, got: " + JSON.stringify(parsed)
+      parsed.error && parsed.error.includes("4 scores"),
+      "Error message should mention 4 scores, got: " + JSON.stringify(parsed)
     );
   });
 
-  it("should return error listing missing dimension when only 2 present", function () {
+  it("should return error listing missing dimension when only 3 present (no Robustness)", function () {
     const reportPath = join(tmpDir, "EVALUATION.md");
     const content = [
       "## Scores",
@@ -179,6 +196,7 @@ describe("extractScores", function () {
       "|-----------|-------|",
       "| Product Depth | 7/10 |",
       "| Functionality | 7/10 |",
+      "| Visual Design | 6/10 |",
     ].join("\n");
     writeFileSync(reportPath, content);
 
@@ -187,8 +205,8 @@ describe("extractScores", function () {
 
     assert.ok(parsed.error, "Should have error");
     assert.ok(
-      parsed.error.includes("visual_design"),
-      "Error should list missing dimension: visual_design, got: " + parsed.error
+      parsed.error.includes("robustness"),
+      "Error should list missing dimension: robustness, got: " + parsed.error
     );
   });
 
@@ -203,14 +221,14 @@ describe("extractScores", function () {
     assert.ok(parsed.scores, "Should have scores field");
   });
 
-  it("should compute total = product_depth + functionality + visual_design (max 30)", function () {
+  it("should compute total = pd + fn + vd + rb (max 40)", function () {
     const reportPath = join(tmpDir, "EVALUATION.md");
-    writeFileSync(reportPath, make3DimReport(10, 10, 10));
+    writeFileSync(reportPath, makeReport(10, 10, 10, 10));
 
     const result = runCLI("extract-scores --report " + JSON.stringify(reportPath));
     const parsed = JSON.parse(result.stdout);
 
-    assert.equal(parsed.scores.total, 30, "Max total should be 30");
+    assert.equal(parsed.scores.total, 40, "Max total should be 40");
   });
 });
 
@@ -219,39 +237,56 @@ describe("extractScores", function () {
 // =============================================================================
 
 describe("computeVerdict", function () {
-  it("should return PASS when all scores at or above thresholds", function () {
-    const result = runCLI("compute-verdict --pd 7 --fn 7 --vd 6");
+  it("should return PASS when all 4 scores at or above thresholds", function () {
+    const result = runCLI("compute-verdict --pd 7 --fn 7 --vd 6 --rb 8");
     const parsed = JSON.parse(result.stdout);
 
     assert.equal(parsed.verdict, "PASS");
   });
 
   it("should return FAIL when PD=6 (below 7 threshold)", function () {
-    const result = runCLI("compute-verdict --pd 6 --fn 7 --vd 6");
+    const result = runCLI("compute-verdict --pd 6 --fn 7 --vd 6 --rb 8");
     const parsed = JSON.parse(result.stdout);
 
     assert.equal(parsed.verdict, "FAIL");
   });
 
   it("should return FAIL when Fn=6 (below 7 threshold)", function () {
-    const result = runCLI("compute-verdict --pd 7 --fn 6 --vd 6");
+    const result = runCLI("compute-verdict --pd 7 --fn 6 --vd 6 --rb 8");
     const parsed = JSON.parse(result.stdout);
 
     assert.equal(parsed.verdict, "FAIL");
   });
 
   it("should return FAIL when VD=5 (below 6 threshold)", function () {
-    const result = runCLI("compute-verdict --pd 7 --fn 7 --vd 5");
+    const result = runCLI("compute-verdict --pd 7 --fn 7 --vd 5 --rb 8");
     const parsed = JSON.parse(result.stdout);
 
     assert.equal(parsed.verdict, "FAIL");
   });
 
-  it("should return PASS at exact threshold scores (PD=7, Fn=7, VD=6)", function () {
-    const result = runCLI("compute-verdict --pd 7 --fn 7 --vd 6");
+  it("should return FAIL when Rb=5 (below 6 threshold)", function () {
+    const result = runCLI("compute-verdict --pd 8 --fn 8 --vd 7 --rb 5");
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(parsed.verdict, "FAIL");
+  });
+
+  it("should return PASS at exact threshold scores (PD=7, Fn=7, VD=6, Rb=6)", function () {
+    const result = runCLI("compute-verdict --pd 7 --fn 7 --vd 6 --rb 6");
     const parsed = JSON.parse(result.stdout);
 
     assert.equal(parsed.verdict, "PASS");
+  });
+
+  it("should error when --rb is missing", function () {
+    const result = runCLI("compute-verdict --pd 7 --fn 7 --vd 6");
+
+    assert.notEqual(result.exitCode, 0, "Should fail without --rb");
+
+    const parsed = JSON.parse(result.stderr || result.stdout);
+    assert.ok(parsed.error, "Should have error message");
+    assert.ok(parsed.error.includes("--rb"), "Error should mention --rb flag");
   });
 });
 
@@ -273,7 +308,7 @@ describe("compile-evaluation", function () {
     cleanTempDir(tmpDir);
   });
 
-  function setupRound(roundNum, perceptualData, projectionData) {
+  function setupRound(roundNum, perceptualData, projectionData, perturbationData) {
     const roundDir = join(tmpDir, "evaluation", "round-" + roundNum);
     const perceptualDir = join(roundDir, "perceptual");
     const projectionDir = join(roundDir, "projection");
@@ -290,10 +325,19 @@ describe("compile-evaluation", function () {
       JSON.stringify(projectionData, null, 2)
     );
 
+    if (perturbationData) {
+      const perturbationDir = join(roundDir, "perturbation");
+      mkdirSync(perturbationDir, { recursive: true });
+      writeFileSync(
+        join(perturbationDir, "summary.json"),
+        JSON.stringify(perturbationData, null, 2)
+      );
+    }
+
     return roundDir;
   }
 
-  it("should produce EVALUATION.md from perceptual and projection summary.json", function () {
+  it("should produce EVALUATION.md from perceptual, projection, and perturbation summary.json", function () {
     const perceptual = makePerceptualSummary(6);
     const projection = makeProjectionSummary(7, {
       total: 10,
@@ -305,8 +349,9 @@ describe("compile-evaluation", function () {
         { feature: "Search", criteria: "User can search", status: "passed", details: null },
       ],
     });
+    const perturbation = makePerturbationSummary(7, []);
 
-    setupRound(1, perceptual, projection);
+    setupRound(1, perceptual, projection, perturbation);
 
     const result = runCLI("compile-evaluation --round 1", { cwd: tmpDir });
 
@@ -320,9 +365,12 @@ describe("compile-evaluation", function () {
     assert.ok(content.includes("Visual Design"), "Should contain Visual Design");
     assert.ok(content.includes("Functionality"), "Should contain Functionality");
     assert.ok(content.includes("Product Depth"), "Should contain Product Depth");
+    assert.ok(content.includes("Robustness"), "Should contain Robustness");
+    assert.ok(content.includes("Robustness Assessment"), "Should contain Robustness Assessment section");
+    assert.ok(content.includes("Perturbation Critic"), "Should cite Perturbation Critic as source");
   });
 
-  it("should produce EVALUATION.md parseable by extractScores()", function () {
+  it("should produce EVALUATION.md parseable by extractScores() with 4 dimensions", function () {
     const perceptual = makePerceptualSummary(7);
     const projection = makeProjectionSummary(8, {
       total: 10,
@@ -333,8 +381,9 @@ describe("compile-evaluation", function () {
         { feature: "Login", criteria: "User can log in", status: "passed", details: null },
       ],
     });
+    const perturbation = makePerturbationSummary(8, []);
 
-    setupRound(2, perceptual, projection);
+    setupRound(2, perceptual, projection, perturbation);
 
     const compileResult = runCLI("compile-evaluation --round 2", { cwd: tmpDir });
     assert.equal(compileResult.exitCode, 0, "compile-evaluation should succeed");
@@ -349,6 +398,8 @@ describe("compile-evaluation", function () {
     assert.equal(typeof parsed.scores.product_depth, "number");
     assert.equal(typeof parsed.scores.functionality, "number");
     assert.equal(typeof parsed.scores.visual_design, "number");
+    assert.equal(typeof parsed.scores.robustness, "number");
+    assert.equal(parsed.scores.total, parsed.scores.product_depth + parsed.scores.functionality + parsed.scores.visual_design + parsed.scores.robustness, "Total should be sum of all 4 dimensions");
   });
 
   it("should compute Product Depth from acceptance_tests pass rate", function () {
@@ -364,8 +415,9 @@ describe("compile-evaluation", function () {
       ],
     });
     const perceptual = makePerceptualSummary(6);
+    const perturbation = makePerturbationSummary(7, []);
 
-    setupRound(3, perceptual, projection);
+    setupRound(3, perceptual, projection, perturbation);
 
     const result = runCLI("compile-evaluation --round 3", { cwd: tmpDir });
     assert.equal(result.exitCode, 0);
@@ -401,8 +453,9 @@ describe("compile-evaluation", function () {
       ],
     });
     const perceptual = makePerceptualSummary(6);
+    const perturbation = makePerturbationSummary(7, []);
 
-    setupRound(4, perceptual, projection);
+    setupRound(4, perceptual, projection, perturbation);
 
     const result = runCLI("compile-evaluation --round 4", { cwd: tmpDir });
     assert.equal(result.exitCode, 0);
@@ -439,8 +492,9 @@ describe("compile-evaluation", function () {
       ]
     );
     const perceptual = makePerceptualSummary(6);
+    const perturbation = makePerturbationSummary(7, []);
 
-    setupRound(5, perceptual, projection);
+    setupRound(5, perceptual, projection, perturbation);
 
     const result = runCLI("compile-evaluation --round 5", { cwd: tmpDir });
     assert.equal(result.exitCode, 0);
@@ -486,8 +540,9 @@ describe("compile-evaluation", function () {
         affects_dimensions: ["Functionality"],
       },
     ]);
+    const perturbation = makePerturbationSummary(6, []);
 
-    setupRound(6, perceptual, projection);
+    setupRound(6, perceptual, projection, perturbation);
 
     const result = runCLI("compile-evaluation --round 6", { cwd: tmpDir });
     assert.equal(result.exitCode, 0);
@@ -507,15 +562,15 @@ describe("compile-evaluation", function () {
     assert.ok(majorIdx < minorIdx, "Major should appear before Minor");
   });
 
-  it("should auto-discover any */summary.json directories (extensibility)", function () {
+  it("should auto-discover any */summary.json directories including perturbation", function () {
     const roundDir = join(tmpDir, "evaluation", "round-7");
     const perceptualDir = join(roundDir, "perceptual");
     const projectionDir = join(roundDir, "projection");
-    const spectralDir = join(roundDir, "spectral");
+    const perturbationDir = join(roundDir, "perturbation");
 
     mkdirSync(perceptualDir, { recursive: true });
     mkdirSync(projectionDir, { recursive: true });
-    mkdirSync(spectralDir, { recursive: true });
+    mkdirSync(perturbationDir, { recursive: true });
 
     writeFileSync(
       join(perceptualDir, "summary.json"),
@@ -531,20 +586,9 @@ describe("compile-evaluation", function () {
         results: [{ feature: "A", criteria: "c1", status: "passed", details: null }],
       }))
     );
-    // Third critic (future extensibility)
     writeFileSync(
-      join(spectralDir, "summary.json"),
-      JSON.stringify({
-        critic: "spectral",
-        dimension: "Robustness",
-        score: 8,
-        threshold: 7,
-        pass: true,
-        findings: [],
-        ceiling_applied: null,
-        justification: "Robustness 8/10",
-        off_spec_features: [],
-      })
+      join(perturbationDir, "summary.json"),
+      JSON.stringify(makePerturbationSummary(8, []))
     );
 
     const result = runCLI("compile-evaluation --round 7", { cwd: tmpDir });
@@ -552,6 +596,7 @@ describe("compile-evaluation", function () {
 
     const parsed = JSON.parse(result.stdout);
     assert.equal(parsed.compiled, true, "Should report compiled: true");
+    assert.equal(typeof parsed.scores.robustness, "number", "Should include robustness score");
   });
 
   it("should exit with error when round directory does not exist", function () {
@@ -669,7 +714,7 @@ describe("install-dep", function () {
 // roundComplete integration
 // =============================================================================
 
-describe("roundComplete integration with 3 dimensions", function () {
+describe("roundComplete integration with 4 dimensions", function () {
   let tmpDir;
 
   beforeEach(function () {
@@ -695,7 +740,7 @@ describe("roundComplete integration with 3 dimensions", function () {
 
   it("should use computeVerdict() instead of extracting verdict from report", function () {
     const reportPath = join(tmpDir, "EVALUATION.md");
-    // Create a 3-dim report WITHOUT a verdict heading
+    // Create a 4-dim report WITHOUT a verdict heading
     const content = [
       "# Evaluation Report",
       "",
@@ -706,6 +751,7 @@ describe("roundComplete integration with 3 dimensions", function () {
       "| Product Depth | 7/10 | 7 | PASS |",
       "| Functionality | 7/10 | 7 | PASS |",
       "| Visual Design | 6/10 | 6 | PASS |",
+      "| Robustness | 6/10 | 6 | PASS |",
       "",
     ].join("\n");
     writeFileSync(reportPath, content);
@@ -721,9 +767,9 @@ describe("roundComplete integration with 3 dimensions", function () {
     assert.equal(parsed.verdict, "PASS", "Should compute PASS from scores");
   });
 
-  it("should work with 3-dimension reports (max total 30)", function () {
+  it("should work with 4-dimension reports (max total 40)", function () {
     const reportPath = join(tmpDir, "EVALUATION.md");
-    writeFileSync(reportPath, make3DimReport(8, 9, 7));
+    writeFileSync(reportPath, makeReport(8, 9, 7, 6));
 
     const result = runCLI(
       "round-complete --round 1 --report " + JSON.stringify(reportPath),
@@ -733,10 +779,11 @@ describe("roundComplete integration with 3 dimensions", function () {
     assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
 
     const parsed = JSON.parse(result.stdout);
-    assert.equal(parsed.scores.total, 24, "Total should be 8+9+7=24 (max 30)");
+    assert.equal(parsed.scores.total, 30, "Total should be 8+9+7+6=30 (max 40)");
     assert.equal(parsed.scores.product_depth, 8);
     assert.equal(parsed.scores.functionality, 9);
     assert.equal(parsed.scores.visual_design, 7);
+    assert.equal(parsed.scores.robustness, 6);
     assert.equal(parsed.scores.code_quality, undefined, "Should not have code_quality");
   });
 });
