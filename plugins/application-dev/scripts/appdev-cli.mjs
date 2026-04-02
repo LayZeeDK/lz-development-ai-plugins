@@ -804,7 +804,7 @@ function cmdResumeCheck() {
   var state = readState();
   var round = state.round || 0;
   var step = state.step;
-  var expectedCritics = state.critics || ["perceptual", "projection"];
+  var expectedCritics = state.critics || ["perceptual", "projection", "perturbation"];
 
   if (step === "plan") {
     var specPath = join(process.cwd(), "SPEC.md");
@@ -849,19 +849,22 @@ function cmdResumeCheck() {
       }
     }
 
-    if (invalid.length === expectedCritics.length) {
-      output({ next_action: "spawn-both-critics", round: round, skip: [], details: "No valid summaries" });
+    // spawn-all-critics: When 2+ critics are missing, re-spawn all expected
+    // critics but skip those in the skip array (valid summaries preserved).
+    // spawn-{name}-critic: When exactly 1 critic is missing, spawn only that one.
+    if (invalid.length >= 2) {
+      output({ next_action: "spawn-all-critics", round: round, skip: valid, details: "Multiple summaries missing/corrupt" });
 
       return;
     }
 
-    if (invalid.length > 0) {
+    if (invalid.length === 1) {
       output({ next_action: "spawn-" + invalid[0] + "-critic", round: round, skip: valid, details: invalid[0] + " summary missing/corrupt" });
 
       return;
     }
 
-    // Both summaries valid -- check EVALUATION.md
+    // All summaries valid -- check EVALUATION.md
     var evalPath = join(roundDir, "EVALUATION.md");
 
     if (!validateEvaluation(evalPath)) {

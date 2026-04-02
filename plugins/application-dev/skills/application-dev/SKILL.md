@@ -92,9 +92,10 @@ will be taken). Then jump directly to the action returned by resume-check:
 - `plan` -> Step 1
 - `generate` -> Step 2 Generation Phase (use round from response)
 - `evaluate` -> Step 2 Evaluation Phase (set critics first via update --critics)
-- `spawn-both-critics` -> Step 2 Evaluation Phase (spawn both critics)
+- `spawn-all-critics` -> Step 2 Evaluation Phase (spawn all critics)
 - `spawn-perceptual-critic` -> Step 2 Evaluation Phase (spawn only perceptual critic)
 - `spawn-projection-critic` -> Step 2 Evaluation Phase (spawn only projection critic)
+- `spawn-perturbation-critic` -> Step 2 Evaluation Phase (spawn only perturbation critic)
 - `compile-evaluation` -> Step 2 compile-evaluation call
 - `round-complete` -> Step 2 round-complete call
 - `summary` -> Step 3
