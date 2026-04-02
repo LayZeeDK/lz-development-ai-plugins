@@ -27,9 +27,12 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 
 ### Active
 
-<!-- Current scope: v1.2 Dutch Art Museum Test Fixes -->
-
-(Defining with milestone v1.2 -- see REQUIREMENTS.md)
+- v1.2: Perturbation-critic for Robustness dimension with adversarial testing (CRITIC-01..04)
+- v1.2: Convergence logic hardening with scaled thresholds, EMA smoothing, per-dimension tracking (CONV-01..05)
+- v1.2: Orchestrator integration for 3-critic ensemble spawn/check/retry/resume (ORCH-01..05)
+- v1.2: Enhanced perceptual-critic (cross-page consistency) and projection-critic (A->B->A navigation) (EVAL-01..03)
+- v1.2: Generator improvements -- browser-agnostic LanguageModel, Vite+ refresh, dependency freshness (GEN-01..04)
+- v1.2: Architecture principles documentation grounded in GAN/Cybernetics/Turing test (DOCS-01)
 
 ### Out of Scope
 
