@@ -538,17 +538,23 @@ Summary presentation.
 
 ## Architecture
 
-Four agents with distinct roles:
+Five agents with distinct roles:
+
+**Planning and Generation:**
 - **Planner**: Expands the user's prompt into an ambitious product specification
 - **Generator**: Builds the full application from the spec
-- **Perceptual Critic**: Evaluates visual design quality from the product
-  surface (scores Visual Design)
-- **Projection Critic**: Evaluates functional coverage via write-and-run
-  acceptance tests (scores Functionality, provides Product Depth test data)
+
+**Critic Ensemble:**
+- **Perceptual Critic** (Visual Design): Evaluates visual design quality from
+  the product surface
+- **Projection Critic** (Functionality, Product Depth): Evaluates functional
+  coverage via write-and-run acceptance tests
+- **Perturbation Critic** (Robustness): Evaluates application resilience through
+  adversarial testing of extreme conditions
 
 The Generator and critics form an adversarial pair -- the critics' honest
 assessment drives the Generator to improve. Separating generation from
-evaluation prevents self-praise bias. The two critics run in parallel with
+evaluation prevents self-praise bias. The three critics run in parallel with
 non-overlapping scoring dimensions, and the CLI compiles their outputs into a
 unified EVALUATION.md.
 
