@@ -212,7 +212,7 @@ describe("extractScores", function () {
 
   it("should not extract verdict from report (scores only, no verdict field)", function () {
     const reportPath = join(tmpDir, "EVALUATION.md");
-    writeFileSync(reportPath, make3DimReport(7, 7, 6));
+    writeFileSync(reportPath, makeReport(7, 7, 6, 6));
 
     const result = runCLI("extract-scores --report " + JSON.stringify(reportPath));
     const parsed = JSON.parse(result.stdout);

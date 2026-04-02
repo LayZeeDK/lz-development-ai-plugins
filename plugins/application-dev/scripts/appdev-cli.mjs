@@ -15,6 +15,7 @@ const DIMENSIONS = [
   { name: "Product Depth", key: "product_depth", threshold: 7 },
   { name: "Functionality", key: "functionality", threshold: 7 },
   { name: "Visual Design", key: "visual_design", threshold: 6 },
+  { name: "Robustness", key: "robustness", threshold: 6 },
 ];
 
 const SEVERITY_ORDER = { Critical: 0, Major: 1, Minor: 2 };
@@ -1195,12 +1196,13 @@ function cmdComputeVerdict(argv) {
   var pd = parseInt(args.pd, 10);
   var fn = parseInt(args.fn, 10);
   var vd = parseInt(args.vd, 10);
+  var rb = parseInt(args.rb, 10);
 
-  if (isNaN(pd) || isNaN(fn) || isNaN(vd)) {
-    fail("Missing required arguments: --pd <N> --fn <N> --vd <N>");
+  if (isNaN(pd) || isNaN(fn) || isNaN(vd) || isNaN(rb)) {
+    fail("Missing required arguments: --pd <N> --fn <N> --vd <N> --rb <N>");
   }
 
-  var scores = { product_depth: pd, functionality: fn, visual_design: vd };
+  var scores = { product_depth: pd, functionality: fn, visual_design: vd, robustness: rb };
   var verdict = computeVerdict(scores);
 
   output({ verdict: verdict, scores: scores });
@@ -1337,6 +1339,7 @@ function cmdCompileEvaluation(argv) {
     { key: "product_depth", name: "Product Depth", source: "CLI Ensemble (computed from acceptance test results)", justification: pdResult.justification, ceiling: pdResult.ceiling_applied },
     { key: "functionality", name: "Functionality", source: "Projection Critic", justification: dimJustifications["Functionality"] || "" },
     { key: "visual_design", name: "Visual Design", source: "Perceptual Critic", justification: dimJustifications["Visual Design"] || "" },
+    { key: "robustness", name: "Robustness", source: "Perturbation Critic", justification: dimJustifications["Robustness"] || "" },
   ];
 
   // Build EVALUATION.md content
@@ -1371,7 +1374,7 @@ function cmdCompileEvaluation(argv) {
   }
 
   md += "## Priority Fixes for Next Round\n";
-  md += "*Source: CLI Ensemble (merged from both critics, severity-ordered)*\n\n";
+  md += "*Source: CLI Ensemble (merged from all critics, severity-ordered)*\n\n";
   md += fixesMd;
 
   writeFileSync(join(roundDir, "EVALUATION.md"), md, "utf8");
