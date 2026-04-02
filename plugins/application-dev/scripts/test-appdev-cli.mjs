@@ -1490,6 +1490,152 @@ describe("static-serve", function () {
 });
 
 // =============================================================================
+// get-trajectory per-dimension scores (CONV-04)
+// =============================================================================
+
+describe("get-trajectory per-dimension scores (CONV-04)", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("trajDim");
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("should include dimensions object per trajectory entry", function () {
+    // Pre-populate state with 2 rounds of known scores
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 2,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [
+          { round: 1, verdict: "FAIL", scores: { product_depth: 5, functionality: 6, visual_design: 5, robustness: 4, total: 20 }, escalation: "E-0", escalation_label: "Progressing" },
+          { round: 2, verdict: "FAIL", scores: { product_depth: 7, functionality: 6, visual_design: 7, robustness: 5, total: 25 }, escalation: "E-0", escalation_label: "Progressing" },
+        ],
+      })
+    );
+
+    var result = runCLI("get-trajectory", { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.trajectory, "Should have trajectory array");
+    assert.equal(parsed.trajectory.length, 2, "Should have 2 entries");
+
+    var entry1 = parsed.trajectory[0];
+    assert.ok(entry1.dimensions, "Entry 1 should have dimensions object");
+    assert.equal(entry1.dimensions.product_depth, 5);
+    assert.equal(entry1.dimensions.functionality, 6);
+    assert.equal(entry1.dimensions.visual_design, 5);
+    assert.equal(entry1.dimensions.robustness, 4);
+
+    var entry2 = parsed.trajectory[1];
+    assert.ok(entry2.dimensions, "Entry 2 should have dimensions object");
+    assert.equal(entry2.dimensions.product_depth, 7);
+    assert.equal(entry2.dimensions.functionality, 6);
+    assert.equal(entry2.dimensions.visual_design, 7);
+    assert.equal(entry2.dimensions.robustness, 5);
+  });
+
+  it("should not include total in dimensions object", function () {
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 1,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [
+          { round: 1, verdict: "FAIL", scores: { product_depth: 7, functionality: 6, visual_design: 7, robustness: 5, total: 25 }, escalation: "E-0", escalation_label: "Progressing" },
+        ],
+      })
+    );
+
+    var result = runCLI("get-trajectory", { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    var entry = parsed.trajectory[0];
+    assert.ok(entry.dimensions, "Should have dimensions object");
+    assert.equal(entry.dimensions.total, undefined, "dimensions should NOT include total key");
+  });
+
+  it("should handle rounds with missing scores gracefully", function () {
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 2,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [
+          { round: 1, verdict: "FAIL", scores: null, escalation: "E-0", escalation_label: "Progressing" },
+          { round: 2, verdict: "FAIL", scores: { product_depth: 7, functionality: 6, visual_design: 7, robustness: 5, total: 25 }, escalation: "E-0", escalation_label: "Progressing" },
+        ],
+      })
+    );
+
+    var result = runCLI("get-trajectory", { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed (no crash). stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    var entry1 = parsed.trajectory[0];
+    assert.ok(entry1.dimensions !== undefined, "Entry with null scores should still have dimensions");
+    assert.deepEqual(entry1.dimensions, {}, "Entry with null scores should have empty dimensions object");
+
+    var entry2 = parsed.trajectory[1];
+    assert.equal(entry2.dimensions.product_depth, 7, "Entry with valid scores should have populated dimensions");
+  });
+
+  it("should include dimensions in round-complete trajectory too", function () {
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 0,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+
+    var reportPath = join(tmpDir, "EVALUATION.md");
+    writeFileSync(reportPath, makeReport(8, 7, 7, 6));
+
+    var result = runCLI(
+      "round-complete --round 1 --report " + JSON.stringify(reportPath),
+      { cwd: tmpDir }
+    );
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.trajectory, "round-complete should have trajectory");
+    assert.ok(parsed.trajectory.length >= 1, "Should have at least 1 trajectory entry");
+
+    var trajEntry = parsed.trajectory[0];
+    assert.ok(trajEntry.dimensions, "trajectory entry in round-complete should have dimensions");
+    assert.equal(trajEntry.dimensions.product_depth, 8);
+    assert.equal(trajEntry.dimensions.functionality, 7);
+    assert.equal(trajEntry.dimensions.visual_design, 7);
+    assert.equal(trajEntry.dimensions.robustness, 6);
+    assert.equal(trajEntry.dimensions.total, undefined, "dimensions in round-complete trajectory should NOT include total");
+  });
+});
+
+// =============================================================================
 // computeEMA -- indirect verification through escalation behavior
 // =============================================================================
 

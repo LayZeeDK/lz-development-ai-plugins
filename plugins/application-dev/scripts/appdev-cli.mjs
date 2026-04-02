@@ -672,10 +672,21 @@ function cmdRoundComplete(argv) {
 
   // Build trajectory
   const trajectory = state.rounds.map(function (r) {
+    var dimensions = {};
+
+    for (var ki = 0; ki < DIMENSIONS.length; ki++) {
+      var dim = DIMENSIONS[ki];
+
+      if (r.scores && r.scores[dim.key] !== undefined) {
+        dimensions[dim.key] = r.scores[dim.key];
+      }
+    }
+
     return {
       round: r.round,
       total: r.scores ? r.scores.total : null,
       escalation: r.escalation,
+      dimensions: dimensions,
     };
   });
 
@@ -711,12 +722,23 @@ function cmdGetTrajectory() {
   }
 
   const trajectory = state.rounds.map(function (r) {
+    var dimensions = {};
+
+    for (var ki = 0; ki < DIMENSIONS.length; ki++) {
+      var dim = DIMENSIONS[ki];
+
+      if (r.scores && r.scores[dim.key] !== undefined) {
+        dimensions[dim.key] = r.scores[dim.key];
+      }
+    }
+
     return {
       round: r.round,
       total: r.scores ? r.scores.total : null,
       escalation: r.escalation || null,
       escalation_label: r.escalation_label || null,
       verdict: r.verdict,
+      dimensions: dimensions,
     };
   });
 
