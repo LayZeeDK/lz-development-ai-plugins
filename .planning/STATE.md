@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
 status: executing
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-04-02T11:26:01.729Z"
-last_activity: 2026-04-02 -- Completed plan 12-01 (threshold scaling + EMA smoothing)
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-04-02T14:52:59.075Z"
+last_activity: 2026-04-02 -- Completed plan 12-02 (per-dimension output)
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 ## Current Position
 
 Phase: 12 of 16 (Convergence Logic Hardening)
-Plan: 1 of 2 (12-01 complete)
-Status: Phase 12 in progress
-Last activity: 2026-04-02 -- Completed plan 12-01 (threshold scaling + EMA smoothing)
+Plan: 2 of 2 (12-02 complete)
+Status: Phase 12 complete
+Last activity: 2026-04-02 -- Completed plan 12-02 (per-dimension output)
 
-Progress: [||||||||--] 75%
+Progress: [##########] 100%
 
 ## Accumulated Context
 
@@ -67,6 +67,12 @@ Progress: [||||||||--] 75%
 - E-II plateau threshold at N=3 changes from <=1 to <=2 (intentional per ISA-18.2 5% deadband)
 - Dual-path signal architecture: safety=raw (E-IV, PASS), hybrid=raw+EMA (E-III), trend=EMA (E-II, E-I, E-0)
 
+### From Phase 12, Plan 02 (Per-Dimension Output)
+- dimension_status uses array format with full metadata (name, key, score, threshold, pass) for diagnostic overlay
+- dimensions uses compact keyed object format (dimension_key: score) for trend extraction efficiency
+- Both scores and dimension_status coexist in round-complete output (backward compatible)
+- Rounds with null/missing scores produce empty dimensions object (graceful degradation)
+
 ### v1.2 Phase Dependencies
 - Sequential: Phase 11 -> Phase 12 -> Phase 13
 - Independent (after Phase 11): Phase 14, Phase 15, Phase 16
@@ -77,6 +83,6 @@ Progress: [||||||||--] 75%
 
 ## Session Continuity
 
-Last session: 2026-04-02T11:26:01.727Z
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-04-02T14:52:59.073Z
+Stopped at: Completed 12-02-PLAN.md
 Resume file: None
