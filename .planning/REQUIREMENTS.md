@@ -25,8 +25,8 @@ Requirements for the Dutch Art Museum Test Fixes milestone. Addresses all remain
 ### Orchestrator Integration
 
 - [ ] **ORCH-01**: 3-critic parallel spawn in evaluation phase (perceptual + projection + perturbation)
-- [ ] **ORCH-02**: Resume-check generalized from spawn-both-critics to spawn-all-critics (CLI output + SKILL.md dispatch updated atomically)
-- [ ] **ORCH-03**: Retry logic generalized for N critics ("retry each failed critic individually" not "retry both")
+- [x] **ORCH-02**: Resume-check generalized from spawn-both-critics to spawn-all-critics (CLI output + SKILL.md dispatch updated atomically)
+- [x] **ORCH-03**: Retry logic generalized for N critics ("retry each failed critic individually" not "retry both")
 - [ ] **ORCH-04**: SAFETY_CAP wrap-up round includes perturbation-critic spawn
 - [ ] **ORCH-05**: Architecture section updated from 4 to 5 agents with perturbation-critic description
 
@@ -97,8 +97,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-04 | Phase 12 | Complete |
 | CONV-05 | Phase 12 | Complete |
 | ORCH-01 | Phase 13 | Pending |
-| ORCH-02 | Phase 13 | Pending |
-| ORCH-03 | Phase 13 | Pending |
+| ORCH-02 | Phase 13 | Complete |
+| ORCH-03 | Phase 13 | Complete |
 | ORCH-04 | Phase 13 | Pending |
 | ORCH-05 | Phase 13 | Pending |
 | EVAL-01 | Phase 14 | Pending |

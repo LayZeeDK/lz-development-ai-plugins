@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
-status: completed
-stopped_at: Phase 13 context gathered
-last_updated: "2026-04-02T15:34:02.778Z"
-last_activity: 2026-04-02 -- Completed plan 12-02 (per-dimension output)
+status: executing
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-04-02T17:30:40.021Z"
+last_activity: 2026-04-02 -- Completed plan 13-01 (N-critic resume-check)
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application.
-**Current focus:** v1.2 Dutch Art Museum Test Fixes -- Phase 12 (Convergence Logic Hardening)
+**Current focus:** v1.2 Dutch Art Museum Test Fixes -- Phase 13 (Orchestrator Integration)
 
 ## Current Position
 
-Phase: 12 of 16 (Convergence Logic Hardening)
-Plan: 2 of 2 (12-02 complete)
-Status: Phase 12 complete
-Last activity: 2026-04-02 -- Completed plan 12-02 (per-dimension output)
+Phase: 13 of 16 (Orchestrator Integration)
+Plan: 1 of 2 (13-01 complete)
+Status: Phase 13 in progress
+Last activity: 2026-04-02 -- Completed plan 13-01 (N-critic resume-check)
 
 Progress: [##########] 100%
 
@@ -73,6 +73,12 @@ Progress: [##########] 100%
 - Both scores and dimension_status coexist in round-complete output (backward compatible)
 - Rounds with null/missing scores produce empty dimensions object (graceful degradation)
 
+### From Phase 13, Plan 01 (N-Critic Resume-Check)
+- >= 2 invalid threshold for spawn-all-critics (not === expectedCritics.length)
+- skip array passes valid critics even in spawn-all-critics path (valid is empty when all invalid)
+- Default critics list: ["perceptual", "projection", "perturbation"]
+- SKILL.md dispatch table updated atomically with CLI changes (Pitfall 1 prevention)
+
 ### v1.2 Phase Dependencies
 - Sequential: Phase 11 -> Phase 12 -> Phase 13
 - Independent (after Phase 11): Phase 14, Phase 15, Phase 16
@@ -83,6 +89,6 @@ Progress: [##########] 100%
 
 ## Session Continuity
 
-Last session: 2026-04-02T15:34:02.775Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-orchestrator-integration/13-CONTEXT.md
+Last session: 2026-04-02T17:30:40.018Z
+Stopped at: Completed 13-01-PLAN.md
+Resume file: None
