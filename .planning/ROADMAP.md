@@ -64,7 +64,10 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
   3. SCORING-CALIBRATION.md contains Robustness ceiling rules and below/at/above threshold calibration scenarios that anchor scoring before any real evaluation runs
   4. All existing tests pass with 4 dimensions, and new tests verify 4-dimension score extraction, verdict computation, and assessment section generation
 **Pitfalls**: Pitfall 2 (scope overlap between critics -- define explicit methodology boundaries), Pitfall 5 (Robustness calibration gap -- write ceiling rules before first use)
-**Plans**: TBD (est. 2-3)
+**Plans**: 2 plans
+Plans:
+- [ ] 11-01-PLAN.md -- 4-dimension scoring system (DIMENSIONS + CLI + tests + template)
+- [ ] 11-02-PLAN.md -- Robustness calibration + perturbation-critic agent definition
 
 ### Phase 12: Convergence Logic Hardening
 **Goal**: Convergence detection scales correctly with any number of scoring dimensions and provides per-dimension trajectory visibility
@@ -184,7 +187,7 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 9. Crash Recovery | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 10. v1.1 Audit Gap Closure | v1.1 | 2/2 | Complete | 2026-04-02 |
-| 11. Scoring Foundation + Perturbation Critic | v1.2 | 0/0 | Not started | - |
+| 11. Scoring Foundation + Perturbation Critic | v1.2 | 0/2 | Planned | - |
 | 12. Convergence Logic Hardening | v1.2 | 0/0 | Not started | - |
 | 13. Orchestrator Integration | v1.2 | 0/0 | Not started | - |
 | 14. Enhanced Existing Critics | v1.2 | 0/0 | Not started | - |
