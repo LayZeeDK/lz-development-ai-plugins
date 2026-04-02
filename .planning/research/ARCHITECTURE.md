@@ -1,619 +1,799 @@
-# Architecture Patterns: v1.1 Integration Analysis
+# Architecture Patterns: v1.2 Integration Analysis
 
-**Domain:** GAN-inspired autonomous application development plugin -- hardening after first real-world test
-**Researched:** 2026-03-29
-**Confidence:** HIGH (based on direct codebase analysis of all 8 core plugin files)
+**Domain:** GAN-inspired autonomous application development plugin -- adding perturbation-critic, convergence hardening, enhanced critic dimensions, and architecture documentation
+**Researched:** 2026-04-02
+**Confidence:** HIGH (based on direct codebase analysis of all 30 shipped plugin files)
 
 ## Executive Summary
 
-The v1.1 features fall into five integration categories: (1) SPEC-TEMPLATE.md extension for acceptance test plan, (2) verdict computation migration from Evaluator to CLI, (3) scoring dimension restructuring in EVALUATION-TEMPLATE.md and SCORING-CALIBRATION.md, (4) CLI subcommand changes for new data flow, and (5) Evaluator information barrier enforcement. Each category has a different blast radius -- from template-only changes (low risk) to data flow restructuring (medium risk). The critical dependency chain is: scoring dimensions first (changes the regex contract), then CLI verdict computation (depends on new dimensions), then template updates (propagate new contract), then agent updates (consume new templates).
+The v1.2 features integrate with the existing ensemble architecture at five distinct levels: (1) a new perturbation-critic agent that plugs into the existing parallel-spawn + CLI-aggregation pipeline, (2) convergence logic restructuring in appdev-cli.mjs that hardens the existing escalation/exit machinery, (3) dimension changes that affect the DIMENSIONS constant and score regex contract, (4) orchestrator loop changes for 3+ critics, and (5) architecture documentation as a new reference file within the plugin.
 
-All v1.1 changes are modifications to existing files. No new files are created. This is consistent with "hardening" -- the architecture is sound, the content needs refinement.
+The critical insight is that the v1.1 ensemble architecture was explicitly designed for N-critic extensibility. The `compile-evaluation` subcommand already auto-discovers `*/summary.json` directories via `readdirSync` glob (verified in test-appdev-cli.mjs line 510-555, test: "should auto-discover any */summary.json directories (extensibility)"). Adding perturbation-critic requires no changes to compile-evaluation's discovery logic -- only to the DIMENSIONS constant and the orchestrator's critic spawn list.
 
----
-
-## Question 1: Where Does the Acceptance Test Plan Fit in SPEC-TEMPLATE.md?
-
-### Current State
-
-SPEC-TEMPLATE.md has these top-level sections (in order):
-1. Overview
-2. Visual Design Language
-3. User Journey
-4. Constraints and Non-Goals
-5. Features (with user stories and data models per feature)
-6. AI Integration
-7. Non-Functional Considerations
-
-The Evaluator currently derives its test oracle from SPEC.md: user stories, feature descriptions, and design language descriptions. There is no structured, machine-readable test plan -- the Evaluator invents its test strategy at runtime.
-
-### Recommended Integration Point
-
-**Add `## Acceptance Test Plan` as a new section between `## Features` and `## AI Integration`.**
-
-Rationale:
-- It depends on Features (tests verify features) so it must come after
-- It is independent of AI Integration (AI features are also features with their own test criteria)
-- Placing it before AI Integration keeps the "what to build" sections (Features) grouped before the "how to verify" section, then the "special implementation concerns" sections (AI, Non-Functional)
-
-### Section Structure
-
-The acceptance test plan should be Planner-authored, not Generator-authored. The Planner already understands the product domain and features. Acceptance criteria should be:
-- **Feature-level**: one test plan entry per numbered feature
-- **Behavioral**: describe what a user should be able to do, not implementation details
-- **Measurable**: each criterion has a binary pass/fail outcome
-- **Evaluator-consumable**: the Evaluator reads these as its structured test oracle instead of deriving tests ad hoc
-
-```
-## Acceptance Test Plan
-
-For each feature, the acceptance criteria define the minimum bar for "Implemented" status
-in the evaluation. A feature is Partial if some criteria pass but others fail. A feature
-is Broken if the core criterion fails.
-
-### 1. <Feature Name>
-
-**Core criterion:** <The one thing that must work for this feature to count as functional>
-**Additional criteria:**
-- <Measurable acceptance criterion>
-- <Measurable acceptance criterion>
-- ...
-```
-
-### Impact on Existing Components
-
-| Component | Change Type | Description |
-|-----------|-------------|-------------|
-| SPEC-TEMPLATE.md | **New section** | Add `## Acceptance Test Plan` section with per-feature structure |
-| planner.md | **Modify** | Add instruction to populate acceptance test plan; add to self-verification checklist |
-| evaluator.md | **Modify** | Step 1 (Understand the Spec): read acceptance test plan. Step 6 (Test Features): use acceptance criteria as structured test oracle |
-| EVALUATION-TEMPLATE.md | **Modify** (minor) | Feature status table could reference acceptance criteria pass/fail counts |
-| SKILL.md (orchestrator) | **No change** | Binary check ("SPEC.md contains `## Features`") does not need to check for test plan -- Planner self-verifies |
-
-### Dependency
-
-This is a **leaf change** -- it feeds into existing data flows but does not restructure them. Can be implemented independently of scoring or verdict changes.
+The dependency chain for v1.2 is: DIMENSIONS constant changes first (affects regex contract, verdict computation, and all downstream consumers), then perturbation-critic agent definition (depends on new dimension name being in DIMENSIONS), then orchestrator loop updates (depends on critic agent existing), then convergence logic hardening (independent but should land after dimensions stabilize), then Generator improvements and architecture documentation (both independent).
 
 ---
 
-## Question 2: How Does CLI Verdict Computation Change the Data Flow?
+## Question 1: Where Does perturbation-critic Fit in the Agent Spawn Sequence and CLI Aggregation?
 
-### Current Data Flow (v1.0)
-
-```
-Evaluator writes EVALUATION.md
-  |-- Contains "## Verdict: PASS/FAIL" (Evaluator decides)
-  |-- Contains scores table with per-criterion PASS/FAIL status
-  '-- Evaluator computes verdict: FAIL if ANY criterion below threshold
-       |
-       v
-appdev-cli.mjs extractScores()
-  |-- Parses scores via regex: /\|\s*(Product Depth|...)\s*\|\s*(\d+)\/10/gi
-  |-- Parses verdict via regex: /##\s*Verdict:\s*(PASS|FAIL)/
-  '-- Returns { scores, verdict }
-       |
-       v
-appdev-cli.mjs cmdRoundComplete()
-  |-- Stores scores + verdict in state
-  |-- Computes escalation (E-0 through E-IV)
-  '-- Determines exit condition (PASS/PLATEAU/REGRESSION/SAFETY_CAP)
-```
-
-The problem: **The Evaluator decides its own verdict**, which is the fox guarding the henhouse. The Dutch art museum test showed the Evaluator passed at 28/40 (all 7s) after only 2 rounds. The Evaluator "anchored" scores to thresholds -- giving exactly 7/10 on each dimension to issue a PASS verdict.
-
-### Proposed Data Flow (v1.1)
+### Current Agent Spawn Sequence (v1.1)
 
 ```
-Evaluator writes EVALUATION.md
-  |-- Contains scores table (Evaluator decides scores)
-  |-- Contains per-criterion assessment (Evaluator's analysis)
-  |-- Does NOT contain verdict (removed from Evaluator's responsibility)
-  '-- May contain a "recommended verdict" but this is advisory only
-       |
-       v
-appdev-cli.mjs extractScores()
-  |-- Parses scores via regex (UPDATED for new dimension names)
-  |-- Does NOT parse verdict from report
-  '-- Returns { scores } (no verdict field from report)
-       |
-       v
-appdev-cli.mjs cmdRoundComplete()
-  |-- COMPUTES verdict mechanically from scores vs thresholds
-  |-- Stores scores + computed verdict in state
-  |-- Computes escalation
-  '-- Determines exit condition
+Orchestrator Step 2 Evaluation Phase:
+  1. Update state: --step evaluate --critics perceptual,projection --round N
+  2. Spawn in parallel:
+     Agent("application-dev:perceptual-critic", "This is evaluation round N.")
+     Agent("application-dev:projection-critic", "This is evaluation round N.")
+  3. Binary checks: perceptual/summary.json, projection/summary.json
+  4. compile-evaluation --round N  (auto-discovers both summaries)
+  5. round-complete --round N      (extracts scores, computes verdict)
 ```
 
-### Key Architectural Change
+### Integration Point for perturbation-critic
 
-The **verdict computation moves from Evaluator to CLI**. This is a GAN principle enforcement: the discriminator (Evaluator) provides signal (scores), but the convergence decision (verdict) is made by the orchestration layer. The Evaluator cannot game the verdict by anchoring scores to thresholds because the thresholds are enforced mechanically in the CLI.
+**perturbation-critic spawns in parallel with the existing two critics.** It writes to `evaluation/round-N/perturbation/summary.json`. The compile-evaluation auto-discovery mechanism (`readdirSync` + `existsSync` for `summary.json`) will find it without modification.
 
-### Implementation Details
+Updated spawn sequence:
 
-**appdev-cli.mjs changes:**
-
-1. `extractScores()` -- Update regex pattern for new dimension names (see Question 3). Remove verdict parsing from this function. Return `{ scores }` only (no verdict).
-
-2. Add `computeVerdict(scores)` function:
-   ```javascript
-   function computeVerdict(scores) {
-     const thresholds = {
-       product_depth: 7,
-       functionality: 7,
-       visual_coherence: 6,  // renamed from visual_design
-       robustness: 6,        // renamed from code_quality
-     };
-
-     for (const [key, threshold] of Object.entries(thresholds)) {
-       if (scores[key] < threshold) {
-         return "FAIL";
-       }
-     }
-
-     return "PASS";
-   }
-   ```
-
-3. `cmdRoundComplete()` -- Use `computeVerdict(extracted.scores)` instead of `extracted.verdict`. The entry stored in `state.rounds[]` gets `verdict` from `computeVerdict()`, not from the report.
-
-4. `determineExit()` -- Already consumes `current.verdict` from the rounds array. No change needed here because `cmdRoundComplete()` populates the array with the computed verdict.
-
-**EVALUATION-TEMPLATE.md changes:**
-
-- Remove `## Verdict: <PASS or FAIL>` heading
-- Remove the `REGEX-SENSITIVE` comment about verdict parsing
-- Keep the scores table (still regex-parsed)
-- The `Status` column in the scores table (PASS/FAIL per criterion) remains -- this is informational for the Generator to know which dimensions need work
-
-**evaluator.md changes:**
-
-- Remove responsibility for computing overall verdict
-- Remove self-verification check #8 ("Verdict is FAIL if any Core feature Missing/Broken") -- this rule moves to CLI threshold logic
-- Remove self-verification check #9 ("Verdict is FAIL if >50% features Missing/Broken/Partial") -- this becomes a Product Depth ceiling rule in SCORING-CALIBRATION.md
-- Evaluator still computes per-criterion PASS/FAIL status in the table (score vs threshold comparison is trivial and useful for the Generator)
-
-**SKILL.md (orchestrator) changes:**
-
-- Binary check for EVALUATION.md: change from checking for `## Verdict` to checking for `## Scores`
-- No other orchestrator changes -- it already acts solely on CLI JSON output
-
-### Risk Assessment
-
-This is a **medium-risk structural change** because it modifies the data flow contract between Evaluator, CLI, and Orchestrator. However, the blast radius is contained: the Orchestrator already relies exclusively on CLI JSON (not the report), so removing the verdict from the report does not affect orchestration logic. The CLI simply computes what it previously read.
-
-### Dependency
-
-Depends on Question 3 (scoring dimension names must be finalized before regex patterns are updated in extractScores).
-
----
-
-## Question 3: How Do New Scoring Dimensions Affect Templates and Calibration?
-
-### Current Dimensions (v1.0)
-
-| Dimension | Threshold | What It Measures |
-|-----------|-----------|------------------|
-| Product Depth | 7 | Feature completeness vs spec |
-| Functionality | 7 | Does the app work when used? |
-| Visual Design | 6 | Design identity matching spec |
-| Code Quality | 6 | Code structure, patterns, security |
-
-### Proposed Dimensions (v1.1)
-
-| Dimension | Threshold | What It Measures | Change Type |
-|-----------|-----------|------------------|-------------|
-| Product Depth | 7 | Feature completeness vs spec | **Unchanged** |
-| Functionality | 7 | Does the app work when used? | **Unchanged** |
-| Visual Coherence | 6 | Expanded: design identity + cross-page consistency + responsive coherence | **Renamed + expanded** |
-| Robustness | 6 | Replaces Code Quality: build stability, error handling, dependency health, test coverage | **Renamed + refocused** |
-
-### Changes to EVALUATION-TEMPLATE.md
-
-**Scores table:**
-```markdown
-| Criterion | Score | Threshold | Status |
-|-----------|-------|-----------|--------|
-| Product Depth | X/10 | 7 | PASS/FAIL |
-| Functionality | X/10 | 7 | PASS/FAIL |
-| Visual Coherence | X/10 | 6 | PASS/FAIL |
-| Robustness | X/10 | 6 | PASS/FAIL |
+```
+Orchestrator Step 2 Evaluation Phase (v1.2):
+  1. Update state: --step evaluate --critics perceptual,projection,perturbation --round N
+  2. Spawn in parallel:
+     Agent("application-dev:perceptual-critic", "This is evaluation round N.")
+     Agent("application-dev:projection-critic", "This is evaluation round N.")
+     Agent("application-dev:perturbation-critic", "This is evaluation round N.")
+  3. Binary checks: perceptual/summary.json, projection/summary.json, perturbation/summary.json
+  4. compile-evaluation --round N  (auto-discovers all 3 summaries)
+  5. round-complete --round N      (extracts scores including Robustness, computes verdict)
 ```
 
-**REGEX-SENSITIVE comment update:**
-```
-<!-- REGEX-SENSITIVE: The following table is parsed by appdev-cli.mjs
-     using the pattern /\|\s*(Product Depth|Functionality|Visual Coherence|Robustness)\s*\|\s*(\d+)\/10/gi
-     Do not change the criterion names, column structure, or score format. -->
-```
+### Why Parallel Spawning Works
 
-**Score Justifications table:** Update criterion names.
+Each critic operates in an isolated context (~60K tokens max), evaluates the same static production build, and writes to its own subdirectory. Critics do not communicate with each other. The static-serve command is idempotent (verified in appdev-cli.mjs lines 855-861) -- all three critics can call it without conflict.
 
-**Section renaming:**
-- `## Visual Design Assessment` -> `## Visual Coherence Assessment`
-- `## Code Quality Assessment` -> `## Robustness Assessment`
+### CLI Aggregation Changes
 
-**New Visual Coherence Assessment scope:**
-- Cross-page design consistency (does navigation, typography, spacing stay consistent across pages?)
-- Responsive coherence (do breakpoints maintain design identity, not just layout?)
-- Design language match with spec (existing from Visual Design)
-- AI slop detection (existing)
-- Cross-feature visual interaction (do features visually coexist, or does each look like a different app?)
+**compile-evaluation needs no discovery logic changes** -- it already globs `*/summary.json`. However, the EVALUATION.md template assembly code needs awareness of the new Robustness dimension:
 
-**New Robustness Assessment scope:**
-- Build health (does it compile, does the dev server start?)
-- Error handling patterns (existing from Code Quality -- but assessed through behavioral observation)
-- Dependency freshness (are dependencies current and non-deprecated?)
-- Test coverage (does the Generator's test suite exist and pass?)
-- Console error count (existing from separate section, now also scored here)
-- Network error rate during normal usage
-- Note: project structure and code organization assessment drops out because the GAN information barrier (Question 5 / feature [G]) prevents the Evaluator from reading source code
+1. **DIMENSIONS constant** -- Add `{ name: "Robustness", key: "robustness", threshold: 6 }` (see Question 3)
+2. **Assessment sections array** (lines 1336-1340 in appdev-cli.mjs) -- Add a Robustness entry mapping to the perturbation-critic
+3. **Score table rows loop** (lines 1322-1333) -- Already iterates over DIMENSIONS constant; no change needed
+4. **extractScores regex** (line 115) -- Built dynamically from DIMENSIONS.map(d => d.name).join("|"); no manual regex update needed
 
-### Changes to SCORING-CALIBRATION.md
+The v1.1 architecture's decision to build the regex from the DIMENSIONS constant (Pitfall 1 prevention from 07-RESEARCH.md) means adding a new dimension is a single-point change to the constant, not a multi-file regex migration.
 
-**Ceiling rules -- Visual Coherence** (renamed from Visual Design):
+### perturbation-critic Agent Definition
 
-| Condition | Ceiling |
-|-----------|---------|
-| All images placeholder | max 3 |
-| No design language match | max 5 |
-| Layout broken on mobile | max 5 |
-| Cross-page style inconsistency (>3 pages differ) | max 5 (new) |
-| Responsive identity loss (design breaks at breakpoints) | max 5 (new) |
+The perturbation-critic follows the same structural pattern as the existing critics:
 
-**Ceiling rules -- Robustness** (renamed from Code Quality):
+| Aspect | perceptual-critic | projection-critic | perturbation-critic |
+|--------|-------------------|-------------------|---------------------|
+| Dimension scored | Visual Design | Functionality | Robustness |
+| Primary technique | Visual inspection via playwright-cli screenshots/eval | Write-and-run acceptance tests via Playwright Test | Adversarial perturbation via viewport resizing, network throttling, rapid navigation, invalid inputs |
+| GAN taxonomy | Perceptual (7.3) | Projection (3.3) | Perturbation (novel -- adversarial robustness testing) |
+| Tool allowlist | Read, Write, Bash(npx playwright-cli *), Bash(node *appdev-cli* install-dep *), Bash(node *appdev-cli* check-assets *), Bash(node *appdev-cli* static-serve*) | Read, Write, Bash(npx playwright-cli *), Bash(node *appdev-cli* install-dep *), Bash(npx playwright test *), Bash(node *appdev-cli* static-serve*) | Read, Write, Bash(npx playwright-cli *), Bash(node *appdev-cli* install-dep *), Bash(npx playwright test *), Bash(node *appdev-cli* static-serve*) |
+| Information barrier | No source code | No source code | No source code |
+| Output directory | evaluation/round-N/perceptual/ | evaluation/round-N/projection/ | evaluation/round-N/perturbation/ |
+| Token budget | ~60K | ~60K | ~60K |
 
-| Condition | Ceiling |
-|-----------|---------|
-| Security vulnerability (observable: XSS, exposed secrets in network) | max 4 |
-| Build fails (app does not start) | max 3 (new) |
-| No test coverage at all | max 5 (new) |
-| No error handling anywhere (observable: crashes on invalid input) | max 5 |
-| >10 console errors on page load | max 5 (new) |
-| All dependencies deprecated (observable: npm audit output) | max 5 (new) |
-| Dead code >30% of codebase | REMOVED (requires source code reading, violates GAN barrier) |
+### perturbation-critic Methodology
 
-**Calibration scenarios:** Need new scenarios for both renamed dimensions. The existing 12 scenarios for Visual Design and Code Quality provide starting structure but names, focus areas, and observable evidence must shift. This is the heaviest single editing task in v1.1.
+The perturbation-critic evaluates Robustness through adversarial interaction:
 
-### Changes to appdev-cli.mjs
+1. **UNDERSTAND** -- Read SPEC.md to identify features, expected error states, and graceful degradation requirements
+2. **STRESS** -- Apply perturbations:
+   - Viewport extremes (320px, 4K) via `npx playwright-cli viewport`
+   - Rapid navigation (back/forward/reload sequences)
+   - Console error monitoring under stress via `npx playwright-cli console error`
+   - Invalid form inputs (empty submissions, XSS-like strings, extremely long values)
+   - JavaScript disabled behavior (basic structure present without JS)
+3. **PROBE** -- Test error recovery:
+   - Network offline and slow network simulation
+   - Missing asset handling (do broken images show fallback UI?)
+   - Browser API unavailability (LanguageModel/WebGPU not present)
+4. **SCORE** -- Apply Robustness ceiling rules from SCORING-CALIBRATION.md
+5. **REPORT** -- Write `evaluation/round-N/perturbation/summary.json` with universal schema
 
-**extractScores() regex update:**
+### Finding ID Convention
+
+Each critic uses a prefix for finding IDs: VD- (Visual Design), FN- (Functionality). The perturbation-critic uses **RB-** (Robustness) for finding IDs.
+
+### Resume-Check Integration
+
+The `resume-check` subcommand (lines 725-818) already reads `state.critics` to determine expected critic names. The orchestrator sets `--critics perceptual,projection,perturbation` in the state update. If perturbation-critic's summary.json is missing, resume-check returns `spawn-perturbation-critic` -- no code change needed because the logic is already generic:
+
 ```javascript
-const scorePattern = /\|\s*(Product Depth|Functionality|Visual Coherence|Robustness)\s*\|\s*(\d+)\/10/gi;
+// Line 781 -- already generic: constructs action name from critic name
+output({ next_action: "spawn-" + invalid[0] + "-critic", ... });
 ```
-
-**Key normalization update:**
-```javascript
-const key = match[1].toLowerCase().replace(/\s+/g, "_");
-// Now produces: product_depth, functionality, visual_coherence, robustness
-```
-
-**Missing-dimension check update:**
-```javascript
-const expected = ["product_depth", "functionality", "visual_coherence", "robustness"];
-```
-
-**Total computation unchanged:** Still `scores.total = sum of 4 dimensions`.
-
-### Changes to evaluator.md
-
-- Step 12 rubric: rename dimension descriptions and expand scope
-- Product Depth and Functionality descriptors unchanged
-- Visual Coherence: expand descriptors to include cross-page consistency and responsive coherence
-- Robustness: refocus descriptors entirely on behaviorally observable signals (build, tests, errors, dependency health)
-- Remove all instructions that require reading Generator source code for Robustness scoring
-
-### Risk Assessment
-
-This is a **high-impact change** because it touches the regex parse contract (the most fragile part of the system). However, the change is mechanical -- regex pattern string update + key name update. The existing architecture (HTML comments marking regex-sensitive sections) makes this safe because the contract is explicitly documented inline and easy to find.
-
-### Dependency
-
-This is the **foundation change** -- verdict computation, evaluator scoring, and calibration all depend on the dimension names being finalized first.
 
 ---
 
-## Question 4: What Changes to appdev-cli.mjs Subcommands Are Needed?
+## Question 2: How Should Convergence Logic Be Restructured in appdev-cli.mjs?
 
-### Current Subcommands (v1.0)
+### Current Convergence Logic (v1.1)
 
-| Subcommand | Purpose | Lines |
-|------------|---------|-------|
-| `init` | Create state file with prompt | 226-248 |
-| `get` | Read and output state | 250-253 |
-| `update` | Update step/round/status | 255-299 |
-| `round-complete` | Extract scores, compute escalation, determine exit | 301-388 |
-| `get-trajectory` | Output score trajectory | 390-417 |
-| `complete` | Mark workflow complete | 419-441 |
-| `delete` | Remove state file | 443-449 |
-| `exists` | Check if state file exists | 451-453 |
-| `check-assets` | Validate external asset URLs | 617-664 |
+The convergence pipeline has three layers:
 
-### Required Changes
+1. **computeVerdict(scores)** -- PASS if all dimensions meet thresholds
+2. **computeEscalation(rounds)** -- E-0 through E-IV based on score trajectory
+3. **determineExit(rounds, escalation, maxRounds)** -- 4 exit conditions
 
-#### `round-complete` (MODIFY -- major)
+Current issues identified from the Dutch art museum test:
 
-This subcommand undergoes the largest change because verdict computation moves here.
+- **Plateau threshold (<=1 point over 3-round window)** may be too sensitive with 3 dimensions (max total 30, meaningful improvement delta is 1-2 points per dimension). With 4 dimensions (max total 40), a 1-point total improvement over 3 rounds is genuinely stagnant. But with more dimensions and the same <=1 threshold, natural variance could trigger false plateaus.
+- **Escalation level E-I Decelerating** is assigned on single-round deltas, which can oscillate round-to-round
+- **No per-dimension trajectory analysis** -- only total score is tracked for escalation, so a dimension going from 3 to 7 while another drops from 8 to 6 looks like flat total (misleadingly labeled E-II Plateau)
 
-1. **Update `extractScores()`** -- New regex for dimension names (Visual Coherence, Robustness). Remove verdict extraction from report entirely.
-2. **Add `computeVerdict(scores)` function** -- Mechanical verdict computation from scores vs thresholds. Returns PASS/FAIL.
-3. **Update `cmdRoundComplete()`** -- Use `computeVerdict()` instead of `extracted.verdict`. Remove the error path for missing verdict in the report.
-4. **Update score validation** -- Check for 4 new expected dimension names.
+### Recommended Restructuring
 
-#### `init` (NO CHANGE for v1.1)
+#### 2a. Scale Plateau Threshold with Dimension Count
 
-The session resume issue ("Orchestrator failed to detect completed steps on session resume") is an orchestrator logic bug, not a CLI data model bug. Current state shape already contains enough information for resume:
+Replace the hardcoded `<= 1` threshold with a fraction of the maximum possible total:
 
-```json
-{
-  "prompt": "...",
-  "step": "evaluate",  // <-- tells orchestrator where it was
-  "round": 2,          // <-- tells orchestrator which round
-  "status": "in_progress",
-  "exit_condition": null,
-  "rounds": [...]      // <-- tells orchestrator what completed
+```javascript
+// Current (hardcoded)
+if (windowDelta <= 1) {
+  return { level: "E-II", label: "Plateau" };
+}
+
+// Proposed (scaled to dimension count)
+const maxTotal = DIMENSIONS.length * 10;
+const plateauThreshold = Math.ceil(maxTotal * 0.05);  // 5% of max total
+// 3 dims (max 30): threshold = 2
+// 4 dims (max 40): threshold = 2
+// 5 dims (max 50): threshold = 3
+
+if (windowDelta <= plateauThreshold) {
+  return { level: "E-II", label: "Plateau" };
 }
 ```
 
-If `rounds` has N entries, rounds 1..N evaluation is complete. The `step` + `round` tells the orchestrator whether it was mid-generate or mid-evaluate when it crashed. The fix is in SKILL.md's Step 0 resume logic, not in the CLI.
+This ensures the plateau threshold scales with scoring capacity rather than being a magic number.
 
-#### No New Subcommands Needed
+#### 2b. Per-Dimension Trajectory in State
 
-The existing subcommand surface is sufficient. The `round-complete` changes handle verdict computation. No new CLI capabilities are required.
+Currently, `state.rounds[].scores` stores individual dimension scores, but `computeEscalation()` only examines `scores.total`. Add per-dimension trajectory analysis:
 
-### Subcommands NOT Affected
+```javascript
+function computeEscalation(rounds) {
+  const current = rounds[rounds.length - 1];
+  const prev = rounds.length > 1 ? rounds[rounds.length - 2] : null;
+  const prevPrev = rounds.length > 2 ? rounds[rounds.length - 3] : null;
 
-| Subcommand | Why Unchanged |
-|------------|---------------|
-| `get` | Reads state -- shape changes are backward-compatible (new dimension keys flow through automatically) |
-| `update` | Step/round/status update -- no scoring involvement |
-| `get-trajectory` | Reads from stored rounds -- new dimension names flow through automatically |
-| `complete` | Exit condition marking -- no change |
-| `delete` | File deletion -- no change |
-| `exists` | Boolean check -- no change |
-| `check-assets` | Asset URL validation -- no change |
+  if (!prev) {
+    return { level: "E-0", label: "Progressing" };
+  }
+
+  const delta = current.scores.total - prev.scores.total;
+
+  // E-IV Catastrophic: >50% single-round drop OR total below crisis threshold
+  const maxTotal = DIMENSIONS.length * 10;
+  const crisisThreshold = Math.ceil(maxTotal * 0.2);  // 20% of max
+
+  if (current.scores.total <= crisisThreshold ||
+      (delta < 0 && Math.abs(delta) > prev.scores.total * 0.5)) {
+    return { level: "E-IV", label: "Catastrophic" };
+  }
+
+  // E-III Regression: 2 consecutive total-score declines
+  const prevDelta = prevPrev ? prev.scores.total - prevPrev.scores.total : null;
+
+  if (delta < 0 && prevDelta !== null && prevDelta < 0) {
+    return { level: "E-III", label: "Regression" };
+  }
+
+  // E-II Plateau: scaled threshold over 3-round window
+  const plateauThreshold = Math.ceil(maxTotal * 0.05);
+
+  if (prevPrev) {
+    const windowDelta = current.scores.total - prevPrev.scores.total;
+
+    if (windowDelta <= plateauThreshold) {
+      return { level: "E-II", label: "Plateau" };
+    }
+  }
+
+  // E-I Decelerating: improved but delta shrinking
+  if (delta > 0 && prevDelta !== null && delta < prevDelta) {
+    return { level: "E-I", label: "Decelerating" };
+  }
+
+  // E-0 Progressing
+  if (delta > 1) {
+    return { level: "E-0", label: "Progressing" };
+  }
+
+  // Edge cases
+  if (delta >= 0) {
+    return { level: "E-I", label: "Decelerating" };
+  }
+
+  return { level: "E-I", label: "Decelerating" };
+}
+```
+
+#### 2c. Enrich round-complete Output with Per-Dimension Status
+
+Add per-dimension pass/fail status to the round-complete JSON response so the orchestrator (and the Generator via EVALUATION.md) can see which dimensions are failing:
+
+```javascript
+// In cmdRoundComplete(), add to result:
+result.dimension_status = DIMENSIONS.map(function(d) {
+  return {
+    name: d.name,
+    key: d.key,
+    score: extracted.scores[d.key],
+    threshold: d.threshold,
+    pass: extracted.scores[d.key] >= d.threshold
+  };
+});
+```
+
+This is informational only -- the orchestrator does not act on per-dimension data (that would break the delegation principle). But it enriches the trajectory output for the Summary step.
+
+#### 2d. get-trajectory Enhancement
+
+Add dimension-level trajectory to get-trajectory so the Summary step can show which dimensions improved/regressed:
+
+```javascript
+// Per-round trajectory entry enrichment:
+{
+  round: r.round,
+  total: r.scores ? r.scores.total : null,
+  scores: r.scores,  // Include individual dimension scores
+  escalation: r.escalation || null,
+  escalation_label: r.escalation_label || null,
+  verdict: r.verdict,
+}
+```
+
+### Impact Analysis
+
+| Function | Change Type | Risk |
+|----------|-------------|------|
+| computeEscalation() | Modify plateau threshold calculation | LOW -- existing tests verify behavior, new test for scaled threshold |
+| computeVerdict() | No change (already iterates DIMENSIONS) | None |
+| determineExit() | No change (consumes escalation level) | None |
+| cmdRoundComplete() | Add dimension_status to output | LOW -- additive field |
+| cmdGetTrajectory() | Add per-dimension scores to trajectory | LOW -- additive field |
+| extractScores() | Regex auto-built from DIMENSIONS; total auto-summed | LOW -- governed by DIMENSIONS constant |
 
 ---
 
-## Question 5: Suggested Build Order Considering Dependencies
+## Question 3: How Do Enhanced Critic Dimensions Affect DIMENSIONS Constant and Score Thresholds?
+
+### Current DIMENSIONS Constant (v1.1)
+
+```javascript
+const DIMENSIONS = [
+  { name: "Product Depth", key: "product_depth", threshold: 7 },
+  { name: "Functionality", key: "functionality", threshold: 7 },
+  { name: "Visual Design", key: "visual_design", threshold: 6 },
+];
+```
+
+Max total: 30. Thresholds sum: 20 (67% of max).
+
+### v1.2 Dimension Changes
+
+Two types of changes: (1) adding a new Robustness dimension for perturbation-critic, and (2) enhancing existing dimensions' scope without renaming them.
+
+#### Option A: Add Robustness, Keep Existing Names
+
+```javascript
+const DIMENSIONS = [
+  { name: "Product Depth", key: "product_depth", threshold: 7 },
+  { name: "Functionality", key: "functionality", threshold: 7 },
+  { name: "Visual Design", key: "visual_design", threshold: 6 },
+  { name: "Robustness", key: "robustness", threshold: 6 },
+];
+```
+
+Max total: 40. Thresholds sum: 26 (65% of max).
+
+#### Option B: Add Robustness and Rename Visual Design to Visual Coherence
+
+The v1.1 ARCHITECTURE.md research (line 206-224) originally proposed renaming Visual Design to Visual Coherence to reflect the expanded scope (cross-page consistency, responsive coherence). This was deferred in v1.1 because the ensemble shipped with 3 dimensions, retiring Code Quality instead.
+
+**Recommendation: Option A -- Add Robustness, keep Visual Design name.**
+
+Rationale:
+- The perceptual-critic already scores "Visual Design" and writes `"dimension": "Visual Design"` in its summary.json. Renaming creates a breaking change across the critic agent, summary.json contract, DIMENSIONS constant, EVALUATION-TEMPLATE regex-sensitive comments, SCORING-CALIBRATION.md, and test fixtures -- for no functional benefit.
+- The enhanced scope (cross-page consistency) can be added to the perceptual-critic's methodology instructions without renaming the dimension. The dimension name "Visual Design" is broad enough to encompass visual coherence.
+- Renaming was proposed when 4 dimensions were planned including "Visual Coherence" and "Robustness" (the original v1.1 research). The actual v1.1 shipped with 3 dimensions and "Visual Design." Renaming now would be gratuitous churn.
+
+#### Robustness Threshold: 6
+
+Robustness gets threshold 6 (same as Visual Design) because:
+- It measures quality attributes (error handling, stability) not core functionality
+- A strict threshold (7) would cause FAIL verdicts for apps that work correctly but have imperfect error handling -- punishing the Generator for edge cases while core features are unfinished
+- The Anthropic harness design article prioritizes functional convergence; robustness is a secondary quality gate
+
+### Impact on Score-Dependent Logic
+
+| Concern | v1.1 (3 dims) | v1.2 (4 dims) | Code Change Needed |
+|---------|----------------|----------------|-------------------|
+| extractScores regex | `(Product Depth|Functionality|Visual Design)` | `(Product Depth|Functionality|Visual Design|Robustness)` | **None** -- regex is built from `DIMENSIONS.map(d => d.name).join("|")` (line 112-113) |
+| Expected dimension count | 3 | 4 | **None** -- uses `DIMENSIONS.length` (line 128) |
+| Total computation | max 30 | max 40 | **None** -- loops over DIMENSIONS (line 139-141) |
+| computeVerdict | Checks 3 thresholds | Checks 4 thresholds | **None** -- loops over DIMENSIONS (line 150-157) |
+| Plateau threshold | `<= 1` (hardcoded) | Should scale with max total | **Yes** -- see Question 2 |
+| E-IV crisis threshold | `total <= 5` (hardcoded) | Should scale with max total | **Yes** -- see Question 2 |
+| EVALUATION-TEMPLATE.md | 3 score rows | 4 score rows | **None** -- compiled by CLI from DIMENSIONS loop |
+| Assessment sections | 3 sections | 4 sections | **Yes** -- add Robustness entry to `assessmentSections` array |
+
+### Scoring Calibration Updates
+
+SCORING-CALIBRATION.md needs new Robustness ceiling rules and calibration scenarios:
+
+**Robustness Ceiling Rules:**
+
+| Condition | Ceiling | Observable Signal |
+|-----------|---------|-------------------|
+| App crashes on valid user action | max 4 | Playwright console error + page unresponsive |
+| >10 console errors on page load | max 5 | `npx playwright-cli console error` output |
+| No error handling (crashes on invalid input) | max 5 | Submit empty forms, enter bogus data |
+| Build fails (production build does not produce output) | max 3 | App cannot be served at all |
+| Viewport < 320px renders blank/broken | max 5 | `npx playwright-cli viewport 320 800` + screenshot |
+| Browser AI unavailable causes full app failure | max 4 | Test without LanguageModel API present |
+
+**Robustness Calibration Scenarios** (abbreviated):
+
+- **Below threshold (4/10):** App crashes when submitting an empty form, shows blank page at mobile viewport, >15 console errors on every page load, no error states shown anywhere.
+- **At threshold (6/10):** App handles empty form gracefully (shows validation message), renders at mobile viewport with minor layout issues, <5 console errors, most error states show messages.
+- **Above threshold (8/10):** App handles all invalid inputs gracefully, responsive down to 320px, zero console errors, comprehensive error states, graceful AI API degradation.
+
+### Enhanced Visual Design Scope
+
+The perceptual-critic's methodology is enhanced to include cross-page consistency checks without renaming the dimension:
+
+- **Existing:** Design language match, AI slop detection, responsive testing at key breakpoints
+- **New:** Cross-page element consistency (navigation, typography, spacing, color palette consistent across all pages), responsive identity preservation (design direction maintained at all breakpoints, not just layout adaptation)
+
+These are instruction-level changes to perceptual-critic.md, not dimension name changes.
+
+### Enhanced Functionality Scope
+
+The projection-critic's methodology is enhanced to include deeper navigation testing:
+
+- **Existing:** Write-and-run acceptance tests, AI probing, feature completeness
+- **New:** Multi-step navigation sequences (A->B->A round-trip, deep link access, back button behavior), state persistence across navigation (create item, navigate away, return -- is it still there?)
+
+These are instruction-level changes to projection-critic.md.
+
+---
+
+## Question 4: What Changes to the Orchestrator Loop Are Needed for 4+ Critics?
+
+### Current Orchestrator Loop (SKILL.md)
+
+The orchestrator evaluation phase is hardcoded for 2 critics:
+
+1. `--critics perceptual,projection` in state update
+2. Two `Agent()` calls in the spawn step
+3. Two `ls` binary checks (one per critic)
+4. Retry logic mentions "retry the SPECIFIC critic that failed (not both)"
+5. Resume-check handles `spawn-both-critics`, `spawn-perceptual-critic`, `spawn-projection-critic`
+
+### Required Changes
+
+#### 4a. State Update -- Add perturbation to critics list
+
+```
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step evaluate --critics perceptual,projection,perturbation --round N)
+```
+
+#### 4b. Agent Spawn -- Add third parallel spawn
+
+```
+Agent(subagent_type: "application-dev:perceptual-critic", prompt: "This is evaluation round N.")
+Agent(subagent_type: "application-dev:projection-critic", prompt: "This is evaluation round N.")
+Agent(subagent_type: "application-dev:perturbation-critic", prompt: "This is evaluation round N.")
+```
+
+#### 4c. Binary Checks -- Add third check
+
+```
+Bash(ls evaluation/round-N/perceptual/summary.json 2>/dev/null)
+Bash(ls evaluation/round-N/projection/summary.json 2>/dev/null)
+Bash(ls evaluation/round-N/perturbation/summary.json 2>/dev/null)
+```
+
+#### 4d. Retry Logic -- Generalize for N critics
+
+The current retry logic says "retry the SPECIFIC critic that failed (not both)". This generalizes naturally to: "if any critic's summary.json is missing, retry that specific critic with the same prompt."
+
+The orchestrator text needs to be updated from:
+
+> If either summary.json is missing, retry the SPECIFIC critic that failed (not both) with the same prompt.
+
+To:
+
+> If any summary.json is missing, retry each failed critic individually with the same prompt (do not retry critics that already produced valid summary.json). Each failed critic counts toward its own 2-retry limit.
+
+#### 4e. SAFETY_CAP Wrap-Up Round -- Add third critic spawn
+
+The SAFETY_CAP exit condition triggers a wrap-up round that re-spawns all critics. This must include the perturbation-critic.
+
+#### 4f. Agent Prompt Protocol Section -- Add perturbation-critic
+
+Add to the "Agent Prompt Protocol" section:
+
+> **Perturbation Critic (all rounds):** `This is evaluation round N.` -- the orchestrator fills in only the round number.
+
+#### 4g. Architecture Section -- Update from 4 to 5 agents
+
+The "Architecture" section lists "Four agents with distinct roles." This becomes five:
+
+- **Planner**: Expands the user's prompt into an ambitious product specification
+- **Generator**: Builds the full application from the spec
+- **Perceptual Critic**: Evaluates visual design quality from the product surface (scores Visual Design)
+- **Projection Critic**: Evaluates functional coverage via write-and-run acceptance tests (scores Functionality, provides Product Depth test data)
+- **Perturbation Critic**: Evaluates robustness via adversarial testing (scores Robustness)
+
+#### 4h. File-Based Communication Section -- Add perturbation-critic artifact
+
+Add:
+
+> - `evaluation/round-N/perturbation/summary.json` -- Perturbation Critic writes per round, CLI reads it during compile-evaluation
+
+#### 4i. Resume-Check Integration
+
+The resume-check already handles N critics generically. With `--critics perceptual,projection,perturbation`, it will:
+- Return `spawn-perturbation-critic` if only perturbation is missing
+- Return `spawn-both-critics` if all 3 are missing (this naming becomes inaccurate with 3 critics)
+
+**Naming issue:** The resume-check returns `spawn-both-critics` when all critics are missing. With 3 critics, this should be `spawn-all-critics`. The orchestrator dispatches on this action string, so both the CLI output and SKILL.md dispatch table need updating.
+
+Current dispatch (line 775 of appdev-cli.mjs):
+```javascript
+if (invalid.length === expectedCritics.length) {
+  output({ next_action: "spawn-both-critics", ... });
+}
+```
+
+Should become:
+```javascript
+if (invalid.length === expectedCritics.length) {
+  output({ next_action: "spawn-all-critics", ... });
+}
+```
+
+And SKILL.md Step 0 dispatch table adds:
+- `spawn-all-critics` -> Step 2 Evaluation Phase (spawn all critics)
+
+### Summary of Orchestrator Changes
+
+| Section | Change | Risk |
+|---------|--------|------|
+| Step 2 state update | Add "perturbation" to --critics | LOW |
+| Step 2 spawn | Add third Agent() call | LOW |
+| Step 2 binary checks | Add third ls check | LOW |
+| Step 2 retry logic | Generalize language from "both" to "each failed" | LOW |
+| SAFETY_CAP wrap-up | Add third critic spawn | LOW |
+| Agent Prompt Protocol | Add perturbation-critic entry | LOW |
+| Architecture section | Update from 4 to 5 agents | LOW |
+| File-Based Communication | Add perturbation summary.json | LOW |
+| Resume-check dispatch | Change spawn-both-critics to spawn-all-critics | MEDIUM -- affects resume behavior |
+
+---
+
+## Question 5: How Does Architecture Documentation Fit into the Plugin Structure?
+
+### Placement
+
+Architecture documentation belongs in the plugin's reference files:
+
+```
+plugins/application-dev/
+  skills/application-dev/
+    references/
+      architecture-principles.md      # NEW -- GAN/Cybernetics/Turing test grounding
+```
+
+### Rationale
+
+- Lives in `references/` because it is loaded on demand by agents who need architectural context (planner when designing specs, generator when making tech choices)
+- Not in `agents/` (not an agent definition)
+- Not in `scripts/` (not executable code)
+- Not in `evaluator/` subdirectory (not evaluation-specific)
+- Follows the progressive disclosure pattern: only loaded when an agent explicitly reads it
+
+### Content Structure
+
+The architecture documentation should ground the plugin's design in the theoretical principles it draws from:
+
+1. **GAN Principles** -- How the Generator/Critic separation maps to GAN architecture, why information barriers exist, how convergence detection maps to GAN training stability
+2. **Cybernetics** -- Damping principle (fix-only mode), requisite variety (multiple critics for multiple dimensions), feedback loop structure (score-based convergence vs round-counting)
+3. **Turing Test Framing** -- Critics as interrogators, product surface as the evaluation boundary, behavioral symptom language as the communication protocol
+4. **Ensemble Architecture** -- Why 3+ critics instead of 1 monolithic evaluator, how GMAN (12.1) aggregation works, why CLI is deterministic, how ProjectedGAN (7.1) uniform interface enables extensibility
+
+### Loading Points
+
+- **Planner** -- Could read architecture-principles.md to understand why the product spec matters (it is the GAN training objective). Optional -- only if spec quality issues recur.
+- **Generator** -- Does not need to read it. The Generator operates independently of the evaluation architecture.
+- **Critics** -- Do not need to read it. Their behavior is specified in their agent definitions.
+- **Orchestrator** -- Does not read reference files (delegation-only role).
+- **Users** -- Primary audience. The README.md can reference it for users who want to understand the design philosophy.
+
+### Token Budget Impact
+
+A well-written architecture reference file should be 150-250 lines (~3-5K tokens). This is comparable to existing reference files (SCORING-CALIBRATION.md is 198 lines, PLAYWRIGHT-EVALUATION.md is ~120 lines). Loaded on demand, not injected into every agent context.
+
+---
+
+## Component Boundaries: New vs Modified Components
+
+### New Components
+
+| Component | Type | Lines (est.) | Depends On |
+|-----------|------|--------------|------------|
+| `agents/perturbation-critic.md` | Agent definition | ~140 | DIMENSIONS constant (Robustness dimension), summary.json contract, SCORING-CALIBRATION.md ceiling rules |
+| `references/architecture-principles.md` | Reference file | ~200 | None (documentation only) |
+
+### Modified Components
+
+| Component | Change Scope | Risk | Phases |
+|-----------|-------------|------|--------|
+| `scripts/appdev-cli.mjs` -- DIMENSIONS constant | Add Robustness entry | LOW -- single-point change, all consumers loop over DIMENSIONS | 1 |
+| `scripts/appdev-cli.mjs` -- computeEscalation() | Scale plateau/crisis thresholds with dimension count | MEDIUM -- affects convergence behavior | 2 |
+| `scripts/appdev-cli.mjs` -- cmdRoundComplete() | Add dimension_status to output | LOW -- additive field | 2 |
+| `scripts/appdev-cli.mjs` -- cmdGetTrajectory() | Add per-dimension scores | LOW -- additive field | 2 |
+| `scripts/appdev-cli.mjs` -- cmdCompileEvaluation() assessmentSections | Add Robustness entry | LOW -- follows existing pattern | 1 |
+| `scripts/appdev-cli.mjs` -- cmdResumeCheck() | Change spawn-both-critics to spawn-all-critics | MEDIUM -- resume behavior | 3 |
+| `skills/application-dev/SKILL.md` | Add perturbation-critic to spawn/check/retry/resume, update architecture section | MEDIUM -- orchestrator is central | 3 |
+| `agents/perceptual-critic.md` | Enhance methodology for cross-page consistency | LOW -- instruction additions | 4 |
+| `agents/projection-critic.md` | Enhance methodology for deeper navigation testing | LOW -- instruction additions | 4 |
+| `agents/generator.md` | Vite+ adoption, dependency freshness, browser-agnostic LanguageModel | LOW -- instruction additions | 5 |
+| `references/evaluator/SCORING-CALIBRATION.md` | Add Robustness ceiling rules and calibration scenarios | MEDIUM -- scoring contract | 1 |
+| `references/evaluator/EVALUATION-TEMPLATE.md` | Add Robustness row to template | LOW -- template update | 1 |
+| `scripts/test-appdev-cli.mjs` | Add tests for 4-dimension scoring, scaled plateau, perturbation summary | MEDIUM -- test coverage | 1-3 |
+
+### Unchanged Components
+
+| Component | Why Unchanged |
+|-----------|---------------|
+| `agents/planner.md` | No v1.2 planner changes |
+| `commands/application-dev.md` | Command interface unchanged |
+| `.claude-plugin/plugin.json` | Plugin manifest unchanged (unless description update desired) |
+| `skills/browser-prompt-api/SKILL.md` | AI skill unchanged |
+| `skills/browser-webllm/SKILL.md` | AI skill unchanged |
+| `skills/browser-webnn/SKILL.md` | AI skill unchanged |
+| `skills/playwright-testing/SKILL.md` | Testing skill unchanged |
+| `skills/vitest-browser/SKILL.md` | Testing skill unchanged |
+| `skills/vite-plus/SKILL.md` | Vite+ skill unchanged (Generator adoption is instruction-level) |
+| `references/SPEC-TEMPLATE.md` | Spec template unchanged |
+| `references/ASSETS-TEMPLATE.md` | Assets template unchanged |
+| `references/acceptance-criteria-guide.md` | Criteria guide unchanged |
+| `references/frontend-design-principles.md` | Design principles unchanged |
+| `references/evaluator/AI-PROBING-REFERENCE.md` | AI probing unchanged |
+| `references/evaluator/AI-SLOP-CHECKLIST.md` | Slop checklist unchanged |
+| `references/evaluator/PLAYWRIGHT-EVALUATION.md` | Playwright patterns unchanged |
+
+---
+
+## Suggested Build Order
 
 ### Dependency Graph
 
 ```
-[A] Scoring Dimensions (EVALUATION-TEMPLATE.md, SCORING-CALIBRATION.md)
+[A] DIMENSIONS constant + scoring contract (appdev-cli.mjs, SCORING-CALIBRATION.md, EVALUATION-TEMPLATE.md)
   |
-  +--> [B] CLI Verdict Computation (appdev-cli.mjs extractScores + computeVerdict)
+  +--> [B] perturbation-critic agent definition (depends on Robustness being in DIMENSIONS)
   |      |
-  |      +--> [D] Orchestrator Verdict Flow (SKILL.md binary check update)
-  |      |
-  |      +--> [E] Evaluator Agent Update (evaluator.md -- remove verdict, use new dims)
+  |      +--> [C] Orchestrator loop updates (depends on perturbation-critic agent existing)
   |
-  +--> [C] Evaluator Scoring Rubric (evaluator.md Step 12 descriptors, new dim focus)
+  +--> [D] Convergence logic hardening (depends on DIMENSIONS for scaled thresholds)
 
-[F] Acceptance Test Plan (SPEC-TEMPLATE.md + planner.md + evaluator.md test oracle)
-    |-- Independent of [A]-[E]
-    |-- Touches evaluator.md (Step 1 + Step 6) but different sections than [C]/[E]
+[E] Enhanced perceptual-critic (independent -- instruction additions to existing agent)
 
-[G] GAN Information Barrier (evaluator.md -- remove Step 10 code review)
-    |-- Related to [C] (Robustness must be scorable without source code)
-    |-- Should be done in same phase as [C] and [E]
+[F] Enhanced projection-critic (independent -- instruction additions to existing agent)
 
-[H] Session Resume Recovery (SKILL.md Step 0 logic)
-    |-- Independent of all others
-    |-- Touches SKILL.md but different section than [D]
+[G] Generator improvements (independent -- instruction additions to existing agent)
 
-[I] Generator Improvements (Vite+, dependency freshness, browser-agnostic AI, test style)
-    |-- Independent of evaluation-side changes
-    |-- generator.md modifications only
-
-[J] Cross-Feature Interaction Testing (evaluator.md testing methodology)
-    |-- Independent of scoring changes
-    |-- Touches evaluator.md Step 6 but additive, not conflicting
-
-[K] Edge-First Browser (evaluator.md browser preference)
-    |-- Independent, tiny change
-    |-- Touches evaluator.md Step 4
+[H] Architecture documentation (independent -- new reference file)
 ```
 
-### Suggested Build Order
+### Recommended Phase Structure
 
-**Phase 1: Scoring Foundation** -- [A]
-- Rename dimensions in EVALUATION-TEMPLATE.md
-- Update regex-sensitive comments
-- Rewrite ceiling rules in SCORING-CALIBRATION.md (add new ceilings, remove dead-code ceiling)
-- Write new calibration scenarios for Visual Coherence and Robustness
-- **Rationale:** Everything else in the scoring pipeline depends on dimension names being stable
+**Phase 1: Scoring Foundation + Perturbation Critic Definition**
 
-**Phase 2: CLI Verdict Pipeline** -- [B] + [D]
-- Update `extractScores()` regex pattern and expected dimensions
-- Add `computeVerdict()` function with threshold table
-- Update `cmdRoundComplete()` to use computed verdict, remove verdict parsing from report
-- Update SKILL.md binary check from `## Verdict` to `## Scores`
-- **Rationale:** Depends on Phase 1 dimension names; [D] is small enough to bundle with [B]
+- Add Robustness to DIMENSIONS constant
+- Add Robustness ceiling rules to SCORING-CALIBRATION.md
+- Add Robustness calibration scenarios to SCORING-CALIBRATION.md
+- Update EVALUATION-TEMPLATE.md (documentation only -- the CLI compiles the actual template)
+- Add assessmentSections entry for Robustness in compile-evaluation
+- Create perturbation-critic.md agent definition
+- Add tests for 4-dimension scoring
 
-**Phase 3: Evaluator Overhaul** -- [C] + [E] + [G] + [J] + [K]
-- Update Step 12 rubric descriptors for Visual Coherence and Robustness
-- Remove verdict computation and associated self-verification checks
-- Restructure/remove Step 10 (code review) -- GAN information barrier
-- Refocus Robustness on behaviorally observable signals
-- Add cross-feature interaction testing to Step 6
-- Add Edge-first browser preference to Step 4
-- Expand Visual Coherence to include cross-page consistency testing
-- **Rationale:** All touch evaluator.md. Doing them together prevents 3-4 separate rewrites of a 392-line file. The GAN barrier and Robustness refocus are tightly coupled (Robustness must be scorable without source code).
+Rationale: DIMENSIONS is the foundation. perturbation-critic bundles here because it is the primary consumer of the new dimension and can be tested in isolation.
 
-**Phase 4: Spec and Planner Enhancement** -- [F]
-- Add `## Acceptance Test Plan` section to SPEC-TEMPLATE.md
-- Update planner.md to generate acceptance criteria per feature
-- Update planner.md self-verification checklist
-- Update evaluator.md Steps 1 and 6 to consume structured test plan
-- **Rationale:** Independent leaf change. Evaluator.md touches are in different sections (Steps 1, 6) than Phase 3 changes (Steps 4, 6-methodology, 10, 12, 13, 14). The Step 6 overlap (testing methodology) can be managed by Phase 3 adding cross-feature interaction paragraphs and Phase 4 adding acceptance criteria consumption -- additive, not conflicting.
+**Phase 2: Convergence Logic Hardening**
 
-**Phase 5: Generator Improvements** -- [I]
-- Stronger Vite+ adoption nudge
-- Dependency freshness instruction
-- Browser-agnostic LanguageModel API guidance (not Chrome-specific)
-- Test style improvements
-- **Rationale:** Generator is independent of evaluation pipeline changes
+- Scale plateau threshold with dimension count
+- Scale E-IV crisis threshold with dimension count
+- Add per-dimension status to round-complete output
+- Enrich get-trajectory with per-dimension scores
+- Add tests for scaled thresholds and new output fields
 
-**Phase 6: Orchestrator Recovery** -- [H]
-- Fix Step 0 resume logic in SKILL.md
-- Add crash detection (state says "evaluate round 2" but no evaluation/round-2/ exists)
-- Add step completion inference from filesystem state + rounds array
-- **Rationale:** Lowest dependency, lowest priority (UX polish, not quality gate)
+Rationale: Depends on DIMENSIONS being stable (Phase 1). Independent of orchestrator changes.
+
+**Phase 3: Orchestrator Integration**
+
+- Update SKILL.md evaluation phase for 3 critics
+- Update resume-check (spawn-both-critics -> spawn-all-critics)
+- Update error recovery text for N critics
+- Update architecture section (4 -> 5 agents)
+- Update file-based communication section
+- Update agent prompt protocol section
+- Update SAFETY_CAP wrap-up round
+
+Rationale: Depends on perturbation-critic existing (Phase 1). This is the integration phase.
+
+**Phase 4: Enhanced Existing Critics**
+
+- Enhance perceptual-critic for cross-page Visual Coherence checks
+- Enhance projection-critic for deeper A->B->A navigation testing
+
+Rationale: Independent of Phases 1-3. Could run in parallel with Phase 2-3 but ordered here to avoid concurrent edits to critic agent files.
+
+**Phase 5: Generator Improvements**
+
+- Strengthen Vite+ adoption guidance
+- Add dependency freshness instructions
+- Add browser-agnostic LanguageModel guidance (not Chrome-specific)
+
+Rationale: Fully independent. Generator operates independently of evaluation pipeline.
+
+**Phase 6: Architecture Documentation**
+
+- Create references/architecture-principles.md
+- Ground in GAN, Cybernetics, and Turing test principles
+
+Rationale: Fully independent. Documentation-only. Could be Phase 1 if desired for roadmap clarity.
 
 ### Phase Dependency Graph
 
 ```
-Phase 1 --> Phase 2 --> Phase 3
-                          |
-Phase 4 (independent) ----' (minor Step 6 coordination)
-Phase 5 (independent)
-Phase 6 (independent)
+Phase 1 --> Phase 2 (needs stable DIMENSIONS)
+Phase 1 --> Phase 3 (needs perturbation-critic agent)
+Phase 4 (independent -- can parallel with 2-3)
+Phase 5 (independent -- can parallel with 1-5)
+Phase 6 (independent -- can be anywhere)
 ```
 
 ### Parallel Execution Options
 
-If parallelization is desired (config.json has `"parallelization": true`):
-
 ```
 Track A (sequential): Phase 1 -> Phase 2 -> Phase 3
-Track B (parallel):   Phase 4 (after Phase 3 completes, or coordinate Step 6)
+Track B (parallel):   Phase 4 (after Phase 1, or independent)
 Track C (parallel):   Phase 5 (anytime)
 Track D (parallel):   Phase 6 (anytime)
 ```
 
-Tracks C and D can run fully in parallel with Track A. Track B can start anytime but should merge after Track A completes to avoid evaluator.md conflicts.
-
 ---
 
-## Component Boundary Analysis
-
-### Files Modified (No Files Created)
-
-| File | Change Scope | Phases |
-|------|-------------|--------|
-| EVALUATION-TEMPLATE.md | Rename dimensions, remove verdict heading, update sections | 1, 2 |
-| SCORING-CALIBRATION.md | Rename dimensions, add/remove ceiling rules, new scenarios | 1 |
-| appdev-cli.mjs | Update regex, add computeVerdict(), update key names | 2 |
-| SKILL.md | Update binary check, fix resume logic | 2, 6 |
-| evaluator.md | Remove verdict, update rubric, add info barrier, update test oracle, add cross-feature testing | 3, 4 |
-| planner.md | Add acceptance test plan generation | 4 |
-| generator.md | Vite+ nudge, dependency freshness, browser-agnostic AI | 5 |
-| SPEC-TEMPLATE.md | Add Acceptance Test Plan section | 4 |
-
-### Cross-File Contract Changes
-
-| Contract | v1.0 | v1.1 | Files Affected |
-|----------|------|------|----------------|
-| Score dimension names | Product Depth, Functionality, Visual Design, Code Quality | Product Depth, Functionality, Visual Coherence, Robustness | EVALUATION-TEMPLATE.md, SCORING-CALIBRATION.md, appdev-cli.mjs, evaluator.md |
-| Verdict location | In EVALUATION.md (Evaluator writes) | In CLI (computed from scores) | EVALUATION-TEMPLATE.md, appdev-cli.mjs, evaluator.md, SKILL.md |
-| Orchestrator binary check | `## Verdict` in EVALUATION.md | `## Scores` in EVALUATION.md | SKILL.md |
-| Test oracle | Ad hoc from SPEC.md features/user stories | Structured acceptance criteria in SPEC.md | SPEC-TEMPLATE.md, planner.md, evaluator.md |
-| Evaluator code access | Reads source code (Step 10) | No source code access (GAN barrier) | evaluator.md |
-
-### Data Flow Diagram (v1.1)
+## Data Flow Diagram (v1.2)
 
 ```
 User Prompt
     |
     v
-Planner --> SPEC.md (now includes Acceptance Test Plan)
+Planner --> SPEC.md (with acceptance criteria per feature)
     |
     v
 Generator (reads SPEC.md round 1, EVALUATION.md rounds 2+)
-    |-- Builds application
+    |-- Builds application with Vite+ preference
+    |-- Browser-agnostic LanguageModel for AI features
     |-- Commits feature-by-feature
-    |-- Runs diagnostic battery
-    '-- Hands off to Evaluator
+    |-- Runs diagnostic battery (build, lint, typecheck, tests)
+    |-- Records build_dir and spa via appdev-cli update
+    '-- Hands off to evaluation ensemble
          |
          v
-Evaluator (reads SPEC.md + runs app via playwright-cli)
-    |-- NO source code access (GAN information barrier)
-    |-- Tests against acceptance criteria from SPEC.md
-    |-- Tests cross-feature interactions
-    |-- Scores: Product Depth, Functionality, Visual Coherence, Robustness
-    |-- Does NOT compute overall verdict
-    '-- Writes evaluation/round-N/EVALUATION.md (scores + assessment)
+    +----+----+----+
+    |         |         |
+    v         v         v
+perceptual  projection  perturbation
+  critic      critic      critic
+    |         |         |
+    |  Visual |  Func   | Robust-
+    |  Design |  tionality| ness
+    |         |  + PD data|
+    v         v         v
+summary.json summary.json summary.json
+    |         |         |
+    '----+----+----+----'
          |
          v
-appdev-cli.mjs round-complete
-    |-- Extracts scores (regex on new dimension names)
-    |-- COMPUTES verdict (scores vs thresholds -- mechanical)
-    |-- Computes escalation (E-0 through E-IV)
-    '-- Returns JSON to Orchestrator
+    appdev-cli compile-evaluation
+         |-- Reads all */summary.json (auto-discovery)
+         |-- Computes Product Depth from acceptance_tests
+         |-- Assembles scores table (4 dimensions)
+         |-- Merges findings by severity
+         |-- Writes EVALUATION.md
          |
          v
-Orchestrator (SKILL.md)
-    |-- Acts on CLI JSON only (exit_condition, should_continue)
-    |-- Tags rounds
-    '-- Loops or exits to Summary
+    appdev-cli round-complete
+         |-- Extracts scores from EVALUATION.md (regex from DIMENSIONS)
+         |-- Computes verdict mechanically (all dims >= thresholds)
+         |-- Computes escalation (E-0 through E-IV, scaled thresholds)
+         |-- Determines exit condition (PASS/PLATEAU/REGRESSION/SAFETY_CAP)
+         '-- Returns JSON to Orchestrator
+              |
+              v
+    Orchestrator (SKILL.md)
+         |-- Acts on CLI JSON only
+         |-- Tags rounds
+         |-- Stops static servers between rounds
+         '-- Loops or exits to Summary
 ```
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Partial Regex Contract Migration
+### Anti-Pattern 1: Hardcoded Dimension Count in Escalation Logic
 
-**What:** Updating dimension names in EVALUATION-TEMPLATE.md but forgetting to update the regex in appdev-cli.mjs (or vice versa).
-**Why bad:** extractScores() returns `{ error: "Could not extract all 4 scores" }`, treated as Evaluator failure, triggers infinite retry loop.
-**Prevention:** Phase 1 and Phase 2 must be treated as an atomic contract change. Update template + regex + expected keys together. Test with a mock EVALUATION.md containing the new dimension names.
-**Detection:** Run appdev-cli.mjs unit tests (7 existing from v1.0 check-assets) -- add regression tests for extractScores() with new dimension names.
+**What:** Using magic numbers like `<= 1` for plateau threshold or `<= 5` for crisis threshold when the dimension count changes from 3 to 4.
+**Why bad:** With 4 dimensions (max total 40), `total <= 5` is 12.5% of max. With 3 dimensions (max 30), it was 16.7%. The behavioral threshold changes meaning as dimensions scale.
+**Prevention:** Derive all thresholds from `DIMENSIONS.length * 10`.
 
-### Anti-Pattern 2: Evaluator Still Computing Verdict
+### Anti-Pattern 2: Renaming Visual Design to Visual Coherence
 
-**What:** Removing the `## Verdict:` heading from the template but leaving verdict computation logic in evaluator.md self-verification.
-**Why bad:** Evaluator fails self-verification because it cannot write a verdict heading that no longer exists in the template. Or worse, Evaluator writes the heading anyway (ignoring the template) and CLI parses it, defeating the purpose.
-**Prevention:** Phase 3 removes verdict from evaluator.md self-verification checks entirely. The Evaluator should not reference overall verdict at all -- only per-criterion PASS/FAIL status in the scores table.
+**What:** Changing the dimension name to reflect expanded scope.
+**Why bad:** Multi-file breaking change (DIMENSIONS constant, summary.json contract, EVALUATION-TEMPLATE.md, SCORING-CALIBRATION.md, perceptual-critic.md, test fixtures) for no functional benefit. The scope expansion is an instruction-level change, not a contract change.
+**Prevention:** Expand the perceptual-critic's methodology instructions. Leave the dimension name as "Visual Design."
 
-### Anti-Pattern 3: Information Barrier Leaks
+### Anti-Pattern 3: compile-evaluation Dimension Hardcoding
 
-**What:** Removing Step 10 (code review) but leaving source-code-dependent instructions elsewhere in evaluator.md.
-**Why bad:** Evaluator still reads source code through instructions like "Check for dead code, TODOs, stubs" (currently in Step 10, but also referenced in Step 11 listing). The GAN barrier is undermined.
-**Prevention:** Audit ALL evaluator.md steps for any instruction that requires reading the Generator's source files. The only legitimate code reading is the Evaluator reading its OWN evaluation artifacts (evaluation/round-N/). Robustness must be scorable entirely through behavioral observation.
-**Specific risk spots:**
-- Step 10 (Code Review) -- primary target, must be removed or restructured
-- Step 11 (List All Findings) mentions "Code quality observations" -- rename to "Robustness observations"
-- Step 14 self-verification -- remove any checks that reference code structure
+**What:** Hardcoding dimension-specific logic in compile-evaluation instead of iterating over DIMENSIONS.
+**Why bad:** Adding a 5th dimension in v2 requires another surgical edit.
+**Prevention:** The current code already uses loops. Maintain this pattern when adding the Robustness assessment section. The `assessmentSections` array (lines 1336-1340) is the one place that maps dimension keys to source labels -- this is intentional (the mapping of which critic produces which dimension cannot be derived from the DIMENSIONS constant alone).
 
-### Anti-Pattern 4: Robustness Without Observable Signals
+### Anti-Pattern 4: perturbation-critic Reading Source Code for Robustness Assessment
 
-**What:** Renaming Code Quality to Robustness but keeping the same code-inspection assessment approach.
-**Why bad:** Robustness measured by reading source code violates the GAN information barrier.
-**Prevention:** Define the Robustness rubric entirely in terms of observable signals:
-1. Build success/failure (`npm run build` output)
-2. Console error count (playwright-cli console output)
-3. Test suite pass/fail (`npm test` output -- Evaluator can run tests without reading test code)
-4. Dependency audit (`npm audit` output)
-5. Network error count during feature testing
-6. Crash/freeze behavior during normal and edge-case usage
-7. Error handling quality (how does the app respond to invalid input, empty states, network failures?)
-All of these are observable through Bash commands and playwright-cli, without reading a single source file.
+**What:** Allowing the perturbation-critic to read JavaScript files to assess error handling patterns.
+**Why bad:** Violates the GAN information barrier. Robustness must be assessed through behavioral observation only.
+**Prevention:** Tool allowlist excludes source file reading. All robustness signals come through playwright-cli (console errors, page crashes, visual inspection of error states, viewport behavior).
+
+### Anti-Pattern 5: Orchestrator Diagnosing Which Critic to Spawn Based on Score Analysis
+
+**What:** Orchestrator looking at scores to decide whether to re-spawn a specific critic for improvement.
+**Why bad:** Violates the delegation principle. The orchestrator acts on binary file-exists checks and CLI JSON, not on qualitative assessment of scores.
+**Prevention:** Retry logic remains purely binary: summary.json exists -> skip; missing -> respawn.
 
 ---
 
 ## Scalability Considerations
 
-| Concern | v1.0 | After v1.1 | Future |
-|---------|------|------------|--------|
-| Score dimensions | 4 hardcoded in regex + CLI | 4 with new names -- still hardcoded | Consider dimensions config file or JSON schema for extensibility |
-| Verdict logic | In Evaluator (distributed) | In CLI (centralized) -- better for consistency | CLI is the right long-term home |
-| Test oracle | Ad hoc from SPEC.md | Structured acceptance criteria in SPEC.md | Could evolve into separate TEST-PLAN.md if specs grow large |
-| Template validation | Regex-based | Regex-based | Consider JSON sidecar for scores (EVALUATION.json alongside EVALUATION.md) for reliability |
-| GAN barrier | Evaluator reads source | Evaluator behavioral-only | Barrier could be tool-enforced with PreToolUse hooks in v2 |
+| Concern | v1.1 (3 dims, 2 critics) | v1.2 (4 dims, 3 critics) | Future (N dims, N critics) |
+|---------|--------------------------|--------------------------|---------------------------|
+| Parallel critic spawns | 2 Agent() calls | 3 Agent() calls | N Agent() calls -- Claude Code handles parallelism |
+| Context per critic | ~60K tokens each | ~60K tokens each | ~60K tokens each -- independent contexts |
+| compile-evaluation | Auto-discovers 2 summaries | Auto-discovers 3 summaries | Auto-discovers N summaries -- already generic |
+| DIMENSIONS constant | 3 entries | 4 entries | N entries -- all consumers loop |
+| Convergence thresholds | Hardcoded magic numbers | Scaled from DIMENSIONS.length | Already scaled -- no future changes needed |
+| Resume-check | spawn-both-critics / spawn-{name}-critic | spawn-all-critics / spawn-{name}-critic | spawn-all-critics / spawn-{name}-critic -- already generic |
+| Total context budget | 2 * 60K = ~120K for evaluation | 3 * 60K = ~180K for evaluation | N * 60K -- linear scaling |
+| EVALUATION.md size | ~150 lines (3 assessment sections) | ~200 lines (4 assessment sections) | Linear with dimension count |
 
 ---
 
 ## Sources
 
-- Direct codebase analysis of all 8 core plugin files (HIGH confidence):
-  - SKILL.md (415 lines) -- orchestrator workflow and data flow
-  - appdev-cli.mjs (709 lines) -- CLI state management, score extraction, escalation, exit logic
-  - SPEC-TEMPLATE.md (86 lines) -- current spec section structure
-  - EVALUATION-TEMPLATE.md (199 lines) -- current evaluation structure with regex-sensitive comments
-  - SCORING-CALIBRATION.md (230 lines) -- current ceiling rules, calibration scenarios, conflict resolution
-  - evaluator.md (392 lines) -- 15-step evaluation workflow, self-verification, scoring rubric
-  - planner.md (98 lines) -- planning workflow, self-verification
-  - generator.md (253 lines) -- build process, fix-only mode, testing decision framework
-- STATE.md -- v1.1 context: Dutch art museum test issues (threshold anchoring, GAN violation, resume failure)
-- RETROSPECTIVE.md -- v1.0 lessons: template extraction value, research-before-planning, audit catches real issues
-- PROJECT.md -- v1.1 target features list, design principles, constraints
+### Primary (HIGH confidence)
+
+- `plugins/application-dev/scripts/appdev-cli.mjs` (1525 lines) -- full CLI codebase analysis: DIMENSIONS constant (line 14-18), extractScores() regex construction (line 112-116), computeVerdict() (line 149-159), computeEscalation() (line 257-306), determineExit() (line 322-353), cmdCompileEvaluation() (line 1211-1380), cmdResumeCheck() (line 725-818)
+- `plugins/application-dev/scripts/test-appdev-cli.mjs` (1331 lines) -- test suite including extensibility test (line 510-555: "should auto-discover any */summary.json directories")
+- `plugins/application-dev/skills/application-dev/SKILL.md` (556 lines) -- orchestrator workflow, evaluation phase, resume logic, error recovery
+- `plugins/application-dev/agents/perceptual-critic.md` (137 lines) -- Visual Design critic definition, tool allowlist, methodology
+- `plugins/application-dev/agents/projection-critic.md` (189 lines) -- Functionality critic definition, write-and-run methodology
+- `plugins/application-dev/agents/generator.md` (280 lines) -- Generator agent, fix-only mode, testing framework
+- `plugins/application-dev/agents/planner.md` (109 lines) -- Planner agent, spec generation
+- `plugins/application-dev/skills/application-dev/references/evaluator/SCORING-CALIBRATION.md` (198 lines) -- ceiling rules, calibration scenarios
+- `plugins/application-dev/skills/application-dev/references/evaluator/EVALUATION-TEMPLATE.md` (71 lines) -- template with regex-sensitive comments
+- `.planning/research/ARCHITECTURE.md` (v1.1 analysis) -- dependency graph, build order, anti-patterns
+- `.planning/milestones/v1.1-phases/07-ensemble-discriminator-architecture/07-RESEARCH.md` -- ensemble design patterns, summary.json contract, install-dep mutex
+- `.planning/PROJECT.md` -- v1.2 target features, current state, design principles

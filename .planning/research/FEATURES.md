@@ -1,14 +1,27 @@
-# Feature Research: v1.1 Hardening
+# Feature Research: v1.2 Dutch Art Museum Test Fixes
 
-**Domain:** GAN-inspired multi-agent autonomous application development harness (Claude Code plugin) -- v1.1 hardening features
-**Researched:** 2026-03-29
-**Confidence:** HIGH (Anthropic article, academic papers, ATDD tooling, LLM-as-judge research)
+**Domain:** GAN-inspired multi-agent autonomous application development harness (Claude Code plugin) -- v1.2 new features
+**Researched:** 2026-04-02
+**Confidence:** MEDIUM (cross-domain synthesis from GAN training literature, W3C specs, Playwright ecosystem, Vite+ alpha docs; no single authoritative source for the perturbation-critic concept)
 
-This document covers ONLY the v1.1 hardening features. The v1.0 feature landscape
-(working application output, score-based exit, adversarial evaluation, git workflow,
-real assets, functional AI, orchestrator integrity, QA versioning, self-testing,
-committed SPEC.md) is validated and not re-researched. See the v1.0 FEATURES.md
-in the milestone archive for the complete landscape.
+This document covers ONLY the v1.2 new features. The v1.0 and v1.1 feature
+landscapes (orchestrator integrity, score-based exit, ensemble critics,
+CLI-decided verdict, GAN information barrier, acceptance criteria, write-and-run
+patterns, crash recovery) are validated and not re-researched. See the v1.1
+FEATURES.md in this directory for the prior landscape.
+
+---
+
+## Feature Areas (Organized by v1.2 Target)
+
+Six feature areas map to the v1.2 milestone targets:
+
+1. **Perturbation-critic** -- new Robustness dimension (adversarial testing)
+2. **Convergence logic hardening** -- CLI scoring algorithm improvements
+3. **Enhanced perceptual-critic** -- Visual Coherence cross-page consistency
+4. **Enhanced projection-critic** -- deeper Functionality (A->B->A navigation)
+5. **Generator improvements** -- Vite+ adoption, dependency freshness, browser-agnostic AI
+6. **Architecture documentation** -- GAN/Cybernetics/Turing test grounding
 
 ---
 
@@ -16,241 +29,296 @@ in the milestone archive for the complete landscape.
 
 ### Table Stakes (Users Expect These)
 
-Features that the v1.0 Dutch art museum test proved are missing. Without these, the
-GAN architecture fails to deliver on its core promise of adversarial quality assurance.
+Features that address concrete failures observed in the Dutch art museum test
+run. Without these, the v1.1 ensemble architecture has blind spots that
+undermine quality assurance.
 
 | Feature | Why Expected | Complexity | Dependencies |
 |---------|--------------|------------|--------------|
-| CLI-decided verdict (harness-computed) | The Anthropic evals article explicitly recommends "grade each dimension with an isolated LLM-as-judge" and computing verdicts externally. The Dutch art museum test proved the failure mode: the Evaluator anchored all scores to 7/10 (the PASS threshold) and issued PASS after only 2 rounds. When the evaluator both scores AND decides, it can game the verdict by anchoring to thresholds. This is the LLM-as-judge "agreeableness bias" (TPR >96%, TNR <25%) documented in the CALM framework. Moving verdict computation to the CLI eliminates self-serving bias because the CLI is mechanical, not generative. Every serious evaluation harness separates grading (agent) from gating (harness). | MEDIUM | Depends on: scoring dimension rename (regex contract). Existing v1.0: `round-complete` subcommand, `extractScores()`, `determineExit()` |
-| Scoring dimension restructuring (Robustness replacing Code Quality, Visual Coherence expanding Visual Design) | The v1.0 "Code Quality" dimension required source code inspection, which violates the GAN information barrier (the discriminator only sees the output, never the generator's internals). Anthropic's own article uses dimensions assessable through the running application: design quality, originality, craft, functionality. The RULERS framework (arXiv:2601.08654) shows that "locked rubrics" with evidence-anchored scoring outperform loose rubric evaluation. "Visual Coherence" expands scope to cross-page consistency and responsive identity -- addressing the Dutch art museum test where pages had inconsistent styling. "Robustness" reframes code quality as behaviorally observable: build health, error handling under stress, console errors, dependency freshness. | HIGH | Foundation change: regex contract in appdev-cli.mjs, EVALUATION-TEMPLATE.md, SCORING-CALIBRATION.md, evaluator.md rubric. Must be done FIRST. |
-| GAN information barrier enforcement | In real GANs, the discriminator only sees the generator's output, never its internal weights. The Dutch art museum test revealed the Evaluator reading source code -- a GAN violation that enables lenient scoring (the Evaluator rationalizes "the code looks reasonable" instead of testing whether the app works). Anthropic's article confirms the evaluator "runs Playwright to interact with the live application" -- behavioral observation, not code inspection. | MEDIUM | Related to: Robustness dimension (must be scorable without source code). Existing v1.0: evaluator.md Step 10 (code review) |
-| Minimum rounds before PASS | The Dutch art museum test PASS'd at round 2 with 28/40. The first evaluation round is uncalibrated -- the Evaluator has no baseline for comparison. GAN training literature confirms: "the discriminator trains for one or more epochs" before the generator can benefit from feedback. The ATDD approach requires at minimum: red phase (tests fail) then green phase (tests pass). A single generate-evaluate is insufficient to establish quality trajectory. Anthropic ran 5-15 iterations per generation. No serious iterative system accepts the first passing result. | LOW | Existing v1.0: `determineExit()` in appdev-cli.mjs. Simple guard: `if (round < minRounds) return { should_continue: true }` |
-| Acceptance test plan in SPEC.md | The SDD/ATDD movement (Spec-Driven Development, Acceptance Test-Driven Development) has converged on specs-as-source-of-truth for AI-generated code. The ATDD Claude Code plugin (swingerman/atdd) demonstrates Given/When/Then acceptance criteria that constrain AI generation. Anthropic's article describes "sprint contracts" -- the generator and evaluator negotiate what "done" looks like before code is written. Without structured acceptance criteria, the Evaluator invents its test strategy ad hoc each round, leading to inconsistent testing and missed features. The Planner already understands the product domain; acceptance criteria should come from the Planner, not be improvised by the Evaluator. | MEDIUM | Independent leaf change. Existing v1.0: SPEC-TEMPLATE.md sections, planner.md, evaluator.md Steps 1 and 6 |
+| **Perturbation-critic: error boundary testing** | The Dutch art museum test revealed no testing of error states -- what happens when forms receive invalid input, when network requests fail, when the user navigates unexpectedly. Every serious QA process includes negative testing. The Anthropic article's evaluator "runs Playwright to interact with the live application" -- this includes adversarial interaction, not just happy-path verification. Without robustness testing, the PASS verdict certifies only that the happy path works, not that the application is resilient. | HIGH | New agent definition (perturbation-critic.md). New summary.json schema with `dimension: "Robustness"`. CLI compile-evaluation must handle 3 critic summaries instead of 2. DIMENSIONS constant must add Robustness. State file must track 3 critics. Orchestrator must spawn 3 critics in parallel. |
+| **Perturbation-critic: console error monitoring under stress** | The v1.1 critics check console errors in steady state. Perturbation testing should capture console errors that appear only under stress: rapid clicking, form spam, navigation during async operations. These are the errors real users trigger. The adversarial LLM UI testing approach (SitePoint, 2025) found real production bugs by "clicking Back during in-flight async validation" -- bugs that conventional tests with polite waits never discovered. | MEDIUM | Part of perturbation-critic agent. Uses existing `npx playwright-cli console error` infrastructure. Requires sequencing: perform adversarial action, then capture console state. |
+| **Perturbation-critic: edge-case input generation** | Fuzz testing literature confirms that mutation-based input generation (valid inputs with modifications -- empty strings, Unicode, extremely long strings, SQL/XSS payloads, boundary values) catches bugs that happy-path tests miss. The projection-critic already tests "one negative test per feature" but this is deterministic, not adversarial. A dedicated perturbation-critic can generate inputs dynamically based on each form's context, following the "Goodhart's Law protection" principle already used for AI probing in the projection-critic. | MEDIUM | Part of perturbation-critic agent. Independent of projection-critic (different dimension, different methodology). Requires SPEC.md reading for form/input identification. |
+| **Convergence: EMA-smoothed score trajectory** | The current convergence logic uses raw total scores and fixed-window deltas (3-round window for plateau, 2 consecutive declines for regression). Raw scores are noisy -- a single critic having a bad round can trigger false REGRESSION. EMA smoothing is the standard technique for noisy time-series convergence detection, used in GAN training (weight averaging), financial scoring, and statistical process control. The EWMA procedure is specifically designed for change/plateau detection in longitudinal data. Smoothing reduces false exits while still detecting genuine trends. | MEDIUM | Modifies `computeEscalation()` in appdev-cli.mjs. Backward-compatible: EMA with alpha=1.0 degenerates to raw scores. Must be tested against existing test suite (57 tests). |
+| **Convergence: per-dimension trajectory analysis** | The current system sums all dimensions into a total score for trajectory analysis. This masks dimension-specific plateaus: if Functionality plateaus at 6 while Visual Design improves from 5 to 8, the total rises but Functionality never converges. Per-dimension tracking detects when individual dimensions are stuck, enabling targeted escalation messages ("Functionality plateaued -- focus on feature completeness"). GAN training literature calls this "per-loss convergence" -- tracking generator loss and discriminator loss independently rather than only the combined objective. | MEDIUM | Modifies `computeEscalation()` and `determineExit()` in appdev-cli.mjs. The escalation response JSON needs a `dimension_details` field. Backward-compatible: existing total-based logic is the fallback. |
+| **Enhanced perceptual-critic: cross-page color/typography audit** | The v1.1 perceptual-critic evaluates pages individually. The Dutch art museum test revealed pages with inconsistent styling -- different background colors, font sizes, or spacing between the landing page and inner pages. Design system literature (UXPin, Supercharge) confirms that cross-page consistency is the foundation of perceived quality: "when typography switches styles across channels, every inconsistency chips away at customer trust." Chromatic's visual testing approach catches these regressions automatically. The perceptual-critic should extract design tokens (colors, fonts, spacing) from each page and compare them for consistency. | MEDIUM | Extends perceptual-critic.md methodology. Requires multi-page screenshot comparison workflow. Uses existing eval-first pattern to extract computed styles across pages. New findings category: "Visual Consistency" (VC-*) feeding into Visual Design score. |
+| **Enhanced projection-critic: A->B->A navigation testing** | The v1.1 projection-critic tests navigation exists (links work) but not navigation state persistence. The Dutch art museum test should verify: navigate to artwork detail, click back, does the gallery state (scroll position, filter selection, active page) persist? Playwright supports `page.goBack()` and state assertions natively. The SitePoint adversarial testing article found real bugs with "clicking Back during in-flight async validation and then immediately clicking Next." This is table stakes for SPAs where client-side routing must manage browser history correctly. | MEDIUM | Extends projection-critic.md acceptance test generation. Adds A->B->A test patterns to the write-and-run template. Uses existing `npx playwright test` infrastructure. New test category in acceptance_tests results. |
+| **Generator: browser-agnostic LanguageModel API** | The v1.1 browser-prompt-api skill references Chrome-specific patterns (chrome://flags, Gemini Nano). Microsoft Edge 139+ ships the same `LanguageModel` API with Phi-4-mini -- same interface, different model. The W3C Web Machine Learning group is standardizing the API. Generated applications should use `LanguageModel` (the W3C standard interface) without Chrome-specific assumptions. Feature detection (`typeof LanguageModel !== 'undefined'`) works identically in both browsers. The skill already uses the standard API shape; the fix is removing Chrome-specific documentation and adding Edge support notes. | LOW | Updates browser-prompt-api skill documentation. May update generator.md AI feature section to reference both browsers. Does not change the API surface -- `LanguageModel` is already the standard. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that go beyond what comparable systems do. These create unique value in
-the GAN-inspired architecture.
+Features that go beyond comparable systems. These create unique value in the
+GAN-inspired architecture and address issues no competing harness handles.
 
 | Feature | Value Proposition | Complexity | Dependencies |
 |---------|-------------------|------------|--------------|
-| Cross-feature interaction testing | No competing harness tests features in combination. The Dutch art museum test missed session overwrite and URL desync bugs because features were tested in isolation. The academic cross-verification protocol (CVCP, 2025) shows multi-agent systems benefit from "adversarial testing" across feature boundaries. The Evaluator should test Core features in combination, not just individually. However, this must be a SCORING INPUT (feeding into Functionality and Visual Coherence), not a separate gate -- the PITFALLS.md documents the combinatorial explosion risk of making it a hard gate. | MEDIUM | Existing v1.0: evaluator.md Step 6 (Test Features). Additive change, not conflicting with other evaluator modifications. |
-| Score anomaly detection (z-score trajectory analysis) | No competing harness detects suspicious score patterns like jumps from 3 to 9 (likely hallucinated evaluation) or mode collapse where all dimensions get identical scores (the 7/7/7/7 Dutch art museum pattern). The LLM-as-judge literature documents "central tendency bias" where LLMs cluster scores around the middle of the scale. The RULERS framework calls this "scale misalignment." Detecting these patterns in the CLI provides a check on the Evaluator's reliability that the Evaluator cannot self-apply. | LOW | Existing v1.0: appdev-cli.mjs `cmdRoundComplete()`, score trajectory tracking. Requires >= 3 rounds of data for meaningful z-scores. |
-| Rising thresholds (round-indexed threshold escalation) | GAN training uses "curriculum learning" -- starting with easier tasks and gradually increasing difficulty. Applied to the evaluation loop: early rounds have lower thresholds (establishing baseline), later rounds have higher thresholds (requiring genuine improvement). This prevents the "PASS at round 2 with mediocre scores" failure without permanently setting thresholds so high they become impossible. No competing harness implements this -- most use fixed thresholds or no thresholds at all. | MEDIUM | Depends on: CLI-decided verdict (thresholds are in the CLI, not the Evaluator). Existing v1.0: escalation levels E-0 through E-IV. Caution: PITFALLS.md warns about impossible convergence if thresholds are set too aggressively. |
-| Commit hygiene as observable Robustness signal | With the GAN information barrier preventing source code inspection, git commit history becomes one of the few observable proxies for code organization. Commit count, commit message quality, feature-per-commit discipline, and merge conflict absence are all observable via `git log` without reading source code. No competing harness uses commit history as a quality signal. | LOW | Existing v1.0: Generator feature-by-feature commits. Independent of other changes. |
-| Edge-first browser for AI-feature applications | Edge ships Phi-4-mini via the same LanguageModel API as Chrome (Gemini Nano). The Generator builds against a standard W3C API; the Evaluator tests against the browser that best supports on-device AI. No competing harness specifies browser selection based on AI feature requirements. The browser-prompt-api skill already abstracts the API; the change is in which browser the Evaluator launches. | LOW | Existing v1.0: browser-prompt-api skill, evaluator.md Step 4. Requires Edge installed on the machine. |
+| **Perturbation-critic: LLM-driven adversarial interaction** | The cutting edge in UI testing (2025-2026) is using LLMs to generate adversarial interaction sequences -- not just input fuzzing, but behavioral adversarial sequences like "double-click submit during async validation," "navigate away mid-form-submission," "resize viewport while animation plays." The SitePoint article documented an adversarial loop: extract UI state -> send to LLM with adversarial prompt -> execute hostile action via Playwright -> detect anomalies -> codify as regression tests. No competing application-generation harness implements this. The perturbation-critic IS an LLM -- it can generate these sequences natively without external tooling. | HIGH | Part of perturbation-critic agent. Requires careful token budget management (~60K context). Must be structured as write-and-run to avoid context explosion (write adversarial test script to disk, run via Playwright, read results). |
+| **Convergence: dimension-weighted scoring** | The current system treats all dimensions equally in the total score (simple sum). But Functionality failures matter more than Visual Design shortfalls for application usability. Weighted scoring (e.g., Functionality 1.5x, Product Depth 1.5x, Visual Design 1.0x, Robustness 1.0x) would align convergence detection with user priorities. GAN training literature uses loss weighting extensively -- the WGAN adaptive weighted discriminator (CVPR 2021) "consistently achieves faster convergence." | LOW | Modifies DIMENSIONS constant and total computation in appdev-cli.mjs. Weights configurable via constant, not user-facing. Must not change the 1-10 per-dimension scoring -- only the trajectory analysis weighting. |
+| **Convergence: z-score anomaly detection on per-round scores** | Deferred from v1.1 (listed as "Should Have" but not shipped). No competing harness detects suspicious score patterns: jumps from 3 to 9 (likely hallucinated), mode collapse where all dimensions get identical scores (the 7/7/7 v1.0 pattern), or oscillation between rounds. The RULERS framework identifies "scale misalignment" as an LLM-judge failure mode. Z-score detection flags statistically improbable score changes, adding a reliability check on the critic ensemble that the critics cannot self-apply. | LOW | Existing infrastructure in appdev-cli.mjs. Requires >= 3 rounds for meaningful z-scores. Additive -- does not change exit conditions, only adds `anomaly_warnings` to the round-complete response. |
+| **Enhanced perceptual-critic: design token extraction and diffing** | Beyond screenshot comparison, extracting actual computed CSS values (colors, font families, font sizes, spacing) from each page and diffing them produces quantifiable consistency metrics. "Page A uses font-size:16px for body, Page B uses 14px" is more actionable than "pages look different." This is the design-token-based consistency measurement approach used by enterprise brand compliance tools (Burberry achieved 89% consistency score across digital touchpoints). No competing application-generation harness does this. | MEDIUM | Extends perceptual-critic eval-first methodology. Uses `npx playwright-cli eval` to extract computed styles as structured JSON. Comparison logic runs in the critic, results feed into findings. |
+| **Enhanced projection-critic: data persistence testing** | Beyond A->B->A navigation, testing that data created on Page A persists when viewed on Page B catches a common SPA bug: state that lives in component memory but is not properly shared or persisted. "Create an artwork entry, navigate to the gallery, verify it appears" tests the data flow, not just the navigation. The v1.1 projection-critic covers "Data persistence (create, navigate away, return)" in its acceptance test template, but the Dutch art museum test showed this was not being exercised deeply enough. Elevating it to a named test pattern with explicit coverage ensures it is not skipped. | LOW | Extends projection-critic.md acceptance test patterns. Uses existing write-and-run infrastructure. Documentation change more than code change. |
+| **Generator: Vite+ adoption for compatible frameworks** | Vite+ (alpha, March 2026) consolidates Vite 8, Vitest 4.1, Oxlint 1.52, Oxfmt, tsgo, and Rolldown into a single `vp` CLI. For generated projects, this means: 3 CI commands instead of 5+, 50-100x faster linting, 30x faster formatting, single config file. The Generator already has a "Vite+ preference" note but the vite-plus skill needs updating to match the official `vp` CLI workflow: `vp create`, `vp check`, `vp test`, `vp build`. No competing harness generates projects with Vite+. | MEDIUM | Updates vite-plus skill SKILL.md. Updates generator.md Phase 1 setup and Phase 4 diagnostic. Must handle alpha instability gracefully -- fallback to plain Vite must remain viable. |
+| **Generator: dependency freshness checking** | Generated projects should use latest stable versions of frameworks and libraries. The Generator currently states "use the latest stable versions" but has no verification mechanism. A dependency freshness check (e.g., `npm outdated` or checking registry versions) after initial setup ensures the generated project starts with current dependencies, not stale cached versions. | LOW | Adds a step to Generator Phase 1 or Phase 4. Uses `npm outdated` (no additional tooling). Could be integrated into appdev-cli as a `check-deps` subcommand for deterministic reporting. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
-Features that seem beneficial for v1.1 but would create problems based on research
-findings.
+Features that seem beneficial for v1.2 but would create problems based on
+research findings and the existing architecture.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Separate cross-validation gate (new exit condition for cross-feature bugs) | Cross-feature bugs are real and were missed in the Dutch art museum test. A separate gate seems like a strong quality signal. | Combinatorial explosion: N features produce N*(N-1)/2 interaction pairs. Even 5% minor issue rate per pair means 97% chance of at least one issue in a 12-feature app. Cross-validation as a hard gate effectively guarantees complex apps never pass. The PITFALLS.md documents this mathematically. | Route cross-feature findings into existing scoring dimensions (Functionality for bugs, Visual Coherence for layout conflicts). The Evaluator prioritizes Core feature interactions. |
-| Evaluator-computed verdict with "advisory" flag | Keeps the current architecture (Evaluator writes verdict) but adds an advisory flag so the CLI can override. Seems like a gentler migration path. | Defeats the purpose. LLM-as-judge research shows "agreeableness bias" -- the Evaluator will still anchor scores to thresholds if it believes its verdict matters. An "advisory" verdict that gets overridden creates confusion about who is in charge. The Anthropic evals article is unambiguous: separate grading from gating. | CLI-decided verdict. The Evaluator writes scores only. The CLI computes PASS/FAIL mechanically from scores vs thresholds. Clean separation of concerns. |
-| Full test suite execution by the Evaluator (running Generator's tests) | The Evaluator could run `npm test` to verify the Generator's test suite passes. Seems like an easy Robustness signal. | The Evaluator running the Generator's tests creates a coupling between Evaluator and Generator implementation details. If the Generator writes poorly scoped tests, the Evaluator is forced to debug test infrastructure rather than evaluate the application. Also, the Evaluator executing tests it did not write cannot assess test quality -- it only learns whether they pass. | The Evaluator observes test results as a Robustness signal (did `npm test` exit 0?) but does not debug or modify tests. Test coverage as a boolean (exists/passes vs does not exist/fails), not a qualitative assessment. |
-| Source code inspection as a "non-scoring advisory" | The GAN information barrier removes source code access, but the Evaluator could still read code for "advisory notes" that do not affect scores. Seems like a way to preserve useful detection capability. | Violates the GAN principle. If the Evaluator reads source code for any purpose, its scoring is contaminated -- it cannot unsee what it read. The PITFALLS.md documents "information barrier leaks" where advisory code review influences behavioral assessment. Real GANs enforce complete output-only discrimination. | Strengthen behavioral probes to compensate: latency analysis for canned AI detection, console error monitoring, network error observation, crash/freeze testing under stress. Accept that some code quality signals are lost -- this is the intended trade-off of the GAN architecture. |
-| Raising all thresholds to 8/10 | Higher thresholds should produce better applications. The Dutch art museum got 7s across the board and it was not high quality. | The Dutch art museum scores were anchored, not calibrated. The problem was score reliability, not threshold levels. Raising thresholds without empirical data on what scores the Generator actually achieves creates impossible convergence (PITFALLS.md Pitfall 3). If round-3 Functionality averages 7.2 with stdDev 1.1, an 8 threshold means ~50% of runs never converge. | Fix the scoring pipeline first (CLI verdict, dimension restructuring, anomaly detection). Collect empirical score distributions from 3+ test runs. THEN raise thresholds if data supports it. |
-| Per-feature acceptance test execution by Evaluator (automated Playwright tests from acceptance criteria) | The acceptance test plan could generate executable Playwright test scripts that run automatically. Full automation sounds ideal. | The acceptance test plan should be a test oracle (what to verify), not a test script (how to verify). Auto-generating Playwright scripts from acceptance criteria is brittle -- the scripts depend on specific DOM structures that the Generator chooses at build time. If the button is a `<div role="button">` instead of a `<button>`, the auto-generated script fails with a selector error, not a real bug. The ATDD plugin uses native test frameworks, not generated scripts. | The Evaluator reads acceptance criteria as behavioral goals and manually translates them to playwright-cli interactions at evaluation time. This is what the Evaluator already does (Steps 5-8) -- the acceptance test plan just makes the goals explicit. |
+| **Full browser fuzzing framework (random click/type everywhere)** | Comprehensive fuzzing would find more edge-case bugs. The fuzz testing literature shows high bug discovery rates. | Untargeted fuzzing generates enormous amounts of noise. A random-click fuzzer on a complex SPA would trigger hundreds of console errors, most of them irrelevant (e.g., clicking a disabled button, typing into a readonly field). The perturbation-critic has a ~60K token budget -- it cannot process unbounded fuzzing output. The write-and-run pattern requires targeted, interpretable test results. Adversarial testing must be guided by SPEC.md domain knowledge to be actionable. | **Targeted perturbation testing** guided by SPEC.md features. The perturbation-critic identifies forms, navigation elements, and interactive widgets from the spec, then generates targeted adversarial inputs for each. Bounded scope, interpretable results, fits within token budget. |
+| **Per-dimension exit conditions (dimension-specific PLATEAU/REGRESSION)** | If Functionality plateaus but Visual Design is improving, should we exit? Per-dimension exits seem more precise. | Adds combinatorial complexity to exit logic. With 4 dimensions, there are 4^4 = 256 possible combinations of per-dimension exit states. The orchestrator's dispatch logic (already handling 5 exit conditions) would become unmanageable. The SAFETY_CAP already catches runs where individual dimensions stagnate while others improve -- the total score plateaus. Dimension-specific exit conditions are theoretically appealing but operationally nightmarish. | **Per-dimension trajectory reporting** (advisory, not gating). The round-complete response includes per-dimension trend information ("Functionality: plateau, Visual Design: improving") for the Generator's benefit. Exit conditions remain total-score-based. The Generator can prioritize stagnant dimensions without the exit logic becoming intractable. |
+| **Rising thresholds (round-indexed threshold escalation)** | Deferred from v1.1 "Should Have." Curriculum learning suggests starting easy and increasing difficulty. | Still lacks empirical data. We deferred this from v1.1 specifically because "setting thresholds without data risks impossible convergence." We still have not collected score distributions from multiple test runs. Implementing rising thresholds now, before the perturbation-critic adds a new dimension, would require re-calibration immediately. Wait until v1.2 stabilizes the 4-dimension scoring, collect data from 3+ test runs, then calibrate thresholds empirically in v1.3. | Collect score distribution data during v1.2 test runs. Add optional `--collect-stats` flag to round-complete that writes score distributions to a stats file. This enables data-driven threshold calibration in v1.3 without premature threshold escalation now. |
+| **Automated Playwright test generation from SPEC.md acceptance criteria** | The Planner writes acceptance criteria, the projection-critic manually translates them to tests. Why not auto-generate? | Same issue identified in v1.1 anti-features: auto-generated scripts depend on DOM structures the Generator chooses at build time. A `<div role="button">` vs `<button>` breaks the generated selector. The projection-critic's write-and-run pattern includes a snapshot step specifically to discover actual selectors before writing tests. Removing human-in-the-loop (the LLM reading the snapshot) makes tests brittle. Additionally, Playwright Agents (v1.56+, October 2025) already offer plan/generate/heal natively -- competing with Playwright's own agent system would be redundant. | Continue using the projection-critic's write-and-run pattern: read SPEC.md criteria as behavioral goals, take a snapshot for selector discovery, write tests against actual DOM structure, run and read results. The perturbation-critic adds adversarial variants of these tests, not duplicates. |
+| **WebLLM/WebNN as LanguageModel fallback** | If LanguageModel API is unavailable, fall back to WebLLM or WebNN for AI features. Ensures AI features always work. | Different APIs with fundamentally different programming models. LanguageModel is session-based prompting; WebLLM is OpenAI-compatible chat API with explicit model loading; WebNN is a low-level operator graph API. A "fallback" that switches between these at runtime adds massive complexity to every AI feature in the generated application. The graceful degradation pattern in the browser-prompt-api skill already handles LanguageModel unavailability by disabling AI features -- this is the correct approach for on-device AI. | Keep the existing graceful degradation pattern: check `LanguageModel.availability()`, show appropriate UI states for "downloadable"/"downloading"/"unavailable", degrade to non-AI functionality when the API is absent. The three browser AI skills (prompt-api, webllm, webnn) remain distinct choices based on SPEC.md requirements, not runtime fallbacks. |
+| **Robustness dimension scoring via source code metrics** | Code coverage, cyclomatic complexity, dependency count -- these are traditional robustness signals. | Violates the GAN information barrier. The v1.1 architecture explicitly prohibits critics from reading source code. Robustness must be assessed from the product surface: error handling behavior, crash resilience, console cleanliness, navigation robustness, input validation. The perturbation-critic achieves this through behavioral testing. Re-introducing source code metrics would undo a core v1.1 architectural decision. | **Behavioral robustness signals only:** error boundary behavior under adversarial input, console error count under stress, crash/freeze detection during rapid interaction, graceful degradation when APIs are unavailable, navigation state persistence. These are all observable from the product surface without reading source code. |
 
 ## Feature Dependencies
 
 ```
-[Scoring Dimension Restructuring] (foundation)
+[Perturbation-Critic Agent] (new agent)
     |
-    +--requires--> [CLI-Decided Verdict] (depends on dimension names for regex)
+    +--requires--> [DIMENSIONS constant update] (add Robustness, set threshold)
     |                  |
-    |                  +--requires--> [Rising Thresholds] (thresholds are in the CLI)
+    |                  +--requires--> [compile-evaluation 3-critic support]
     |                  |
-    |                  +--enables--> [Score Anomaly Detection] (CLI computes trajectory)
+    |                  +--requires--> [Orchestrator 3-critic spawn/retry]
+    |                  |
+    |                  +--requires--> [State file critics field: 3 critics]
     |
-    +--requires--> [GAN Information Barrier] (Robustness must be scorable without code)
+    +--requires--> [Perturbation summary.json schema]
     |
-    +--requires--> [Evaluator Scoring Rubric Update] (rubric descriptors use new dims)
+    +--requires--> [SCORING-CALIBRATION.md Robustness section]
 
-[Acceptance Test Plan] (independent leaf)
-    |-- Touches evaluator.md Steps 1, 6 (different sections than scoring changes)
-    |-- Does NOT require scoring changes
+[Convergence Hardening] (CLI modifications)
+    |
+    +-- [EMA smoothing] -- independent, modifies computeEscalation()
+    |
+    +-- [Per-dimension tracking] -- independent, extends round data structure
+    |
+    +-- [Z-score anomaly detection] -- requires >= 3 rounds, additive to
+    |   round-complete response
+    |
+    +-- [Dimension weighting] -- independent, modifies total computation
 
-[Cross-Feature Interaction Testing] (independent leaf)
-    |-- Touches evaluator.md Step 6 (additive, not conflicting)
-    |-- Findings route to Functionality and Visual Coherence scores
+[Enhanced Perceptual-Critic] (extends existing agent)
+    |
+    +-- [Cross-page consistency audit] -- extends methodology section
+    |       |
+    |       +--requires--> [Multi-page screenshot workflow]
+    |       |
+    |       +--requires--> [Design token extraction via eval-first]
+    |
+    +-- does NOT depend on perturbation-critic (different dimension)
 
-[Minimum Rounds Before PASS] (independent)
-    |-- Touches appdev-cli.mjs determineExit() (small guard)
-    |-- Should be implemented WITH CLI-decided verdict for clean integration
+[Enhanced Projection-Critic] (extends existing agent)
+    |
+    +-- [A->B->A navigation tests] -- extends acceptance test patterns
+    |       |
+    |       +--requires--> [page.goBack() pattern documentation]
+    |
+    +-- [Data persistence test elevation] -- documentation change
+    |
+    +-- does NOT depend on perturbation-critic (different dimension)
 
 [Generator Improvements] (independent track)
-    |-- Vite+ adoption nudge
-    |-- Dependency freshness
-    |-- Browser-agnostic LanguageModel API
-    |-- Test style improvements
-    |-- Touches generator.md only
+    |
+    +-- [Vite+ skill update] -- updates SKILL.md, generator.md references
+    |
+    +-- [Dependency freshness] -- new diagnostic step or CLI subcommand
+    |
+    +-- [Browser-agnostic LanguageModel] -- updates browser-prompt-api skill
+    |
+    +-- does NOT depend on critic changes
 
-[Session Resume Recovery] (independent)
-    |-- Touches SKILL.md Step 0 only
-    |-- Lowest dependency, lowest priority
-
-[Edge-First Browser] (independent)
-    |-- Touches evaluator.md Step 4 (tiny change)
-    |-- Touches browser-prompt-api skill (documentation update)
+[Architecture Documentation] (independent, no code changes)
+    |
+    +-- Pure documentation grounded in GAN/Cybernetics/Turing test principles
+    |
+    +-- does NOT block or depend on any other feature
 ```
 
 ### Dependency Notes
 
-- **Scoring Dimensions requires CLI-Decided Verdict:** The dimension names
-  appear in the regex parse contract. Verdict computation moves to the CLI
-  and references these names. Both must be coordinated atomically.
-- **Scoring Dimensions requires GAN Information Barrier:** The new "Robustness"
-  dimension must be assessable without reading source code. The barrier must be
-  enforced simultaneously with the dimension change.
-- **CLI-Decided Verdict enables Score Anomaly Detection:** Once the CLI owns
-  verdict computation, it naturally owns anomaly detection too -- the CLI already
-  tracks score trajectories.
-- **CLI-Decided Verdict enables Rising Thresholds:** Threshold escalation logic
-  belongs in the CLI (deterministic, mechanical) not in the Evaluator (generative,
-  biased).
-- **Acceptance Test Plan is independent:** It feeds into existing evaluator data
-  flows but does not restructure them.
-- **Cross-Feature Testing conflicts with Separate Gate:** These must NOT be
-  combined. Cross-feature findings feed into existing dimensions.
+- **Perturbation-critic requires DIMENSIONS update:** The new Robustness
+  dimension must be added to the DIMENSIONS constant in appdev-cli.mjs before
+  the perturbation-critic can report scores that the CLI processes. This is the
+  same foundation-first pattern as v1.1's scoring restructuring.
+- **Perturbation-critic requires 3-critic orchestration:** The orchestrator
+  currently spawns 2 critics in parallel. Adding a third requires changes to
+  the `--critics` flag, compile-evaluation logic, resume-check recovery states,
+  and the per-critic retry pattern.
+- **Convergence hardening is internally independent:** EMA smoothing,
+  per-dimension tracking, z-score detection, and dimension weighting can be
+  implemented in any order. They modify different parts of the CLI.
+- **Critic enhancements are parallel:** Perceptual-critic (Visual Design) and
+  projection-critic (Functionality) enhancements touch different agents with
+  non-overlapping scoring dimensions. They can be developed in parallel.
+- **Generator improvements are independent:** Vite+ updates, dependency
+  freshness, and LanguageModel browser-agnostic changes affect only the
+  Generator side. They do not interact with critic or convergence changes.
+- **Architecture documentation has no code dependencies:** It is a pure
+  documentation deliverable that can be written at any point.
 
-## v1.1 Scope Definition
+## v1.2 Scope Definition
 
-### Must Have (v1.1 -- hardening release)
+### Must Have (v1.2)
 
-- [x] **CLI-decided verdict** -- Core fix for the Dutch art museum anchoring
-  problem. Without this, every subsequent improvement is undermined by
-  unreliable verdict computation. The LLM-as-judge literature is unanimous:
-  separate grading from gating.
-- [x] **Scoring dimension restructuring** -- Foundation for all scoring changes.
-  Robustness replaces Code Quality (enabling GAN barrier). Visual Coherence
-  expands Visual Design (addressing cross-page consistency). Must be done first.
-- [x] **GAN information barrier** -- Architectural principle enforcement. Without
-  this, the Evaluator reading source code makes it a code reviewer, not an
-  adversarial tester. Coupled with Robustness dimension redesign.
-- [x] **Minimum rounds before PASS** -- Prevents premature convergence. Low
-  complexity (single guard in `determineExit()`). Addresses the "PASS at round 2"
-  failure.
-- [x] **Acceptance test plan in SPEC.md** -- Structures the Evaluator's test oracle.
-  The SDD/ATDD movement confirms: specs should generate both implementation and
-  tests. Independent leaf change, low risk.
+- [ ] **Perturbation-critic (Robustness dimension)** -- The primary new
+  capability in v1.2. Addresses the blind spot where the Dutch art museum test
+  had no robustness testing. Requires: new agent definition, DIMENSIONS update,
+  3-critic orchestration, scoring calibration, summary.json schema. This is the
+  highest-complexity feature but also the highest-value one -- without it, the
+  v1.2 milestone has no new critic capability.
+- [ ] **Convergence: EMA-smoothed trajectory** -- Addresses false PLATEAU and
+  REGRESSION exits caused by noisy single-round scores. Low risk (backward-
+  compatible with alpha=1.0). Should be implemented alongside DIMENSIONS update
+  since both modify the CLI.
+- [ ] **Convergence: per-dimension tracking** -- Enables the Generator to
+  prioritize stagnant dimensions. Required for meaningful escalation messages
+  with 4 dimensions. Advisory (not gating) to avoid combinatorial exit logic.
+- [ ] **Enhanced perceptual-critic: cross-page consistency** -- Addresses the
+  specific Dutch art museum failure where pages had inconsistent styling. Medium
+  complexity, uses existing eval-first infrastructure.
+- [ ] **Enhanced projection-critic: A->B->A navigation** -- Addresses the
+  specific Dutch art museum failure where navigation state was not tested. Uses
+  existing write-and-run infrastructure.
+- [ ] **Architecture documentation** -- Milestone requirement. Pure
+  documentation, no risk.
 
-### Should Have (v1.1 -- adds meaningful quality)
+### Should Have (v1.2)
 
-- [ ] **Cross-feature interaction testing** -- Addresses real bugs missed in the
-  Dutch art museum test. Additive change to evaluator.md Step 6. Must be
-  integrated as a scoring input, not a separate gate.
-- [ ] **Score anomaly detection** -- Catches mode collapse (all 7s) and
-  hallucinated evaluations (score jumps). Low complexity, high value for
-  convergence reliability. Requires >= 3 rounds of data.
-- [ ] **Session resume recovery** -- UX polish. Orchestrator crash recovery
-  prevents lost work. Independent change to SKILL.md Step 0.
-- [ ] **Generator improvements** -- Vite+ adoption nudge, dependency freshness,
-  browser-agnostic LanguageModel API, test style. Independent track.
-- [ ] **Edge-first browser** -- Small Evaluator configuration change. Requires
-  Edge installed; not universally available.
+- [ ] **Generator: browser-agnostic LanguageModel** -- Low complexity, high
+  correctness value. Edge 139+ ships LanguageModel with Phi-4-mini. The skill
+  should document both browsers.
+- [ ] **Generator: Vite+ skill refresh** -- Vite+ alpha has matured since the
+  initial skill was written. Update to match official `vp` CLI workflow.
+- [ ] **Generator: dependency freshness** -- Low complexity diagnostic step.
+  Can be a CLI subcommand or a Generator step.
+- [ ] **Convergence: z-score anomaly detection** -- Deferred from v1.1. Low
+  complexity, additive, requires >= 3 rounds. Catches mode collapse and
+  hallucinated evaluations.
+- [ ] **Perturbation-critic: LLM-driven adversarial sequences** -- Differentiator
+  but high complexity. Can be an advanced feature of the perturbation-critic
+  rather than a v1.2 requirement. Start with targeted input perturbation, add
+  behavioral adversarial sequences if token budget allows.
 
-### Defer to v1.2+ (needs empirical data first)
+### Defer to v1.3+ (needs empirical data or more design work)
 
-- [ ] **Rising thresholds** -- Conceptually sound (curriculum learning) but requires
-  empirical score distributions from 3+ test runs to calibrate. Setting
-  thresholds without data risks impossible convergence (PITFALLS.md Pitfall 3).
-  Implement the infrastructure in v1.1 (round-indexed threshold lookup table)
-  but keep thresholds flat until data is collected.
-- [ ] **Commit hygiene scoring** -- Novel differentiator but untested. Needs
-  calibration scenarios and empirical validation before integrating into
-  Robustness scoring. Could be an advisory (non-scoring) appendix in v1.1.
+- [ ] **Rising thresholds** -- Still needs empirical score distributions. Now
+  complicated further by the new Robustness dimension. Collect data in v1.2.
+- [ ] **Dimension-weighted scoring** -- Conceptually sound but the weight
+  values need empirical calibration. Collecting data in v1.2 enables this.
+- [ ] **Score distribution statistics collection** -- Add `--collect-stats`
+  flag to round-complete for data-driven threshold and weight calibration in
+  v1.3.
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Risk | Priority |
 |---------|------------|---------------------|------|----------|
-| CLI-decided verdict | HIGH | MEDIUM | MEDIUM (data flow change) | P1 |
-| Scoring dimension restructuring | HIGH | HIGH | HIGH (regex contract) | P1 |
-| GAN information barrier | HIGH | MEDIUM | MEDIUM (Evaluator capability loss) | P1 |
-| Minimum rounds before PASS | HIGH | LOW | LOW (simple guard) | P1 |
-| Acceptance test plan | MEDIUM | MEDIUM | LOW (leaf change) | P1 |
-| Cross-feature interaction testing | MEDIUM | MEDIUM | MEDIUM (combinatorial risk) | P2 |
-| Score anomaly detection | MEDIUM | LOW | LOW (additive) | P2 |
-| Session resume recovery | MEDIUM | MEDIUM | LOW (independent) | P2 |
-| Generator improvements | MEDIUM | MEDIUM | LOW (independent) | P2 |
-| Edge-first browser | LOW | LOW | LOW (independent) | P2 |
-| Rising thresholds | MEDIUM | MEDIUM | HIGH (needs empirical data) | P3 |
-| Commit hygiene scoring | LOW | LOW | MEDIUM (untested concept) | P3 |
+| Perturbation-critic (Robustness) | HIGH | HIGH | HIGH (new agent, 3-critic orchestration) | P1 |
+| DIMENSIONS update (add Robustness) | HIGH | MEDIUM | MEDIUM (regex contract) | P1 |
+| 3-critic orchestration | HIGH | MEDIUM | MEDIUM (orchestrator changes) | P1 |
+| EMA-smoothed trajectory | HIGH | MEDIUM | LOW (backward-compatible) | P1 |
+| Per-dimension tracking | MEDIUM | MEDIUM | LOW (additive) | P1 |
+| Cross-page consistency (perceptual) | HIGH | MEDIUM | LOW (extends existing agent) | P1 |
+| A->B->A navigation (projection) | HIGH | MEDIUM | LOW (extends existing patterns) | P1 |
+| Architecture documentation | MEDIUM | LOW | LOW (no code) | P1 |
+| Browser-agnostic LanguageModel | MEDIUM | LOW | LOW (documentation update) | P2 |
+| Vite+ skill refresh | MEDIUM | MEDIUM | LOW (independent) | P2 |
+| Dependency freshness | LOW | LOW | LOW (diagnostic step) | P2 |
+| Z-score anomaly detection | MEDIUM | LOW | LOW (additive) | P2 |
+| LLM-driven adversarial sequences | MEDIUM | HIGH | MEDIUM (token budget) | P2 |
+| Dimension-weighted scoring | LOW | LOW | MEDIUM (needs calibration) | P3 |
+| Rising thresholds | MEDIUM | MEDIUM | HIGH (needs data) | P3 |
+| Stats collection | LOW | LOW | LOW (additive) | P3 |
 
 **Priority key:**
-- P1: Must have for v1.1 -- fixes Dutch art museum test failures
-- P2: Should have for v1.1 -- meaningful quality improvements
-- P3: Defer to v1.2+ -- needs empirical validation before implementing
+- P1: Must have for v1.2 -- addresses Dutch art museum test failures and core architecture gaps
+- P2: Should have for v1.2 -- meaningful quality improvements, low risk
+- P3: Defer to v1.3+ -- needs empirical data or design maturation
 
 ## Competitor Feature Analysis
 
-| Feature | Anthropic Article Harness | ATDD Plugin (swingerman) | Citadel | Our Approach (v1.1) |
-|---------|---------------------------|--------------------------|---------|---------------------|
-| Verdict authority | Evaluator agent decides | Native test runner decides (deterministic) | No convergence loop (single-pass with circuit breaker) | CLI decides (harness-computed, mechanical) |
-| Scoring dimensions | 4: design quality, originality, craft, functionality | Binary pass/fail per acceptance test | No scoring (task-oriented) | 4: Product Depth, Functionality, Visual Coherence, Robustness |
-| Acceptance criteria | "Sprint contracts" negotiated before each sprint | Given/When/Then specs derived from requirements; two-stream (acceptance + unit) | Not applicable | Planner-authored acceptance test plan per feature in SPEC.md; Evaluator uses as structured test oracle |
-| Convergence detection | Heuristic (5-15 iterations, no formal stopping) | Deterministic (all tests pass = done) | Circuit breaker on tool failure (3 failures = try different approach) | Score-based exit with 4 conditions (PASS/PLATEAU/REGRESSION/SAFETY_CAP) + minimum rounds + anomaly detection |
-| Information barrier | Evaluator uses Playwright (behavioral), not code inspection | Spec Guardian audits for implementation leakage in specs, not in code | Not applicable (single-pass) | Evaluator has no source code access (GAN principle); Robustness scored via behavioral observation |
-| Cross-feature testing | Not documented | Acceptance tests can span features | Not documented | Evaluator tests Core feature interactions; findings feed into Functionality and Visual Coherence scores |
-| Score calibration | Few-shot examples with detailed breakdowns | Not applicable (binary) | Not applicable | SCORING-CALIBRATION.md with ceiling rules, grade range descriptors, 12 calibration scenarios per dimension |
-| Bias prevention | Iterative prompt tuning ("several rounds of development loop") | Spec Guardian agent audits for bias | Not applicable | Isolated dimension scoring, CLI-computed verdict (eliminates self-serving bias), z-score anomaly detection |
+| Feature | Anthropic Article | Playwright Agents (v1.56+) | Chromatic | Our v1.2 Approach |
+|---------|-------------------|---------------------------|-----------|-------------------|
+| Robustness/perturbation testing | Not documented. Evaluator focuses on design, functionality, craft | Healer agent fixes broken tests, not adversarial testing | Visual regression only, no functional perturbation | Dedicated perturbation-critic with targeted adversarial inputs, error boundary testing, and console monitoring under stress |
+| Convergence detection | Heuristic (5-15 iterations, manual assessment) | N/A (single-pass test execution) | N/A (CI pipeline, no convergence loop) | EMA-smoothed trajectory with per-dimension tracking, 4 exit conditions, z-score anomaly detection |
+| Cross-page visual consistency | Not documented (per-page assessment implied) | Not built-in; relies on snapshot comparison | Core capability: automated visual regression across components | Perceptual-critic extracts design tokens (colors, fonts, spacing) across pages, diffs for consistency, feeds findings into Visual Design score |
+| Deep navigation testing | "Runs Playwright to interact with the live application" -- scope unclear | Planner/Generator agents generate navigation tests | Not applicable (component-level, not page-level) | Projection-critic A->B->A patterns with state persistence assertions, back-button testing, data flow verification |
+| Browser AI API support | Not documented | Not applicable | Not applicable | Browser-agnostic LanguageModel API (Chrome 138+/Gemini Nano, Edge 139+/Phi-4-mini), W3C standardization track |
+| Build toolchain for generated projects | Not documented | Not applicable | Not applicable | Vite+ alpha (`vp` CLI) with fallback to plain Vite. 3 commands replace 5+. 50-100x faster linting. |
 
 ### Key Insight from Competitor Analysis
 
-The field is split between two approaches:
+The perturbation-critic is genuinely novel in the application-generation space.
+No competing harness (Anthropic's, Playwright Agents, Chromatic, ATDD plugins)
+has a dedicated adversarial testing agent that applies robustness perturbations
+to generated applications. The closest analog is the SitePoint adversarial LLM
+tester, which is a standalone tool, not integrated into a generation loop.
 
-1. **Deterministic verification** (ATDD, BDD): Specs generate executable tests.
-   PASS/FAIL is binary and computed by the test runner. No scoring dimensions,
-   no LLM judgment. Works well for well-specified behavior but cannot assess
-   subjective qualities (design coherence, product depth, user experience).
+Our advantage: the perturbation-critic operates WITHIN the adversarial loop. Its
+findings feed back to the Generator, which can fix robustness issues in
+subsequent rounds. This is true GAN-inspired adversarial improvement -- the
+Generator faces pressure from three independent critics (visual, functional,
+robustness), each probing a different weakness.
 
-2. **LLM-as-judge with rubric** (Anthropic, our approach): The evaluator scores
-   against dimensions using a calibrated rubric. More expressive (can assess
-   "does this feel like a real product?") but vulnerable to LLM biases
-   (agreeableness, anchoring, halo effect).
-
-Our v1.1 approach takes the best of both:
-- **Structured acceptance criteria** from the spec (ATDD influence) give the
-  Evaluator a deterministic minimum bar
-- **Dimension-based scoring** with calibrated rubrics (Anthropic influence) assess
-  subjective product quality
-- **CLI-decided verdict** (harness engineering best practice) separates grading
-  from gating, eliminating self-serving bias
-- **Anomaly detection** (novel) provides a reliability check on the LLM judge
-  that neither approach offers
+The convergence hardening features (EMA, per-dimension tracking, z-score) are
+also unique. Competing systems either have no convergence detection (single-pass)
+or use simple heuristics (fixed iteration count). Our approach applies signal
+processing techniques (EMA smoothing, statistical process control) to score
+trajectories -- a direct transfer from GAN training diagnostics to the
+application generation domain.
 
 ## Sources
 
-### Anthropic (HIGH confidence)
-- [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps) -- Evaluator scoring dimensions (design quality, originality, craft, functionality), few-shot calibration, sprint contracts, 5-15 iterations, Playwright-based behavioral testing
-- [Demystifying Evals for AI Agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) -- "Grade each dimension with an isolated LLM-as-judge," calibrate against human experts, structured rubrics, give the LLM a way out with "Unknown"
+### Perturbation Testing / Robustness
 
-### Academic Papers (HIGH confidence)
-- [RULERS: Locked Rubrics and Evidence-Anchored Scoring (arXiv:2601.08654)](https://arxiv.org/abs/2601.08654) -- Rubric instability, unverifiable reasoning, and scale misalignment as LLM-judge failure modes. Executable rubrics with deterministic evidence verification outperform loose rubrics
-- [Evaluating Scoring Bias in LLM-as-a-Judge (arXiv:2506.22316)](https://arxiv.org/abs/2506.22316) -- Rubric order bias, score ID bias, reference answer score bias. Even GPT-4o shows 0.2 correlation fluctuation with perturbations on smaller models
-- [Justice or Prejudice? CALM Bias Framework (ICLR 2025)](https://openreview.net/forum?id=3GTtZFiajM) -- 12-bias quantification framework for LLM-as-judge. Agreeableness bias: TPR >96%, TNR <25%
-- [Rubric Is All You Need (ACM ICER 2025)](https://dl.acm.org/doi/10.1145/3702652.3744220) -- Question-specific rubrics outperform question-agnostic rubrics. Pointwise rubric evaluation provides granular feedback
-- [Autorubric (arXiv:2603.00077)](https://arxiv.org/html/2603.00077v1) -- "Reduced conflation: independent scoring of criteria prevents halo effects where strength in one dimension inflates scores in others"
+- [Adversarial LLM-Driven UI Logic Tester (SitePoint, 2025)](https://www.sitepoint.com/playwright-llm-building-an-adversarial-ui-logic-tester/) -- MEDIUM confidence. Adversarial loop: extract UI state, send to LLM with hostile prompt, execute via Playwright, detect anomalies. Found real production bugs (back-button during async validation bypass). Directly applicable to perturbation-critic design.
+- [AI-Powered UI Testing: Fuzzing with a Creative Partner (BetaCraft, 2025)](https://betacraft.com/2025-06-10-ai-powered-ui-testing/) -- MEDIUM confidence. LLM-driven fuzz testing scales to edge cases humans miss. Key: AI generates inputs, Playwright executes, screenshot comparison detects anomalies.
+- [Fuzz Testing Beginner's Guide (Better Stack)](https://betterstack.com/community/guides/testing/fuzz-testing/) -- MEDIUM confidence. Mutation-based vs generation-based fuzzing. Black-box fuzzing treats application as unknown. Modern fuzzers use instrumentation for execution feedback.
+- [Rethinking Testing for LLM Applications (arXiv:2508.20737)](https://arxiv.org/html/2508.20737v1) -- MEDIUM confidence. Boundary-value analysis combined with adversarial-prompt generation and mutation-based perturbations for robust testing.
+- [Data Perturbation Testing for Web Services (ScienceDirect)](https://www.sciencedirect.com/science/article/abs/pii/S0020025510004846) -- MEDIUM confidence. Penetration testing + fault injection to emulate XSS attacks. WSInject improves vulnerability detection over standard tools.
 
-### ATDD/SDD (MEDIUM confidence)
-- [ATDD Plugin for Claude Code (swingerman/atdd)](https://github.com/swingerman/atdd) -- Given/When/Then acceptance criteria, two-stream testing (acceptance + unit), Spec Guardian for implementation leakage detection, Red-Green-Refactor workflow
-- [Spec-Driven Development (Thoughtworks, 2025)](https://www.thoughtworks.com/en-us/insights/blog/agile-engineering-practices/spec-driven-development-unpacking-2025-new-engineering-practices) -- "Specs become the source of truth" for AI-generated code
-- [ATDD-Driven AI Development (Paul Duvall)](https://www.paulmduvall.com/atdd-driven-ai-development-how-prompting-and-tests-steer-the-code/) -- "Without acceptance tests anchoring behavior, AI can write unit tests that pass but don't verify the right behavior"
-- [Spec-Driven Development: From Code to Contract (arXiv:2602.00180)](https://arxiv.org/abs/2602.00180) -- Three levels of specification rigor: spec-first, spec-anchored, spec-as-source
+### Convergence Algorithms
 
-### Harness Engineering (MEDIUM confidence)
-- [Harness Engineering Academy](https://harnessengineering.academy/blog/what-is-harness-engineering-introduction-2026/) -- Circuit breakers from distributed systems, evaluation pipelines from MLOps
-- [LangChain: Improving Deep Agents](https://blog.langchain.com/improving-deep-agents-with-harness-engineering/) -- LoopDetectionMiddleware for doom loops; per-file edit count tracking
-- [Braintrust: Agent Evaluation Framework](https://www.braintrust.dev/articles/ai-agent-evaluation-framework) -- Binary, weighted, or hybrid scoring; regression gates
-- [GoDaddy: Calibrating Scores of LLM-as-a-Judge](https://www.godaddy.com/resources/news/calibrating-scores-of-llm-as-a-judge) -- "Rubrics as Rewards" replacing opaque preference signals with structured rubrics
+- [Google: GAN Training](https://developers.google.com/machine-learning/gan/training) -- HIGH confidence. "Convergence is often a fleeting, rather than stable, state." Discriminator performance degrades as generator improves. Directly applicable to critic-based convergence detection.
+- [GAN Convergence Challenges (Springer, 2025)](https://link.springer.com/article/10.1007/s44354-025-00007-w) -- HIGH confidence. Unified taxonomy linking divergence choice, objective loss, and architecture to training dynamics. Mode collapse, vanishing gradients, instability from generator/discriminator imbalance.
+- [Convergence and Robustness of Adversarial Training (ICML 2019)](http://proceedings.mlr.press/v97/wang19i/wang19i.pdf) -- HIGH confidence. First-Order Stationary Condition (FOSC) for quantitative convergence quality measurement. Directly applicable to scoring convergence assessment.
+- [Adaptive Weighted Discriminator (CVPR 2021)](https://openaccess.thecvf.com/content/CVPR2021/papers/Zadorozhnyy_Adaptive_Weighted_Discriminator_for_Training_Generative_Adversarial_Networks_CVPR_2021_paper.pdf) -- MEDIUM confidence. Adaptive weighting achieves faster convergence. Applicable to dimension weighting concept.
+- [EWMA Procedure for Change Detection (PMC, 2023)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10248291/) -- HIGH confidence. EWMA specifically designed for plateau/change detection in longitudinal data. Directly applicable to score trajectory smoothing.
+- [EMA in Deep Learning: Dynamics and Benefits (arXiv, 2024)](https://arxiv.org/html/2411.18704v1) -- MEDIUM confidence. Weight averaging reduces noise and yields good solutions under high learning rates. Dynamic decay for convergence.
 
-### GAN Training (MEDIUM confidence)
-- [Google: GAN Training](https://developers.google.com/machine-learning/gan/training) -- Discriminator trains multiple epochs before generator; convergence is "fleeting rather than stable"; Two Time-Scale Update Rule (TTUR) for stability
-- [GAN Convergence Challenges (Springer, 2025)](https://link.springer.com/article/10.1007/s42044-025-00369-y) -- Mode collapse and non-convergence from generator/discriminator imbalance. Curriculum learning: start easy, increase difficulty progressively
+### Visual Consistency
+
+- [Color Consistency in Design Systems (UXPin)](https://www.uxpin.com/studio/blog/color-consistency-design-systems/) -- MEDIUM confidence. Design tokens as foundation for cross-page consistency. Primitive + semantic token layers.
+- [Visual Consistency in Branding (Siteimprove)](https://www.siteimprove.com/blog/visual-consistency-meaning/) -- MEDIUM confidence. "When typography switches styles across channels, every inconsistency chips away at customer trust." Automated brand compliance tools measure consistency.
+- [Chromatic: Visual Testing for Design Systems](https://www.chromatic.com/solutions/design-systems) -- MEDIUM confidence. Automated visual regression detection across components. Prevents minor bugs from triggering widespread regressions.
+- [AI-Driven Assessment in Visual Communication (ShodhKosh)](https://www.granthaalayahpublication.org/Arts-Journal/ShodhKosh/article/download/6651/6034/34424) -- LOW confidence. AI systems achieve 87% correlation with human grading for visual design assessment. Automated evaluation reduces time by 65%.
+- [Design System Trends 2026 (Design Signal)](https://designsignal.ai/articles/design-systems-trends-2026) -- MEDIUM confidence. "Mood mode" dark themes and sustainable palettes add consistency complexity. AI useful for exploration but needs human constraints.
+
+### Navigation Testing
+
+- [Testing Navigation and Routing (Codefinity/Playwright)](https://codefinity.com/courses/v2/39d9ad92-13c1-4c43-9dfe-3e52c38f193e/7cf6d65b-6ff7-4885-8a20-24752d152bb1/198d193a-0266-448f-a6d1-e86ae7bd47e8) -- MEDIUM confidence. A->B->A pattern with `page.goBack()` and URL/content assertions. Core Playwright capability.
+- [Playwright Best Practices 2026 (BrowserStack)](https://www.browserstack.com/guide/playwright-best-practices) -- MEDIUM confidence. Context isolation, fresh browser contexts per test, state reset between tests. Applicable to navigation state testing.
+- [Playwright Features 2026 (ThinkSys)](https://thinksys.com/qa-testing/playwright-features/) -- MEDIUM confidence. SPA/PWA compatibility, Shadow DOM handling, auto-waiting for navigation stability.
+
+### Browser AI APIs
+
+- [W3C Prompt API (GitHub)](https://github.com/webmachinelearning/prompt-api) -- HIGH confidence. W3C Web Machine Learning group standardization. `LanguageModel` is the proposed standard interface.
+- [Chrome Built-in AI APIs (Chrome Developers)](https://developer.chrome.com/docs/ai/built-in-apis) -- HIGH confidence. Chrome 138+ with Gemini Nano. Origin trial for web pages, stable in extensions.
+- [Edge Prompt API (Microsoft Learn)](https://learn.microsoft.com/en-us/microsoft-edge/web-platform/prompt-api) -- HIGH confidence. Edge 139+ with Phi-4-mini. Same `LanguageModel` interface as Chrome. Developer preview in Canary/Dev channels.
+- [Edge Prompt and Writing Assistance APIs (Edge Blog)](https://blogs.windows.com/msedgedev/2025/05/19/introducing-the-prompt-and-writing-assistance-apis/) -- HIGH confidence. Phi-4-mini 3.5B parameters, local inference, no cloud calls.
+- [On-Device AI with Chrome Prompt API (DEV Community)](https://dev.to/this-is-learning/on-device-ai-with-the-google-chrome-prompt-api-2jbe) -- MEDIUM confidence. Practical implementation guide for LanguageModel API.
+
+### Vite+
+
+- [Announcing Vite+ Alpha (VoidZero)](https://voidzero.dev/posts/announcing-vite-plus-alpha) -- HIGH confidence. Official announcement. `vp` CLI, unified config, Vite 8 + Vitest 4.1 + Oxlint + Oxfmt + tsgo + Rolldown.
+- [Vite+ GitHub (voidzero-dev/vite-plus)](https://github.com/voidzero-dev/vite-plus) -- HIGH confidence. Official repository. "Manages your runtime, package manager, and frontend toolchain in one place."
+- [Complete Guide to Vite+ Alpha (Flex)](https://www.flex.com.ph/articles/complete-guide-to-vite-alpha-launch) -- MEDIUM confidence. Practical guide covering `vp create`, `vp check`, `vp test`, `vp build`, `vp install`, `vp prepare`.
+- [Getting Started with Vite+ (BSWEN)](https://docs.bswen.com/blog/2026-03-14-viteplus-getting-started-tutorial/) -- MEDIUM confidence. Tutorial covering project setup, configuration, and CI integration.
 
 ---
-*Feature research for: application-dev plugin v1.1 hardening*
-*Researched: 2026-03-29*
+*Feature research for: application-dev plugin v1.2 Dutch Art Museum Test Fixes*
+*Researched: 2026-04-02*
