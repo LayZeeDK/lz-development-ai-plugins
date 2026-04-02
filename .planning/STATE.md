@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
-status: executing
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-04-02T17:30:40.021Z"
-last_activity: 2026-04-02 -- Completed plan 13-01 (N-critic resume-check)
+status: verifying
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-04-02T17:36:59.205Z"
+last_activity: 2026-04-02 -- Completed plan 13-02 (SKILL.md 3-critic integration)
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 100
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 ## Current Position
 
 Phase: 13 of 16 (Orchestrator Integration)
-Plan: 1 of 2 (13-01 complete)
-Status: Phase 13 in progress
-Last activity: 2026-04-02 -- Completed plan 13-01 (N-critic resume-check)
+Plan: 2 of 2 (13-02 complete)
+Status: Phase 13 complete -- all plans finished, awaiting verification
+Last activity: 2026-04-02 -- Completed plan 13-02 (SKILL.md 3-critic integration)
 
 Progress: [##########] 100%
 
@@ -79,6 +79,13 @@ Progress: [##########] 100%
 - Default critics list: ["perceptual", "projection", "perturbation"]
 - SKILL.md dispatch table updated atomically with CLI changes (Pitfall 1 prevention)
 
+### From Phase 13, Plan 02 (SKILL.md 3-Critic Integration)
+- SKILL.md evaluation phase spawns 3 critics in parallel with 3 binary checks
+- SAFETY_CAP wrap-up spawns all 3 critics (not just 2)
+- Agent Prompt Protocol includes perturbation-critic with identical minimal pattern
+- Architecture section uses two-tier grouping: Planning and Generation / Critic Ensemble
+- All "both critics", "two critics", "Four agents" references eliminated from SKILL.md
+
 ### v1.2 Phase Dependencies
 - Sequential: Phase 11 -> Phase 12 -> Phase 13
 - Independent (after Phase 11): Phase 14, Phase 15, Phase 16
@@ -89,6 +96,6 @@ Progress: [##########] 100%
 
 ## Session Continuity
 
-Last session: 2026-04-02T17:30:40.018Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-04-02T17:36:59.202Z
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None
