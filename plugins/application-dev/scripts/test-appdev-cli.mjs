@@ -965,15 +965,15 @@ describe("resume-check", function () {
     assert.equal(parsed.next_action, "evaluate");
   });
 
-  it("should return next_action=spawn-both-critics when step is evaluate and no valid summaries", function () {
-    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection"] });
+  it("should return next_action=spawn-all-critics when step is evaluate and no valid summaries", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection", "perturbation"] });
     // No evaluation directory at all
 
     const result = runCLI("resume-check", { cwd: tmpDir });
     assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
 
     const parsed = JSON.parse(result.stdout);
-    assert.equal(parsed.next_action, "spawn-both-critics");
+    assert.equal(parsed.next_action, "spawn-all-critics");
   });
 
   it("should return spawn-perceptual-critic when projection valid but perceptual missing", function () {
@@ -1167,7 +1167,7 @@ describe("resume-check", function () {
     assert.equal(parsed.next_action, "summary");
   });
 
-  it("should default critics to [perceptual, projection] when state.critics is unset", function () {
+  it("should default critics to [perceptual, projection, perturbation] when state.critics is unset", function () {
     writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [] });
     // No critics field in state
 
@@ -1175,7 +1175,76 @@ describe("resume-check", function () {
     assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
 
     const parsed = JSON.parse(result.stdout);
-    assert.equal(parsed.next_action, "spawn-both-critics", "Should default to both critics");
+    assert.equal(parsed.next_action, "spawn-all-critics", "Should default to all critics");
+  });
+
+  it("should return spawn-all-critics with skip when 2 of 3 critics missing", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection", "perturbation"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    mkdirSync(percDir, { recursive: true });
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design", score: 6,
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-all-critics");
+    assert.deepEqual(parsed.skip, ["perceptual"]);
+  });
+
+  it("should return spawn-perturbation-critic when only perturbation missing", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection", "perturbation"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    const projDir = join(roundDir, "projection");
+    mkdirSync(percDir, { recursive: true });
+    mkdirSync(projDir, { recursive: true });
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design", score: 6,
+    }));
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "spawn-perturbation-critic");
+    assert.ok(parsed.skip.includes("perceptual"), "skip should include perceptual");
+    assert.ok(parsed.skip.includes("projection"), "skip should include projection");
+  });
+
+  it("should return compile-evaluation when all 3 critics have valid summaries", function () {
+    writeState({ prompt: "Test", step: "evaluate", round: 1, status: "in_progress", exit_condition: null, rounds: [], critics: ["perceptual", "projection", "perturbation"] });
+
+    const roundDir = join(tmpDir, "evaluation", "round-1");
+    const percDir = join(roundDir, "perceptual");
+    const projDir = join(roundDir, "projection");
+    const pertDir = join(roundDir, "perturbation");
+    mkdirSync(percDir, { recursive: true });
+    mkdirSync(projDir, { recursive: true });
+    mkdirSync(pertDir, { recursive: true });
+    writeFileSync(join(percDir, "summary.json"), JSON.stringify({
+      critic: "perceptual", dimension: "Visual Design", score: 6,
+    }));
+    writeFileSync(join(projDir, "summary.json"), JSON.stringify({
+      critic: "projection", dimension: "Functionality", score: 7,
+    }));
+    writeFileSync(join(pertDir, "summary.json"), JSON.stringify({
+      critic: "perturbation", dimension: "Robustness", score: 6,
+    }));
+
+    const result = runCLI("resume-check", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.next_action, "compile-evaluation");
   });
 });
 
