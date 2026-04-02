@@ -6,8 +6,8 @@ description: >-
   game, develop a full-stack project, or generate a complete working product
   from a description. Handles requests like "build me an app that does X",
   "create a web application for Y", "make a 2D game maker", or "develop a
-  DAW in the browser". Orchestrates four agents (Planner, Generator,
-  Perceptual Critic, Projection Critic) in an adversarial generation/evaluation
+  DAW in the browser". Orchestrates five agents (Planner, Generator,
+  Perceptual Critic, Projection Critic, Perturbation Critic) in an adversarial generation/evaluation
   loop with git version control, score-based convergence detection, escalation
   vocabulary, workflow state management, error recovery, and resumable execution.
   Runs without user intervention after the initial prompt.
@@ -24,9 +24,9 @@ allowed-tools: Agent Read Write Bash(node *appdev-cli*) Bash(git init*) Bash(git
 
 # Autonomous Application Development
 
-Build a complete application from the user's prompt using four specialized
-agents (Planner, Generator, Perceptual Critic, Projection Critic) in an
-adversarial loop.
+Build a complete application from the user's prompt using five specialized
+agents (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation
+Critic) in an adversarial loop.
 
 ## Rules
 
@@ -260,29 +260,31 @@ Output: `[2/3] Evaluating (round N)...`
 Update state and set expected critics:
 
 ```
-Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step evaluate --critics perceptual,projection --round N)
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step evaluate --critics perceptual,projection,perturbation --round N)
 ```
 
-Spawn both critics in parallel:
+Spawn all three critics in parallel:
 
 ```
 Agent(subagent_type: "application-dev:perceptual-critic", prompt: "This is evaluation round N.")
 Agent(subagent_type: "application-dev:projection-critic", prompt: "This is evaluation round N.")
+Agent(subagent_type: "application-dev:perturbation-critic", prompt: "This is evaluation round N.")
 ```
 
 Apply the error recovery pattern per critic (see below).
 
-**Binary checks:** Verify both critics produced their summary artifacts:
+**Binary checks:** Verify all three critics produced their summary artifacts:
 
 ```
 Bash(ls evaluation/round-N/perceptual/summary.json 2>/dev/null)
 Bash(ls evaluation/round-N/projection/summary.json 2>/dev/null)
+Bash(ls evaluation/round-N/perturbation/summary.json 2>/dev/null)
 ```
 
-If either summary.json is missing, retry the SPECIFIC critic that failed (not
-both) with the same prompt. Counts toward the 2-retry limit per critic.
+If any summary.json is missing, retry the SPECIFIC critic that failed (not
+all) with the same prompt. Counts toward the 2-retry limit per critic.
 
-**Compile evaluation:** After both summary.json files exist, compile the
+**Compile evaluation:** After all three summary.json files exist, compile the
 ensemble evaluation report:
 
 ```
@@ -380,12 +382,13 @@ Act on the JSON response:
     Agent(subagent_type: "application-dev:generator", prompt: "This is generation round {N+1}.")
     ```
   - Binary check (project files exist)
-  - Spawn both critics in parallel:
+  - Spawn all three critics in parallel:
     ```
     Agent(subagent_type: "application-dev:perceptual-critic", prompt: "This is evaluation round {N+1}.")
     Agent(subagent_type: "application-dev:projection-critic", prompt: "This is evaluation round {N+1}.")
+    Agent(subagent_type: "application-dev:perturbation-critic", prompt: "This is evaluation round {N+1}.")
     ```
-  - Binary checks (both summary.json files exist)
+  - Binary checks (all three summary.json files exist)
   - Compile evaluation:
     ```
     Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs compile-evaluation --round {N+1})
@@ -502,6 +505,9 @@ diagnostic notes, or "this time make sure to..." instructions.
 orchestrator fills in only the round number.
 
 **Projection Critic (all rounds):** `This is evaluation round N.` -- the
+orchestrator fills in only the round number.
+
+**Perturbation Critic (all rounds):** `This is evaluation round N.` -- the
 orchestrator fills in only the round number.
 
 ## File-Based Communication
