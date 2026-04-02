@@ -4,7 +4,7 @@ function). Do not change the table column structure, criterion names, or
 score format (N/10).
 
 Regex used by extractScores():
-  /\|\s*(Product Depth|Functionality|Visual Design)\s*\|\s*(\d+)\/10/gi
+  /\|\s*(Product Depth|Functionality|Visual Design|Robustness)\s*\|\s*(\d+)\/10/gi
 
 Verdict heading is parsed by:
   /##\s*Verdict:\s*(PASS|FAIL)/
@@ -18,14 +18,14 @@ placeholders at compile time. No agent writes this file directly.
 ## Generation Round: {round}
 
 <!-- Verdict is CLI-computed from per-criterion thresholds.
-     Product Depth >= 7, Functionality >= 7, Visual Design >= 6.
+     Product Depth >= 7, Functionality >= 7, Visual Design >= 6, Robustness >= 6.
      FAIL if ANY criterion is below its threshold. -->
 ## Verdict: {verdict}
 
 A criterion FAILS if its score is below the threshold. The overall verdict is FAIL if ANY criterion fails.
 
 <!-- REGEX-SENSITIVE: The following table is parsed by appdev-cli.mjs
-     using the pattern /\|\s*(Product Depth|Functionality|Visual Design)\s*\|\s*(\d+)\/10/gi
+     using the pattern /\|\s*(Product Depth|Functionality|Visual Design|Robustness)\s*\|\s*(\d+)\/10/gi
      Do not change the criterion names, column structure, or score format. -->
 ## Scores
 
@@ -34,6 +34,7 @@ A criterion FAILS if its score is below the threshold. The overall verdict is FA
 | Product Depth | {pd_score}/10 | 7 | {pd_status} |
 | Functionality | {fn_score}/10 | 7 | {fn_status} |
 | Visual Design | {vd_score}/10 | 6 | {vd_status} |
+| Robustness | {rb_score}/10 | 6 | {rb_status} |
 
 ## Score Justifications
 
@@ -46,6 +47,7 @@ Each score must cite specific findings from this report. Scores without evidence
 | Product Depth | {pd_justification} |
 | Functionality | {fn_justification} |
 | Visual Design | {vd_justification} |
+| Robustness | {rb_justification} |
 
 ## Product Depth Assessment
 
@@ -65,8 +67,14 @@ Each score must cite specific findings from this report. Scores without evidence
 
 {vd_assessment}
 
+## Robustness Assessment
+
+*Source: Perturbation Critic*
+
+{rb_assessment}
+
 ## Priority Fixes for Next Round
 
-*Source: CLI Ensemble (merged from both critics, severity-ordered)*
+*Source: CLI Ensemble (merged from all critics, severity-ordered)*
 
 {priority_fixes}
