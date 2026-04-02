@@ -4,10 +4,10 @@ milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
 status: active
 stopped_at: null
-last_updated: "2026-04-02T12:00:00Z"
-last_activity: 2026-04-02 -- Milestone v1.2 started
+last_updated: "2026-04-02T14:00:00Z"
+last_activity: 2026-04-02 -- Roadmap created for v1.2 (6 phases, 22 requirements)
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application.
-**Current focus:** v1.2 Dutch Art Museum Test Fixes
+**Current focus:** v1.2 Dutch Art Museum Test Fixes -- Phase 11 (Scoring Foundation + Perturbation Critic)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 11 of 16 (Scoring Foundation + Perturbation Critic)
 Plan: --
-Status: Defining requirements
-Last activity: 2026-04-02 -- Milestone v1.2 started
+Status: Ready to plan
+Last activity: 2026-04-02 -- Roadmap created for v1.2
 
 Progress: [..........] 0%
 
@@ -56,8 +56,16 @@ Progress: [..........] 0%
 - Static production builds over dev servers (idempotent, resumable)
 - Zero npm dependencies in appdev-cli.mjs
 
+### v1.2 Phase Dependencies
+- Sequential: Phase 11 -> Phase 12 -> Phase 13
+- Independent (after Phase 11): Phase 14, Phase 15, Phase 16
+
+### Blockers/Concerns
+- 3-critic parallel concurrency limit unknown (Phase 13 empirical test needed)
+- Robustness score distribution is untested (Phase 11 calibration scenarios mitigate)
+
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Defining v1.2 requirements
+Stopped at: Roadmap created for v1.2 -- ready to plan Phase 11
 Resume file: None

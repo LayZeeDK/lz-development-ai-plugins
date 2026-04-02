@@ -4,7 +4,7 @@
 
 - v1.0 **Hardening** -- Phases 1-5 (shipped 2026-03-29)
 - v1.1 **Ensemble Discriminator + Crash Recovery** -- Phases 7-10 (shipped 2026-04-02)
-- v1.2 **Dutch Art Museum Test Fixes** -- Phases 11+ (planned)
+- v1.2 **Dutch Art Museum Test Fixes** -- Phases 11-16 (planned)
 - v2.0 **Advanced Discriminators** -- (future)
 
 ## Phases
@@ -35,13 +35,92 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 
 </details>
 
-### v1.2 Dutch Art Museum Test Fixes (planned)
+### v1.2 Dutch Art Museum Test Fixes (6 phases, planned)
 
-**Milestone Goal:** Address all remaining issues from the Dutch art museum website test #1: perturbation-critic (Robustness), scoring convergence logic, planner/generator improvements, Visual Coherence expansion, architecture documentation.
+**Milestone Goal:** Address all remaining issues from the Dutch art museum website test #1: perturbation-critic (Robustness), scoring convergence logic, orchestrator integration for 3 critics, enhanced existing critics, generator improvements, architecture documentation.
 
-**Requirements:** CRITIC-01..03, CONV-01..05, SCORE-01..02, PLAN-01..02, GEN-01..04, EVAL-01..02, ORCH-01, DOCS-01
+**Requirements:** CRITIC-01..04, CONV-01..05, ORCH-01..05, EVAL-01..03, GEN-01..04, DOCS-01 (22 total)
 
-(Phases defined after v1.1 ships)
+**Phase Structure:**
+- 3 sequential phases (11 -> 12 -> 13): Foundation, convergence, integration
+- 3 independent phases (14, 15, 16): Enhanced critics, generator, docs
+
+- [ ] **Phase 11: Scoring Foundation + Perturbation Critic** - DIMENSIONS constant update, new perturbation-critic agent, Robustness calibration
+- [ ] **Phase 12: Convergence Logic Hardening** - Scaled thresholds, per-dimension tracking, EMA smoothing
+- [ ] **Phase 13: Orchestrator Integration** - 3-critic spawn/check/retry/resume, architecture section update
+- [ ] **Phase 14: Enhanced Existing Critics** - Cross-page visual consistency, A->B->A navigation testing
+- [ ] **Phase 15: Generator Improvements** - Browser-agnostic LanguageModel, Vite+ refresh, dependency freshness
+- [ ] **Phase 16: Architecture Documentation** - GAN/Cybernetics/Turing test principles reference file
+
+## Phase Details
+
+### Phase 11: Scoring Foundation + Perturbation Critic
+**Goal**: The scoring system recognizes Robustness as a fourth dimension and a new perturbation-critic agent can evaluate application resilience through adversarial testing
+**Depends on**: Nothing (v1.2 foundation)
+**Requirements**: CRITIC-01, CRITIC-02, CRITIC-03, CRITIC-04
+**Success Criteria** (what must be TRUE):
+  1. Running `compile-evaluation` with 3 critic summaries (perceptual, projection, perturbation) produces a 4-dimension EVALUATION.md with Robustness scores extracted and totaled correctly
+  2. The perturbation-critic agent definition exists with clear methodology boundaries that prevent overlap with perceptual-critic (responsive layout) and projection-critic (feature correctness)
+  3. SCORING-CALIBRATION.md contains Robustness ceiling rules and below/at/above threshold calibration scenarios that anchor scoring before any real evaluation runs
+  4. All existing tests pass with 4 dimensions, and new tests verify 4-dimension score extraction, verdict computation, and assessment section generation
+**Pitfalls**: Pitfall 2 (scope overlap between critics -- define explicit methodology boundaries), Pitfall 5 (Robustness calibration gap -- write ceiling rules before first use)
+**Plans**: TBD (est. 2-3)
+
+### Phase 12: Convergence Logic Hardening
+**Goal**: Convergence detection scales correctly with any number of scoring dimensions and provides per-dimension trajectory visibility
+**Depends on**: Phase 11 (DIMENSIONS constant must be stable with 4 entries)
+**Requirements**: CONV-01, CONV-02, CONV-03, CONV-04, CONV-05
+**Success Criteria** (what must be TRUE):
+  1. The plateau threshold and crisis threshold are derived from `DIMENSIONS.length * 10`, not hardcoded -- verified by tests running against both 3-dimension and 4-dimension configurations
+  2. The `round-complete` CLI output includes per-dimension pass/fail status for each scoring dimension so the Generator can see which dimensions are failing
+  3. The `get-trajectory` CLI output includes per-dimension scores per round so the Summary step can show dimension-level trends
+  4. EMA-smoothed score trajectory is used for convergence detection, with alpha=1.0 backward-compatible degeneration to raw scores
+**Pitfalls**: Pitfall 1 (magic numbers wrong with 4 dimensions -- the primary critical pitfall for this phase)
+**Plans**: TBD (est. 2)
+
+### Phase 13: Orchestrator Integration
+**Goal**: The orchestrator spawns, checks, retries, and resumes all three critics (perceptual, projection, perturbation) as a unified evaluation ensemble
+**Depends on**: Phase 11 (perturbation-critic agent must exist), Phase 12 (convergence logic should use correct thresholds before first real evaluation)
+**Requirements**: ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05
+**Success Criteria** (what must be TRUE):
+  1. SKILL.md evaluation phase spawns 3 critics in parallel and checks all 3 summary.json files before proceeding to compile-evaluation
+  2. Resume-check returns `spawn-all-critics` (not `spawn-both-critics`) when all critics are missing, and the SKILL.md dispatch table handles this action -- both files updated atomically
+  3. Retry logic retries each failed critic individually (not all critics) and the SAFETY_CAP wrap-up round includes all 3 critic spawns
+  4. SKILL.md architecture section describes 5 agents (planner, generator, perceptual-critic, projection-critic, perturbation-critic)
+**Pitfalls**: Pitfall 3 (resume-check rename breaking crash recovery -- atomic CLI + SKILL.md update), Pitfall 4 (3-critic parallel concurrency -- empirical test, 2+1 fallback if needed)
+**Plans**: TBD (est. 2)
+
+### Phase 14: Enhanced Existing Critics
+**Goal**: The perceptual-critic detects cross-page visual inconsistencies and the projection-critic validates round-trip navigation state persistence
+**Depends on**: Phase 11 (DIMENSIONS stable; can run in parallel with Phases 12-13)
+**Requirements**: EVAL-01, EVAL-02, EVAL-03
+**Success Criteria** (what must be TRUE):
+  1. The perceptual-critic methodology includes cross-page visual consistency checks (design token extraction, color/typography/spacing comparison) and these findings feed into the Visual Design score
+  2. The projection-critic methodology includes A->B->A navigation test patterns (round-trip navigation, state persistence after navigate-away-and-return, back-button behavior)
+  3. SCORING-CALIBRATION.md Visual Design scenarios are updated to account for the expanded cross-page scope so that the calibration anchors match the enhanced methodology
+**Pitfalls**: Pitfall 6 (Visual Design calibration gap -- update calibration scenarios alongside methodology expansion)
+**Plans**: TBD (est. 1-2)
+
+### Phase 15: Generator Improvements
+**Goal**: The Generator produces applications with browser-agnostic AI features, current dependencies, and modern Vite+ tooling where compatible
+**Depends on**: Nothing (independent of evaluation pipeline; can run in parallel with Phases 12-16)
+**Requirements**: GEN-01, GEN-02, GEN-03, GEN-04
+**Success Criteria** (what must be TRUE):
+  1. Generator instructions reference LanguageModel API as the standard interface with both Chrome (Gemini Nano) and Edge (Phi-4-mini) documented, including graceful degradation when the API is unavailable
+  2. Vite+ skill is updated to the official `vp` CLI workflow (vp create, vp check, vp test, vp build) with alpha stability caveats and a clear escape hatch for incompatible frameworks (Angular, Nuxt)
+  3. Generator workflow includes a dependency freshness checking step that verifies dependencies are current before proceeding
+**Pitfalls**: Pitfall 7 (LanguageModel browser lock-in -- must include graceful degradation, not just feature detection), Pitfall 9 (Vite+ too aggressive -- keep compatibility escape hatch)
+**Plans**: TBD (est. 2)
+
+### Phase 16: Architecture Documentation
+**Goal**: A reference file grounds the plugin's design in GAN, Cybernetics, and Turing test principles for users and future maintainers
+**Depends on**: Nothing (independent; ordered last so it can reflect the shipped v1.2 architecture)
+**Requirements**: DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. `references/architecture-principles.md` exists and covers GAN principles (Generator/Discriminator separation, convergence detection, information barrier), Cybernetics (damping principle, requisite variety, feedback loop), and Turing test framing (critics as interrogators, product surface as evaluation boundary)
+  2. The document focuses on principles (not implementation specifics like file paths or dimension names) so it resists staleness across milestones
+**Pitfalls**: Pitfall 8 (staleness -- document principles, not implementation details)
+**Plans**: TBD (est. 1)
 
 ### v2.0 Advanced Discriminators (future)
 
@@ -105,3 +184,9 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 9. Crash Recovery | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 10. v1.1 Audit Gap Closure | v1.1 | 2/2 | Complete | 2026-04-02 |
+| 11. Scoring Foundation + Perturbation Critic | v1.2 | 0/0 | Not started | - |
+| 12. Convergence Logic Hardening | v1.2 | 0/0 | Not started | - |
+| 13. Orchestrator Integration | v1.2 | 0/0 | Not started | - |
+| 14. Enhanced Existing Critics | v1.2 | 0/0 | Not started | - |
+| 15. Generator Improvements | v1.2 | 0/0 | Not started | - |
+| 16. Architecture Documentation | v1.2 | 0/0 | Not started | - |
