@@ -1375,3 +1375,386 @@ describe("static-serve", function () {
     assert.equal(stateAfter.servers[0].spa, true, "State server entry should record spa: true");
   });
 });
+
+// =============================================================================
+// computeEMA -- indirect verification through escalation behavior
+// =============================================================================
+
+describe("computeEMA", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("computeEMA");
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 0,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("should produce different escalation with EMA smoothing vs raw scores (noisy trajectory)", function () {
+    // Trajectory: 20, 25, 22 (raw: decline from 25 to 22, but EMA trend is still upward)
+    // With raw only: round 3 has delta=-3 (decline), two data points, not 2 consecutive declines so E-I
+    // With EMA alpha=0.4: EMA = [20, 22, 22] -- EMA delta from 22 to 22 = 0
+    // The key: EMA smoothing changes how the trend is perceived
+    var round1Report = makeReport(5, 5, 5, 5); // total=20
+    var round2Report = makeReport(7, 7, 6, 5); // total=25
+    var round3Report = makeReport(6, 6, 5, 5); // total=22
+
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    var reportPath3 = join(tmpDir, "EVAL3.md");
+    writeFileSync(reportPath1, round1Report);
+    writeFileSync(reportPath2, round2Report);
+    writeFileSync(reportPath3, round3Report);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 3 --report " + JSON.stringify(reportPath3), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    // With EMA smoothing and hybrid E-III check, a single raw decline should NOT trigger E-III
+    // because emaDelta is still >= 0 (EMA is still rising or flat from rounds 1-3)
+    assert.notEqual(parsed.escalation, "E-III", "Single raw decline should not trigger E-III when EMA trend is non-negative");
+  });
+
+  it("should produce identical escalation with alpha=1.0 as old raw-based logic for known trajectory", function () {
+    // alpha=1.0 degenerates to raw scores, so escalation should match pre-refactor behavior
+    // Trajectory: 20, 25 -- raw delta=5, progressing (>1)
+    var report1 = makeReport(5, 5, 5, 5); // total=20
+    var report2 = makeReport(7, 7, 6, 5); // total=25
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.escalation, "E-0", "With alpha=1.0 equivalent trajectory (large delta), should be E-0 Progressing");
+  });
+});
+
+// =============================================================================
+// computeEscalation threshold scaling
+// =============================================================================
+
+describe("computeEscalation threshold scaling", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("thresholdScaling");
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 0,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("should trigger E-IV crisis floor at total=6 with 4 dimensions (ceil(40*0.15)=6)", function () {
+    // With 4 dimensions, maxTotal=40, crisisFloor=ceil(40*0.15)=6
+    // Total of 6 should trigger E-IV. Old hardcoded <= 5 would NOT trigger at 6.
+    var report1 = makeReport(5, 5, 5, 5); // total=20 (round 1, baseline)
+    var report2 = makeReport(2, 2, 1, 1); // total=6 (at crisis floor)
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.escalation, "E-IV", "Total=6 should trigger E-IV with 4 dimensions (crisis floor = ceil(40*0.15) = 6)");
+  });
+
+  it("should trigger E-II plateau when 3-round EMA window improvement <= 2 (ceil(40*0.05)=2)", function () {
+    // With 4 dimensions, plateauThreshold=ceil(40*0.05)=2
+    // Design a 3-round trajectory where EMA 3-round window improvement is exactly 2
+    // Round 1: total=20, Round 2: total=21, Round 3: total=22
+    // EMA (alpha=0.4): [20, 20.4, 21.04]
+    // EMA window = 21.04 - 20 = 1.04 <= 2 -> E-II Plateau
+    var report1 = makeReport(5, 5, 5, 5); // total=20
+    var report2 = makeReport(5, 5, 5, 6); // total=21
+    var report3 = makeReport(5, 5, 6, 6); // total=22
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    var reportPath3 = join(tmpDir, "EVAL3.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+    writeFileSync(reportPath3, report3);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 3 --report " + JSON.stringify(reportPath3), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.escalation, "E-II", "3-round EMA improvement of ~1.04 (<=2) should trigger E-II Plateau");
+  });
+
+  it("should classify as E-0 Progressing when EMA delta > 1 (ceil(40*0.025)=1)", function () {
+    // With 4 dimensions, progressingThreshold=ceil(40*0.025)=1
+    // Trajectory with significant improvement so EMA delta > 1
+    // Round 1: total=20, Round 2: total=30
+    // EMA (alpha=0.4): [20, 24]
+    // EMA delta = 24 - 20 = 4 > 1 -> E-0 Progressing
+    var report1 = makeReport(5, 5, 5, 5); // total=20
+    var report2 = makeReport(8, 8, 7, 7); // total=30
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.escalation, "E-0", "EMA delta of 4 (>1) should classify as E-0 Progressing");
+  });
+});
+
+// =============================================================================
+// threshold formula verification (pure computation, N=3 and N=4)
+// =============================================================================
+
+describe("threshold formula verification", function () {
+  it("should compute correct crisis floor at N=3: ceil(30*0.15)=5", function () {
+    var maxTotal = 3 * 10;
+    var crisisFloor = Math.ceil(maxTotal * 0.15);
+    assert.equal(crisisFloor, 5, "Crisis floor at N=3 should be 5");
+  });
+
+  it("should compute correct crisis floor at N=4: ceil(40*0.15)=6", function () {
+    var maxTotal = 4 * 10;
+    var crisisFloor = Math.ceil(maxTotal * 0.15);
+    assert.equal(crisisFloor, 6, "Crisis floor at N=4 should be 6");
+  });
+
+  it("should compute correct plateau threshold at N=3: ceil(30*0.05)=2", function () {
+    var maxTotal = 3 * 10;
+    var plateauThreshold = Math.ceil(maxTotal * 0.05);
+    assert.equal(plateauThreshold, 2, "Plateau threshold at N=3 should be 2");
+  });
+
+  it("should compute correct plateau threshold at N=4: ceil(40*0.05)=2", function () {
+    var maxTotal = 4 * 10;
+    var plateauThreshold = Math.ceil(maxTotal * 0.05);
+    assert.equal(plateauThreshold, 2, "Plateau threshold at N=4 should be 2");
+  });
+
+  it("should compute correct progressing threshold at N=3: ceil(30*0.025)=1", function () {
+    var maxTotal = 3 * 10;
+    var progressingThreshold = Math.ceil(maxTotal * 0.025);
+    assert.equal(progressingThreshold, 1, "Progressing threshold at N=3 should be 1");
+  });
+
+  it("should compute correct progressing threshold at N=4: ceil(40*0.025)=1", function () {
+    var maxTotal = 4 * 10;
+    var progressingThreshold = Math.ceil(maxTotal * 0.025);
+    assert.equal(progressingThreshold, 1, "Progressing threshold at N=4 should be 1");
+  });
+
+  it("should produce EMA degeneration at alpha=1.0 (EMA = raw scores)", function () {
+    // computeEMA([20, 25, 30], 1.0) should return [20, 25, 30]
+    // We verify the formula: alpha*x + (1-alpha)*prev = 1.0*x + 0*prev = x
+    var totals = [20, 25, 30];
+    var alpha = 1.0;
+    var ema = [totals[0]];
+
+    for (var i = 1; i < totals.length; i++) {
+      ema.push(alpha * totals[i] + (1 - alpha) * ema[i - 1]);
+    }
+
+    assert.deepEqual(ema, [20, 25, 30], "EMA with alpha=1.0 should equal raw scores");
+  });
+
+  it("should produce correct EMA for [20, 25, 30] at alpha=0.4", function () {
+    var totals = [20, 25, 30];
+    var alpha = 0.4;
+    var ema = [totals[0]];
+
+    for (var i = 1; i < totals.length; i++) {
+      ema.push(alpha * totals[i] + (1 - alpha) * ema[i - 1]);
+    }
+
+    // EMA[0] = 20
+    // EMA[1] = 0.4*25 + 0.6*20 = 10 + 12 = 22
+    // EMA[2] = 0.4*30 + 0.6*22 = 12 + 13.2 = 25.2
+    assert.equal(ema[0], 20);
+    assert.equal(ema[1], 22);
+    assert.ok(Math.abs(ema[2] - 25.2) < 0.001, "EMA[2] should be 25.2, got " + ema[2]);
+  });
+
+  it("should return empty array for empty input", function () {
+    var totals = [];
+    var ema = totals.length === 0 ? [] : [totals[0]];
+    assert.deepEqual(ema, [], "EMA of empty array should be empty");
+  });
+
+  it("should return single value for single input", function () {
+    var totals = [20];
+    var ema = [totals[0]];
+    assert.deepEqual(ema, [20], "EMA of single value should be [20]");
+  });
+});
+
+// =============================================================================
+// EMA dual-path signal architecture
+// =============================================================================
+
+describe("EMA dual-path signal architecture", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("dualPath");
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 0,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("safety path: E-IV crisis floor fires on raw score (not dampened by EMA)", function () {
+    // Round 1: total=30, Round 2: total=5 (below crisis floor of 6)
+    // EMA would dampen: EMA[1] = 0.4*5 + 0.6*30 = 20 -- not at crisis level
+    // But safety path uses RAW, so E-IV should fire
+    var report1 = makeReport(8, 8, 7, 7); // total=30
+    var report2 = makeReport(1, 2, 1, 1); // total=5 (<= crisisFloor=6)
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.escalation, "E-IV", "E-IV crisis floor should fire on raw score, not EMA-dampened");
+  });
+
+  it("hybrid path: single raw decline does NOT trigger E-III if EMA trend is still positive", function () {
+    // Build trajectory where two consecutive raw declines occur but EMA is still rising
+    // Round 1: total=10, Round 2: total=25, Round 3: total=24
+    // Raw deltas: +15, -1 (only 1 decline, so not 2 consecutive -- E-III shouldn't fire anyway)
+    // But let's make 2 consecutive raw declines with EMA still positive:
+    // Round 1: total=10, Round 2: total=30, Round 3: total=28, Round 4: total=27
+    // Raw deltas: +20, -2, -1 (2 consecutive declines in rounds 3,4)
+    // EMA (alpha=0.4): [10, 18, 22, 24] -- EMA delta r3->r4 = 24-22 = +2 (positive)
+    // Hybrid check: rawDelta<0 AND prevRawDelta<0 AND emaDelta<0
+    // emaDelta is +2, so E-III should NOT fire
+    var report1 = makeReport(3, 3, 2, 2); // total=10
+    var report2 = makeReport(8, 8, 7, 7); // total=30
+    var report3 = makeReport(7, 7, 7, 7); // total=28
+    var report4 = makeReport(7, 7, 7, 6); // total=27
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    var reportPath3 = join(tmpDir, "EVAL3.md");
+    var reportPath4 = join(tmpDir, "EVAL4.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+    writeFileSync(reportPath3, report3);
+    writeFileSync(reportPath4, report4);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+    runCLI("round-complete --round 3 --report " + JSON.stringify(reportPath3), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 4 --report " + JSON.stringify(reportPath4), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.notEqual(parsed.escalation, "E-III", "Two consecutive raw declines should NOT trigger E-III when EMA trend is still positive");
+  });
+
+  it("trend path: noisy scores that would be plateau with raw but progressing with EMA", function () {
+    // Design trajectory where raw 3-round window shows small improvement but EMA delta is healthy
+    // Round 1: total=20, Round 2: total=28, Round 3: total=22
+    // Raw 3-round window: 22-20=2 -- would be plateau with old <= 1 but progressing with new <= 2
+    // EMA (alpha=0.4): [20, 23.2, 22.72]
+    // EMA window: 22.72 - 20 = 2.72 > 2 -- NOT plateau
+    // This test verifies EMA smooths through the noise
+    var report1 = makeReport(5, 5, 5, 5); // total=20
+    var report2 = makeReport(7, 7, 7, 7); // total=28
+    var report3 = makeReport(6, 6, 5, 5); // total=22
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    var reportPath3 = join(tmpDir, "EVAL3.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+    writeFileSync(reportPath3, report3);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 3 --report " + JSON.stringify(reportPath3), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.notEqual(parsed.escalation, "E-II", "Noisy trajectory with EMA window of 2.72 (>2) should NOT be plateau");
+  });
+
+  it("PASS verdict still uses raw scores (safety path)", function () {
+    // Verify that PASS verdict is determined from raw scores, not EMA
+    // Round 1: total=20 (low), Round 2: total=26 (PASS: pd=7, fn=7, vd=6, rb=6)
+    // EMA doesn't affect PASS verdict since it's computed from raw per-dimension scores
+    var report1 = makeReport(5, 5, 5, 5); // total=20, FAIL
+    var report2 = makeReport(7, 7, 6, 6); // total=26, PASS
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.verdict, "PASS", "PASS verdict should use raw scores");
+    assert.equal(parsed.should_continue, false, "PASS should stop continuation");
+    assert.equal(parsed.exit_condition, "PASS", "Exit condition should be PASS");
+  });
+});

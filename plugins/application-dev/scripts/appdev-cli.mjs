@@ -255,7 +255,27 @@ function assemblePriorityFixes(summaries) {
   return allFindings;
 }
 
-function computeEscalation(rounds) {
+function computeEMA(totals, alpha) {
+  if (totals.length === 0) {
+    return [];
+  }
+
+  var ema = [totals[0]];
+
+  for (var i = 1; i < totals.length; i++) {
+    ema.push(alpha * totals[i] + (1 - alpha) * ema[i - 1]);
+  }
+
+  return ema;
+}
+
+function computeEscalation(rounds, opts) {
+  var alpha = (opts && opts.alpha !== undefined) ? opts.alpha : 0.4;
+  var maxTotal = DIMENSIONS.length * 10;
+  var crisisFloor = Math.ceil(maxTotal * 0.15);
+  var plateauThreshold = Math.ceil(maxTotal * 0.05);
+  var progressingThreshold = Math.ceil(maxTotal * 0.025);
+
   const current = rounds[rounds.length - 1];
   const prev = rounds.length > 1 ? rounds[rounds.length - 2] : null;
   const prevPrev = rounds.length > 2 ? rounds[rounds.length - 3] : null;
@@ -265,44 +285,67 @@ function computeEscalation(rounds) {
     return { level: "E-0", label: "Progressing" };
   }
 
+  // Raw deltas (used by safety and hybrid paths)
   const delta = current.scores.total - prev.scores.total;
   const prevDelta = prevPrev ? prev.scores.total - prevPrev.scores.total : null;
 
-  // E-IV Catastrophic: >50% single-round drop OR total <= 5
-  if (current.scores.total <= 5 || (delta < 0 && Math.abs(delta) > prev.scores.total * 0.5)) {
+  // Compute EMA for trend-based and hybrid escalation levels
+  var totals = rounds.map(function (r) { return r.scores.total; });
+  var ema = computeEMA(totals, alpha);
+  var emaCurrent = ema[ema.length - 1];
+  var emaPrev = ema.length > 1 ? ema[ema.length - 2] : null;
+  var emaPrevPrev = ema.length > 2 ? ema[ema.length - 3] : null;
+  var emaDelta = emaPrev !== null ? emaCurrent - emaPrev : null;
+
+  // --- SAFETY PATH (raw scores, no EMA) ---
+
+  // E-IV Catastrophic: >50% single-round drop OR total <= crisisFloor
+  if (current.scores.total <= crisisFloor || (delta < 0 && Math.abs(delta) > prev.scores.total * 0.5)) {
     return { level: "E-IV", label: "Catastrophic" };
   }
 
-  // E-III Regression: 2 consecutive total-score declines
-  if (delta < 0 && prevDelta !== null && prevDelta < 0) {
+  // --- HYBRID PATH (raw AND EMA must agree) ---
+
+  // E-III Regression: 2 consecutive raw declines AND EMA confirms decline
+  if (delta < 0 && prevDelta !== null && prevDelta < 0 && emaDelta < 0) {
     return { level: "E-III", label: "Regression" };
   }
 
-  // E-II Plateau: <=1 point improvement over 3-round window
-  if (prevPrev) {
-    const windowDelta = current.scores.total - prevPrev.scores.total;
+  // --- TREND PATH (EMA-smoothed) ---
 
-    if (windowDelta <= 1) {
+  // E-II Plateau: EMA 3-round window improvement <= plateauThreshold
+  if (emaPrevPrev !== null) {
+    var emaWindowDelta = emaCurrent - emaPrevPrev;
+
+    if (emaWindowDelta <= plateauThreshold) {
       return { level: "E-II", label: "Plateau" };
     }
   }
 
-  // E-I Decelerating: improved but delta shrinking
-  if (delta > 0 && prevDelta !== null && delta < prevDelta) {
-    return { level: "E-I", label: "Decelerating" };
+  // E-I Decelerating: EMA delta positive but shrinking, or EMA delta <= progressingThreshold
+  if (emaDelta !== null && emaDelta > 0) {
+    var emaPrevDelta = emaPrevPrev !== null ? emaPrev - emaPrevPrev : null;
+
+    if (emaPrevDelta !== null && emaDelta < emaPrevDelta) {
+      return { level: "E-I", label: "Decelerating" };
+    }
+
+    if (emaDelta <= progressingThreshold) {
+      return { level: "E-I", label: "Decelerating" };
+    }
   }
 
-  // E-0 Progressing: improved >1 point
-  if (delta > 1) {
+  // E-0 Progressing: EMA delta > progressingThreshold
+  if (emaDelta !== null && emaDelta > progressingThreshold) {
     return { level: "E-0", label: "Progressing" };
   }
 
-  // Edge case: improved by exactly 0 or 1 without 3-round window -> E-I Decelerating
-  if (delta >= 0) {
+  // Edge case: EMA delta >= 0 without 3-round window -> E-I Decelerating
+  if (emaDelta !== null && emaDelta >= 0) {
     return { level: "E-I", label: "Decelerating" };
   }
 
-  // Single decline (not 2 consecutive) -> E-I Decelerating
+  // Single decline (not confirmed by EMA) -> E-I Decelerating
   return { level: "E-I", label: "Decelerating" };
 }
 
