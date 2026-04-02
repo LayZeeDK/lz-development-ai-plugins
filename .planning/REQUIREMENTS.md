@@ -10,7 +10,7 @@ Requirements for the Dutch Art Museum Test Fixes milestone. Addresses all remain
 ### Perturbation Critic
 
 - [x] **CRITIC-01**: New perturbation-critic agent with adversarial testing methodology (targeted input perturbation, viewport extremes, rapid navigation, console monitoring under stress) that scores the Robustness dimension
-- [ ] **CRITIC-02**: Robustness dimension added to DIMENSIONS constant with threshold 6, including auto-built regex and compile-evaluation assessmentSections entry
+- [x] **CRITIC-02**: Robustness dimension added to DIMENSIONS constant with threshold 6, including auto-built regex and compile-evaluation assessmentSections entry
 - [x] **CRITIC-03**: Robustness ceiling rules and calibration scenarios (below/at/above threshold) added to SCORING-CALIBRATION.md
 - [x] **CRITIC-04**: Clear methodology boundaries between perturbation-critic and existing critics to prevent duplicate findings (perturbation tests EXTREME conditions, not normal responsive/functionality)
 
@@ -88,7 +88,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CRITIC-01 | Phase 11 | Complete |
-| CRITIC-02 | Phase 11 | Pending |
+| CRITIC-02 | Phase 11 | Complete |
 | CRITIC-03 | Phase 11 | Complete |
 | CRITIC-04 | Phase 11 | Complete |
 | CONV-01 | Phase 12 | Pending |

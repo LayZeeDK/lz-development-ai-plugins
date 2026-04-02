@@ -45,7 +45,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 - 3 sequential phases (11 -> 12 -> 13): Foundation, convergence, integration
 - 3 independent phases (14, 15, 16): Enhanced critics, generator, docs
 
-- [ ] **Phase 11: Scoring Foundation + Perturbation Critic** - DIMENSIONS constant update, new perturbation-critic agent, Robustness calibration
+- [x] **Phase 11: Scoring Foundation + Perturbation Critic** - DIMENSIONS constant update, new perturbation-critic agent, Robustness calibration (completed 2026-04-02)
 - [ ] **Phase 12: Convergence Logic Hardening** - Scaled thresholds, per-dimension tracking, EMA smoothing
 - [ ] **Phase 13: Orchestrator Integration** - 3-critic spawn/check/retry/resume, architecture section update
 - [ ] **Phase 14: Enhanced Existing Critics** - Cross-page visual consistency, A->B->A navigation testing
@@ -187,7 +187,7 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 8. SPEC Acceptance Criteria + Playwright | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 9. Crash Recovery | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 10. v1.1 Audit Gap Closure | v1.1 | 2/2 | Complete | 2026-04-02 |
-| 11. Scoring Foundation + Perturbation Critic | 1/2 | In Progress|  | - |
+| 11. Scoring Foundation + Perturbation Critic | 2/2 | Complete   | 2026-04-02 | - |
 | 12. Convergence Logic Hardening | v1.2 | 0/0 | Not started | - |
 | 13. Orchestrator Integration | v1.2 | 0/0 | Not started | - |
 | 14. Enhanced Existing Critics | v1.2 | 0/0 | Not started | - |

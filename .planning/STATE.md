@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
 status: executing
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-04-02T09:15:17.075Z"
-last_activity: 2026-04-02 -- Completed plan 11-02 (Robustness calibration + perturbation-critic)
+stopped_at: Completed 11-01-PLAN.md and 11-02-PLAN.md
+last_updated: "2026-04-02T09:18:07Z"
+last_activity: 2026-04-02 -- Completed plan 11-01 (4-dimension scoring foundation)
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 50
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 ## Current Position
 
 Phase: 11 of 16 (Scoring Foundation + Perturbation Critic)
-Plan: 2 of 2
-Status: Executing
-Last activity: 2026-04-02 -- Completed plan 11-02 (Robustness calibration + perturbation-critic)
+Plan: 2 of 2 (all complete)
+Status: Phase 11 complete
+Last activity: 2026-04-02 -- Completed plan 11-01 (4-dimension scoring foundation)
 
-Progress: [|||||.....] 50%
+Progress: [||||||||||] 100%
 
 ## Accumulated Context
 
@@ -56,6 +56,11 @@ Progress: [|||||.....] 50%
 - Static production builds over dev servers (idempotent, resumable)
 - Zero npm dependencies in appdev-cli.mjs
 
+### From Phase 11 (Scoring Foundation + Perturbation Critic)
+- Robustness threshold 6 (same as Visual Design) -- lower bar than PD/Fn for early perturbation testing
+- Perturbation Critic ceiling applied within summary.json, not by CLI (matches Functionality/VD pattern)
+- DIMENSIONS constant extended to 4 entries -- auto-propagates to extractScores, computeVerdict, compile-evaluation
+
 ### v1.2 Phase Dependencies
 - Sequential: Phase 11 -> Phase 12 -> Phase 13
 - Independent (after Phase 11): Phase 14, Phase 15, Phase 16
@@ -66,6 +71,6 @@ Progress: [|||||.....] 50%
 
 ## Session Continuity
 
-Last session: 2026-04-02T09:15:17.073Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-04-02T09:18:07Z
+Stopped at: Completed 11-01-PLAN.md and 11-02-PLAN.md (Phase 11 complete)
 Resume file: None
