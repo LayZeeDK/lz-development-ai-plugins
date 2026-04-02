@@ -1,6 +1,6 @@
 # Scoring Calibration Reference
 
-**Loaded by:** perceptual-critic (Visual Design ceilings), projection-critic (Functionality and Product Depth ceilings), CLI compile-evaluation (all ceilings for cross-validation).
+**Loaded by:** perceptual-critic (Visual Design ceilings), projection-critic (Functionality and Product Depth ceilings), perturbation-critic (Robustness ceilings), CLI compile-evaluation (all ceilings for cross-validation).
 
 **Purpose:** This file anchors scores to concrete scenarios and enforces mechanical ceiling rules. It contains structural/mechanical scoring guidance only -- behavioral guidance stays in each critic's agent definition.
 
@@ -36,6 +36,16 @@ When a condition is met, the score for that criterion CANNOT exceed the ceiling.
 | All images placeholder | max 3 |
 | No design language match | max 5 |
 | Layout broken on mobile | max 5 |
+
+### Robustness
+
+| Condition | Ceiling |
+|-----------|---------|
+| App crash or freeze under perturbation | max 4 |
+| Unrecoverable state (requires reload) | max 5 |
+| No error handling for invalid inputs | max 5 |
+| 3+ uncaught exceptions under stress | max 6 |
+| Console warnings that don't affect behavior | max 7 |
 
 ### Browser AI Degradation (Cross-Criterion)
 
@@ -74,6 +84,7 @@ Criteria do not compensate each other. The overall verdict is FAIL if ANY criter
 - Product Depth: 7
 - Functionality: 7
 - Visual Design: 6
+- Robustness: 6
 
 ---
 
@@ -194,4 +205,30 @@ The music app has a fully realized dark theme with neon-green and electric-purpl
 Score: 8/10 -- Strong design identity that clearly matches the spec's "dark, immersive, neon-accented" direction. Intentional typography, color, and interaction design. The inconsistent settings page is the only notable gap.
 
 Not 9 because: A 9 requires design excellence throughout. The settings page breaking the design language shows incomplete execution, even though all other pages are strong.
+
+### Robustness
+
+**Below Threshold: 5/10**
+
+A recipe app crashes when the search field receives a 500-character input. Rapid-clicking "Add to favorites" creates duplicate entries and eventually freezes the UI. Navigating back while an image loads produces a blank screen requiring full page reload. Console shows 3+ uncaught exceptions under normal-speed usage. The app works on the happy path but diverges from functional state under any non-ideal behavior. Defensive variety far below disturbance variety. Undamped (zeta near 0) -- perturbations cause the system to diverge.
+
+Score: 5/10 -- Undamped + insufficient variety. The app cannot survive perturbation without crashing and multiple crash paths exist.
+
+Not 6 because: A 6 requires the app to at least survive perturbation without crashing. Here the system diverges -- it cannot return to equilibrium without a full reload, and multiple crash paths exist.
+
+**At Threshold: 7/10**
+
+The same recipe app handles long inputs by truncating with a visible character limit. Rapid clicking is debounced -- only one favorite entry created. Navigation during loading shows a loading indicator instead of a blank screen. Console is clean under normal usage; 1-2 warnings appear only under rapid stress. Error messages appear for invalid form submissions. Missing browser APIs trigger graceful degradation (non-AI fallback). Quality degradation is proportional to perturbation magnitude (Lipschitz-continuous). Near-critically damped (zeta ~0.7-1.0) -- converges to stable state after disturbance.
+
+Score: 7/10 -- Critically damped + adequate variety. The app handles common disturbances and converges to a stable state after perturbation.
+
+Not 8 because: An 8 requires the console to stay fully clean under stress and extreme viewports to be handled gracefully. At 7, the app handles common disturbances but has gaps at the extremes.
+
+**Above Threshold: 9/10**
+
+All inputs validated with informative error messages. Rapid interactions debounced/throttled throughout. Extreme viewports (320px, 4K) produce usable layouts. Console stays clean even under stress testing. Offline state shows cached content or meaningful offline indicator. Missing APIs handled transparently. No uncaught exceptions at any perturbation level tested. A "salt marsh" (Christie) -- absorbs disturbances naturally rather than resisting rigidly. Steady state maintained across all injected fault categories.
+
+Score: 9/10 -- Overdamped + full variety. Complete coverage of known disturbance classes with steady state maintained across all fault categories.
+
+Not 10 because: A 10 means zero degradation found during exhaustive adversarial testing, including novel disturbance types not explicitly tested. The 9 has complete coverage of known disturbance classes but has not been tested against every conceivable perturbation.
 
