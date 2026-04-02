@@ -94,7 +94,10 @@ Plans:
   3. Retry logic retries each failed critic individually (not all critics) and the SAFETY_CAP wrap-up round includes all 3 critic spawns
   4. SKILL.md architecture section describes 5 agents (planner, generator, perceptual-critic, projection-critic, perturbation-critic)
 **Pitfalls**: Pitfall 3 (resume-check rename breaking crash recovery -- atomic CLI + SKILL.md update), Pitfall 4 (3-critic parallel concurrency -- empirical test, 2+1 fallback if needed)
-**Plans**: TBD (est. 2)
+**Plans**: 2 plans
+Plans:
+- [ ] 13-01-PLAN.md -- CLI 3-critic resume-check + atomic dispatch table update
+- [ ] 13-02-PLAN.md -- SKILL.md evaluation phase, SAFETY_CAP, prompt protocol, architecture section
 
 ### Phase 14: Enhanced Existing Critics
 **Goal**: The perceptual-critic detects cross-page visual inconsistencies and the projection-critic validates round-trip navigation state persistence
@@ -192,7 +195,7 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 10. v1.1 Audit Gap Closure | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 11. Scoring Foundation + Perturbation Critic | v1.2 | 2/2 | Complete | 2026-04-02 |
 | 12. Convergence Logic Hardening | 2/2 | Complete   | 2026-04-02 | - |
-| 13. Orchestrator Integration | v1.2 | 0/0 | Not started | - |
+| 13. Orchestrator Integration | v1.2 | 0/2 | Not started | - |
 | 14. Enhanced Existing Critics | v1.2 | 0/0 | Not started | - |
 | 15. Generator Improvements | v1.2 | 0/0 | Not started | - |
 | 16. Architecture Documentation | v1.2 | 0/0 | Not started | - |
