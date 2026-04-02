@@ -651,6 +651,17 @@ function cmdRoundComplete(argv) {
     return a.round - b.round;
   });
 
+  // Build per-dimension pass/fail status
+  var dimensionStatus = DIMENSIONS.map(function (dim) {
+    return {
+      name: dim.name,
+      key: dim.key,
+      score: extracted.scores[dim.key],
+      threshold: dim.threshold,
+      pass: extracted.scores[dim.key] >= dim.threshold,
+    };
+  });
+
   // Compute escalation for the current round
   const escalation = computeEscalation(state.rounds);
   entry.escalation = escalation.level;
@@ -675,6 +686,7 @@ function cmdRoundComplete(argv) {
     round: round,
     verdict: computedVerdict,
     scores: extracted.scores,
+    dimension_status: dimensionStatus,
     escalation: escalation.level,
     escalation_label: escalation.label,
     exit_condition: exitResult.exit_condition,

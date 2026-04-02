@@ -789,6 +789,119 @@ describe("roundComplete integration with 4 dimensions", function () {
 });
 
 // =============================================================================
+// round-complete dimension_status (CONV-03)
+// =============================================================================
+
+describe("round-complete dimension_status (CONV-03)", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("dimStatus");
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 0,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("should include dimension_status array in round-complete output", function () {
+    var reportPath = join(tmpDir, "EVALUATION.md");
+    writeFileSync(reportPath, makeReport(8, 7, 7, 6));
+
+    var result = runCLI(
+      "round-complete --round 1 --report " + JSON.stringify(reportPath),
+      { cwd: tmpDir }
+    );
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.ok(Array.isArray(parsed.dimension_status), "dimension_status should be an array");
+    assert.equal(parsed.dimension_status.length, 4, "dimension_status should have 4 entries");
+
+    var first = parsed.dimension_status[0];
+    assert.equal(typeof first.name, "string", "Entry should have name (string)");
+    assert.equal(typeof first.key, "string", "Entry should have key (string)");
+    assert.equal(typeof first.score, "number", "Entry should have score (number)");
+    assert.equal(typeof first.threshold, "number", "Entry should have threshold (number)");
+    assert.equal(typeof first.pass, "boolean", "Entry should have pass (boolean)");
+  });
+
+  it("should show correct pass/fail per dimension", function () {
+    var reportPath = join(tmpDir, "EVALUATION.md");
+    writeFileSync(reportPath, makeReport(8, 5, 7, 4));
+
+    var result = runCLI(
+      "round-complete --round 1 --report " + JSON.stringify(reportPath),
+      { cwd: tmpDir }
+    );
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    var status = parsed.dimension_status;
+
+    // Find each dimension by key
+    var pd = status.find(function (d) { return d.key === "product_depth"; });
+    var fn = status.find(function (d) { return d.key === "functionality"; });
+    var vd = status.find(function (d) { return d.key === "visual_design"; });
+    var rb = status.find(function (d) { return d.key === "robustness"; });
+
+    assert.equal(pd.score, 8, "PD score should be 8");
+    assert.equal(pd.threshold, 7, "PD threshold should be 7");
+    assert.equal(pd.pass, true, "PD 8 >= 7 should pass");
+
+    assert.equal(fn.score, 5, "Fn score should be 5");
+    assert.equal(fn.threshold, 7, "Fn threshold should be 7");
+    assert.equal(fn.pass, false, "Fn 5 < 7 should fail");
+
+    assert.equal(vd.score, 7, "VD score should be 7");
+    assert.equal(vd.threshold, 6, "VD threshold should be 6");
+    assert.equal(vd.pass, true, "VD 7 >= 6 should pass");
+
+    assert.equal(rb.score, 4, "Rb score should be 4");
+    assert.equal(rb.threshold, 6, "Rb threshold should be 6");
+    assert.equal(rb.pass, false, "Rb 4 < 6 should fail");
+  });
+
+  it("should preserve existing scores object alongside dimension_status", function () {
+    var reportPath = join(tmpDir, "EVALUATION.md");
+    writeFileSync(reportPath, makeReport(8, 7, 7, 6));
+
+    var result = runCLI(
+      "round-complete --round 1 --report " + JSON.stringify(reportPath),
+      { cwd: tmpDir }
+    );
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+
+    // Existing scores object should still be present
+    assert.ok(parsed.scores, "scores object should still be present");
+    assert.equal(parsed.scores.product_depth, 8);
+    assert.equal(parsed.scores.functionality, 7);
+    assert.equal(parsed.scores.visual_design, 7);
+    assert.equal(parsed.scores.robustness, 6);
+    assert.equal(parsed.scores.total, 28);
+
+    // dimension_status should also be present
+    assert.ok(Array.isArray(parsed.dimension_status), "dimension_status should also be present");
+    assert.equal(parsed.dimension_status.length, 4);
+  });
+});
+
+// =============================================================================
 // resume-check subcommand
 // =============================================================================
 
