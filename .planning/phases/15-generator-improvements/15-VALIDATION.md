@@ -1,8 +1,8 @@
 ---
 phase: 15
 slug: generator-improvements
-status: draft
-nyquist_compliant: false
+status: complete
+nyquist_compliant: true
 wave_0_complete: true
 created: 2026-04-03
 ---
@@ -17,11 +17,11 @@ created: 2026-04-03
 
 | Property | Value |
 |----------|-------|
-| **Framework** | Manual verification (documentation changes only) |
+| **Framework** | node:test (built-in Node.js test runner) |
 | **Config file** | N/A |
-| **Quick run command** | Read modified files, verify content matches requirements |
-| **Full suite command** | Full file review + generator.md frontmatter check |
-| **Estimated runtime** | ~60 seconds (manual review) |
+| **Quick run command** | `node --test tests/phase-15-structural.test.mjs` |
+| **Full suite command** | `node --test tests/phase-15-structural.test.mjs` |
+| **Estimated runtime** | ~0.1 seconds |
 
 ---
 
@@ -38,10 +38,11 @@ created: 2026-04-03
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 15-01-xx | 01 | 1 | GEN-01 | manual-only | Verify SKILL.md contains decision tree, Chrome vs Edge table, 5 reference files exist | N/A | pending |
-| 15-02-xx | 02 | 1 | GEN-02 | manual-only | Verify SKILL.md updated versions, installation URLs, env vars, breaking changes | N/A | pending |
-| 15-02-xx | 02 | 1 | GEN-04 | manual-only | Verify generator.md Vite+ paragraph + Step 8 commands updated | N/A | pending |
-| 15-02-xx | 02 | 1 | GEN-03 | manual-only | Verify generator.md Step 1 contains upgrade instruction + non-SemVer exceptions | N/A | pending |
+| 15-01-01 | 01 | 1 | GEN-01 | unit | `node --test tests/phase-15-structural.test.mjs` | tests/phase-15-structural.test.mjs | green |
+| 15-02-01 | 02 | 1 | GEN-02 | unit | `node --test tests/phase-15-structural.test.mjs` | tests/phase-15-structural.test.mjs | green |
+| 15-02-02 | 02 | 1 | GEN-03 | unit | `node --test tests/phase-15-structural.test.mjs` | tests/phase-15-structural.test.mjs | green |
+| 15-02-03 | 02 | 1 | GEN-04 | unit | `node --test tests/phase-15-structural.test.mjs` | tests/phase-15-structural.test.mjs | green |
+| 15-cross | -- | -- | Cross-wiring | unit | `node --test tests/phase-15-structural.test.mjs` | tests/phase-15-structural.test.mjs | green |
 
 *Status: pending / green / red / flaky*
 
@@ -68,11 +69,11 @@ Existing infrastructure covers all phase requirements.
 
 ## Validation Sign-Off
 
-- [x] All tasks have manual verify instructions
-- [x] Sampling continuity: manual review after every task commit
+- [x] All tasks have automated verify commands
+- [x] Sampling continuity: `node --test tests/phase-15-structural.test.mjs` after every task commit
 - [x] Wave 0 covers all MISSING references (none needed)
 - [x] No watch-mode flags
-- [x] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] Feedback latency < 1s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved (24 tests, 5 suites, 0 failures)
