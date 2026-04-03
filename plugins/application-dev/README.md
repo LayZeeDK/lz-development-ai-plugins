@@ -1,15 +1,16 @@
 # application-dev
 
-Autonomous application development plugin for Claude Code, using a GAN-inspired four-agent ensemble architecture.
+Autonomous application development plugin for Claude Code, using a GAN-inspired five-agent ensemble architecture.
 
 ## Overview
 
-This plugin orchestrates long-running application development from a short prompt (1-4 sentences). It uses four specialized agents in an adversarial feedback loop:
+This plugin orchestrates long-running application development from a short prompt (1-4 sentences). It uses five specialized agents in an adversarial feedback loop:
 
 - **Planner**: Expands your prompt into an ambitious product specification (10-16+ features, visual design language, AI integration points)
 - **Generator**: Builds the full application from the spec, choosing the optimal tech stack
 - **Perceptual Critic**: Scores Visual Design by detecting AI slop and assessing whether the product passes as hand-built. Evaluates via browser screenshots and interaction.
 - **Projection Critic**: Scores Functionality by writing and running acceptance tests against SPEC.md criteria. Tests execute outside agent context for token efficiency.
+- **Perturbation Critic**: Scores Robustness by running adversarial tests -- viewport extremes, rapid navigation, input perturbation, and console monitoring under stress. Evaluates resilience beyond what the spec requires.
 
 The workflow runs continuously and autonomously -- no user input is required after the initial prompt.
 
@@ -35,7 +36,7 @@ If your prompt mentions a specific tech stack (e.g., "using React" or "with the 
 
 2. **Build** -- The Generator builds the complete application. It picks the tech stack, implements all features, and follows the visual design language.
 
-3. **Evaluate** -- Both critics evaluate the running app in parallel -- the Perceptual Critic observes visual quality, the Projection Critic runs acceptance tests. The CLI compiles their findings into a single evaluation report.
+3. **Evaluate** -- All three critics evaluate the running app in parallel -- the Perceptual Critic observes visual quality, the Projection Critic runs acceptance tests, and the Perturbation Critic stress-tests resilience. The CLI compiles their findings into a single evaluation report.
 
 4. **Iterate** -- If any dimension falls below its threshold, the Generator receives the evaluation report and improves the application. Up to 10 generation/evaluation rounds.
 
@@ -54,7 +55,7 @@ Inspired by Generative Adversarial Networks (GANs):
 
 - The Generator and critic ensemble form an adversarial pair
 - The critics are calibrated to be skeptical -- finding issues, not praising work
-- Two specialized critics (Perceptual + Projection) evaluate in parallel, each in its own isolated context. The CLI aggregates their findings deterministically.
+- Three specialized critics (Perceptual + Projection + Perturbation) evaluate in parallel, each in its own isolated context. The CLI aggregates their findings deterministically.
 - Multiple rounds create an improvement loop where critique drives quality
 - Separation of generation and evaluation prevents the self-praise bias seen when models judge their own output
 
@@ -67,6 +68,7 @@ Based on: [Harness design for long-running application development](https://www.
 | Product Depth | 7/10 | Feature completeness vs. spec (CLI-computed from acceptance tests) |
 | Functionality | 7/10 | Does it actually work when used? (Projection Critic) |
 | Visual Design | 6/10 | Coherent identity, not AI-slop (Perceptual Critic) |
+| Robustness | 6/10 | Resilience under adversarial conditions (Perturbation Critic) |
 
 ## File Protocol
 
