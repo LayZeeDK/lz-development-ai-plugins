@@ -39,9 +39,9 @@ Requirements for the Dutch Art Museum Test Fixes milestone. Addresses all remain
 ### Generator Improvements
 
 - [ ] **GEN-01**: Browser-agnostic LanguageModel guidance referencing both Chrome (Gemini Nano) and Edge (Phi-4-mini) with graceful degradation
-- [ ] **GEN-02**: Vite+ skill refreshed for official vp CLI workflow (vp create, vp check, vp test, vp build) with alpha stability caveats
-- [ ] **GEN-03**: Dependency freshness checking step in Generator workflow or as CLI subcommand
-- [ ] **GEN-04**: Strengthened Vite+ adoption guidance with compatibility escape hatch (Angular, Nuxt incompatible)
+- [x] **GEN-02**: Vite+ skill refreshed for official vp CLI workflow (vp create, vp check, vp test, vp build) with alpha stability caveats
+- [x] **GEN-03**: Dependency freshness checking step in Generator workflow or as CLI subcommand
+- [x] **GEN-04**: Strengthened Vite+ adoption guidance with compatibility escape hatch (Angular, Nuxt incompatible)
 
 ### Documentation
 
@@ -105,9 +105,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVAL-02 | Phase 14 | Complete |
 | EVAL-03 | Phase 14 | Complete |
 | GEN-01 | Phase 15 | Pending |
-| GEN-02 | Phase 15 | Pending |
-| GEN-03 | Phase 15 | Pending |
-| GEN-04 | Phase 15 | Pending |
+| GEN-02 | Phase 15 | Complete |
+| GEN-03 | Phase 15 | Complete |
+| GEN-04 | Phase 15 | Complete |
 | DOCS-01 | Phase 16 | Pending |
 
 **Coverage:**
