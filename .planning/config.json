@@ -4,6 +4,14 @@
   "parallelization": true,
   "commit_docs": true,
   "model_profile": "quality",
+  "model_overrides": {
+    "gsd-research-synthesizer": "opus",
+    "gsd-codebase-mapper": "opus",
+    "gsd-verifier": "opus",
+    "gsd-plan-checker": "opus",
+    "gsd-integration-checker": "opus",
+    "gsd-nyquist-auditor": "opus"
+  },
   "workflow": {
     "research": true,
     "plan_check": true,
