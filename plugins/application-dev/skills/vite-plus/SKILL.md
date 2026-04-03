@@ -16,10 +16,16 @@ description: >
 
 Docs: https://viteplus.dev/guide/
 Announcement: https://voidzero.dev/posts/announcing-vite-plus-alpha
-Status: Alpha (March 2026)
+Status: Alpha (tested: v0.1.15)
 
-Vite+ is a unified toolchain that bundles Vite 8, Vitest 4.1, Oxlint 1.52,
-Oxfmt (beta), tsgo (TypeScript Go port), and Rolldown into a single `vp`
+> Vite+ is alpha software (tested: v0.1.15). When vp commands fail
+> unexpectedly, research the latest vite-plus docs or fall back to known
+> working vp commands from a previous version. Do NOT fall back to plain
+> Vite -- Vite+ is the default toolchain and the Generator should exhaust
+> vp troubleshooting before considering alternatives.
+
+Vite+ is a unified toolchain that bundles Vite 8, Vitest 4.1, Oxlint,
+Oxfmt, tsgo (TypeScript Go port), Rolldown, and tsdown into a single `vp`
 CLI. It replaces separate ESLint + Prettier + tsc + Vite + Vitest setups
 with one tool and one config file.
 
@@ -27,9 +33,9 @@ with one tool and one config file.
 
 ## 1. When to use
 
-**Prefer Vite+ for greenfield web projects** when compatible with the chosen
-tech stack. This is a preference, not a mandate. Falls back to plain Vite
-when incompatible.
+**Vite+ is the default toolchain for greenfield web projects** when
+compatible with the chosen framework. The Generator must explicitly justify
+choosing plain Vite over Vite+ for a compatible framework.
 
 Use Vite+ when:
 - Starting a new React, Vue, Svelte, Solid, or react-router project
@@ -42,104 +48,118 @@ Do NOT use Vite+ when:
 - The user prompt explicitly requests plain Vite, Webpack, or another bundler
 - The tech stack requires custom compiler transformations tsgo cannot handle
 
-**Fallback:** Plain Vite + ESLint + Prettier + tsc. Stable, framework-agnostic,
-and fully supported for all ecosystems.
+**Escape hatch:** Plain Vite + ESLint + Prettier + tsc. Stable, framework-
+agnostic, and fully supported for all ecosystems. The Generator knows plain
+Vite from pre-trained knowledge -- no skill documentation needed.
 
 ---
 
-## 2. Installation
+## 2. Breaking changes (v0.1.12 through v0.1.15)
+
+Breaking changes between alpha releases are expected. Key changes since the
+initial announcement:
+
+1. **Environment variable prefix renamed:** `VITE_PLUS_*` -> `VP_*`
+   (v0.1.15). Old prefix no longer recognized.
+2. **`vp run` argument order changed:** Flags must come before the task
+   name. `vp run -r build` (correct) vs `vp run build -r` (broken, v0.1.15).
+3. **Installation URL changed:** Primary URL is now `viteplus.dev`. The old
+   `vite.plus` URL still redirects but the skill uses the canonical URL.
+4. **TypeScript peer range:** `^6.0.0` (was unspecified in earlier alphas).
+5. **Bun package manager support:** First-class in `vp create` and install.
+
+---
+
+## 3. Installation
 
 Vite+ is a standalone CLI binary, not an npm package.
 
 **macOS/Linux:**
 ```bash
-curl -fsSL https://vite.plus | bash
+curl -fsSL https://viteplus.dev/install.sh | bash
 ```
 
 **Windows:**
 ```powershell
-irm https://vite.plus/ps1 | iex
+irm https://viteplus.dev/install.ps1 | iex
 ```
+
+**Environment variables for customization:**
+- `VP_VERSION` -- version to install (default: latest)
+- `VP_HOME` -- installation directory (default: `~/.vite-plus`)
 
 After installation, the `vp` command is available globally.
 
 ---
 
-## 3. vp CLI commands
+## 4. vp CLI commands
 
-### `vp create` -- scaffold a new project
+### Start phase
 
-```bash
-# Interactive mode (prompts for template and options)
-vp create
+| Command | Purpose |
+|---------|---------|
+| `vp create` | Scaffold new project (templates: `vite`, `react-router`, `vue`, `svelte`) |
+| `vp migrate` | Migrate existing Vite project to Vite+ |
+| `vp config` | Configure commit hooks and agent integration |
+| `vp staged` | Run checks on staged files (pre-commit integration) |
+| `vp install` | Resolve dependencies (wraps npm/pnpm/yarn/bun) |
+| `vp env` | Manage Node.js versions (`vp env off` to opt out) |
 
-# With specific template
-vp create vite
-vp create react-router
-vp create vue
-vp create svelte
-```
+### Development phase
 
-Available templates: `vite`, `react-router`, `vue`, `svelte`.
+| Command | Purpose |
+|---------|---------|
+| `vp dev` | Start Vite 8 dev server with HMR |
+| `vp check` | Format (Oxfmt) + lint (Oxlint) + typecheck (tsgo) in one pass |
+| `vp check --fix` | Auto-fix lint and format issues |
+| `vp lint` | Lint only (Oxlint) |
+| `vp fmt` | Format only (Oxfmt) |
+| `vp test` | Run tests (Vitest 4.1.2) |
 
-### `vp dev` -- start development server
+### Execution phase
 
-```bash
-vp dev
-```
+| Command | Purpose |
+|---------|---------|
+| `vp run <task>` | Run custom tasks defined in vite.config.ts |
+| `vpr <task>` | Shorthand for `vp run` |
+| `vp run --parallel` | Ignore task dependencies, run all at once |
+| `vp run --concurrency-limit N` | Limit concurrent tasks (default: 4) |
+| `vp cache` | Clear task cache entries |
+| `vpx` | Execute binaries globally |
+| `vp exec` | Run local project binaries |
+| `vp dlx` | Run package binaries without install |
 
-Starts the Vite 8 dev server with HMR.
+### Build phase
 
-### `vp check` -- format + lint + typecheck in a single pass
+| Command | Purpose |
+|---------|---------|
+| `vp build` | Production build (Rolldown) |
+| `vp pack` | Library packaging (tsdown) |
+| `vp preview` | Preview production build locally |
 
-```bash
-# Check only (report issues)
-vp check
+### Dependency management
 
-# Auto-fix lint and format issues
-vp check --fix
-```
+| Command | Purpose |
+|---------|---------|
+| `vp add <pkg>` | Add dependency |
+| `vp remove <pkg>` | Remove dependency |
+| `vp update` | Update dependencies |
+| `vp dedupe` | Deduplicate dependency tree |
+| `vp outdated` | List outdated packages |
+| `vp why <pkg>` | Show why a package is installed |
+| `vp info <pkg>` | Show package information |
+| `vp pm <command>` | Access underlying package manager directly |
 
-Runs three tools in one command:
-1. **Oxfmt** (format) -- 30x faster than Prettier
-2. **Oxlint** (lint) -- 50-100x faster than ESLint
-3. **tsgo** (typecheck) -- native-speed TypeScript checking
+### Maintenance
 
-### `vp test` -- run tests
-
-```bash
-vp test
-```
-
-Runs Vitest 4.1 with configuration from `vite.config.ts`.
-
-### `vp build` -- production build
-
-```bash
-vp build
-```
-
-Uses Rolldown for production bundling.
-
-### `vp run <task>` -- run custom tasks
-
-```bash
-vp run check-assets
-```
-
-Runs tasks defined in `vite.config.ts` under `run.tasks`.
-
-### `vp migrate` -- migrate existing Vite project
-
-```bash
-vp migrate
-```
-
-Migrates an existing Vite project to use Vite+ toolchain configuration.
+| Command | Purpose |
+|---------|---------|
+| `vp upgrade` | Update the vp CLI itself |
+| `vp implode` | Uninstall vp and remove related data |
 
 ---
 
-## 4. Unified vite.config.ts
+## 5. Unified vite.config.ts
 
 Vite+ uses a single `vite.config.ts` for the entire toolchain -- dev server,
 build, lint, format, typecheck, tests, and custom tasks.
@@ -160,7 +180,7 @@ export default defineConfig({
     },
   },
 
-  // Test configuration (Vitest 4.1)
+  // Test configuration (Vitest 4.1.2)
   test: {
     // Vitest options -- see vitest-browser skill for projects config
   },
@@ -187,18 +207,18 @@ export default defineConfig({
 
 ---
 
-## 5. Framework support and compatibility
+## 6. Framework support and compatibility
 
 | Framework | `vp create` template | `vp check` | `vp build` | Status |
 |-----------|---------------------|------------|------------|--------|
 | React | `react-router` | Full support | Full support | Fully supported |
-| Vue | `vue` | Script parts only (no template lint) | Full support | Fully supported |
-| Svelte | `svelte` | Script parts only (no template lint) | Full support | Fully supported |
-| Solid | (via `vite` template) | Full support | Full support | Fully supported |
+| Vue | `vue` | Script parts only | Full support | Fully supported |
+| Svelte | `svelte` | Script parts only | Full support | Fully supported |
+| Solid | via `vite` template | Full support | Full support | Fully supported |
 | react-router | `react-router` | Full support | Full support | Fully supported |
 | Angular | None | tsgo incompatible | Untested | **Not supported** |
-| Nuxt | None | Partial | Partial | Experimental |
-| TanStack Start | None | Partial | Partial | Experimental |
+| Nuxt | None | Partial | Partial | **Experimental** |
+| TanStack Start | None | Partial | Partial | **Experimental** |
 
 ### Angular incompatibility
 
@@ -217,34 +237,39 @@ available in Vite+.
 
 ---
 
-## 6. Bundled tool versions (alpha, March 2026)
+## 7. Bundled tool versions (v0.1.15)
 
 | Tool | Version | Replaces |
 |------|---------|----------|
-| Vite | 8 | Vite (standalone) |
-| Vitest | 4.1 | Vitest (standalone) |
-| Oxlint | 1.52 | ESLint |
-| Oxfmt | beta | Prettier |
+| Vite | 8.0.3 | Vite (standalone) |
+| Vitest | 4.1.2 | Vitest (standalone) |
+| Oxlint | 1.58.0 | ESLint |
+| Oxfmt | 0.43.0 | Prettier |
 | tsgo | experimental | tsc (TypeScript compiler) |
-| Rolldown | (bundled) | Rollup / esbuild (production builds) |
+| Rolldown | 1.0.0-rc.12 | Rollup / esbuild (production builds) |
+| tsdown | 0.21.7 | tsup (library bundling) |
 
 ---
 
-## 7. Known limitations
+## 8. Known limitations
 
-- **Alpha software** -- expect rough edges, breaking changes between releases
+- **Alpha software** -- expect breaking changes between releases. The skill
+  documents v0.1.15; later versions may change CLI flags, env vars, or
+  command behavior.
 - **Oxlint cannot lint Vue/Svelte templates** -- only script sections are
   checked. Template-level lint rules require ESLint with framework parsers.
 - **tsgo is experimental** -- does not support Angular decorator metadata,
-  custom compiler transformations, or certain advanced TypeScript features
-- **`vp check` may fail on Angular projects** -- fall back to `npx tsc --noEmit`
-- **No npm package** -- `vp` is a standalone CLI binary, installed via curl/irm
+  custom compiler transformations, or certain advanced TypeScript features.
+- **`vp check` may fail on Angular projects** -- fall back to
+  `npx tsc --noEmit`.
+- **No npm package** -- `vp` is a standalone CLI binary, installed via
+  curl/irm.
 - **Limited framework templates** -- only `vite`, `react-router`, `vue`,
-  `svelte` available in `vp create`
+  `svelte` available in `vp create`.
 
 ---
 
-## 8. CI integration with vp
+## 9. CI integration with vp
 
 When a project uses Vite+, CI configuration simplifies to three commands:
 
@@ -256,7 +281,7 @@ vp build        # Replaces: vite build
 
 The Generator's CI diagnostic pass becomes simpler:
 - **Static analysis:** `vp check` (format + lint + typecheck in one pass)
-- **Tests:** `vp test` (Vitest 4.1 with projects config)
+- **Tests:** `vp test` (Vitest 4.1.2 with projects config)
 - **Build:** `vp build` (Rolldown production build)
 
 For the pre-handoff diagnostic, run all three in sequence. Fix quick wins from
@@ -264,7 +289,7 @@ For the pre-handoff diagnostic, run all three in sequence. Fix quick wins from
 
 ---
 
-## 9. Decision: Vite+ vs plain Vite
+## 10. Decision: Vite+ vs plain Vite
 
 | Criterion | Vite+ | Plain Vite |
 |-----------|-------|------------|
@@ -273,9 +298,10 @@ For the pre-handoff diagnostic, run all three in sequence. Fix quick wins from
 | Check speed | 50-100x faster lint, 30x faster format | Standard ESLint/Prettier speed |
 | Framework support | React, Vue, Svelte, Solid | All frameworks |
 | Angular | Not supported | Fully supported |
-| Stability | Alpha | Stable |
+| Stability | Alpha (breaking changes expected) | Stable |
 | Ecosystem plugins | Limited | Full ESLint/Prettier plugin ecosystem |
 
-**Choose Vite+** for React, Vue, Svelte, or Solid greenfield projects.
-**Choose plain Vite** for Angular, Nuxt, TanStack Start, or when framework-
-specific ESLint plugins are essential.
+**Choose Vite+** for React, Vue, Svelte, Solid, or react-router greenfield
+projects (default).
+**Choose plain Vite** for Angular, Nuxt, TanStack Start, or when the user
+prompt explicitly requests another bundler.
