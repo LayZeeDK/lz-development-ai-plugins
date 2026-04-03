@@ -121,7 +121,10 @@ Plans:
   2. Vite+ skill is updated to the official `vp` CLI workflow (vp create, vp check, vp test, vp build) with alpha stability caveats and a clear escape hatch for incompatible frameworks (Angular, Nuxt)
   3. Generator workflow includes a dependency freshness checking step that verifies dependencies are current before proceeding
 **Pitfalls**: Pitfall 7 (LanguageModel browser lock-in -- must include graceful degradation, not just feature detection), Pitfall 9 (Vite+ too aggressive -- keep compatibility escape hatch)
-**Plans**: TBD (est. 2)
+**Plans**: 2 plans
+Plans:
+- [ ] 15-01-PLAN.md -- browser-built-in-ai meta-skill (routing SKILL.md + 5 reference files, replacing browser-prompt-api)
+- [ ] 15-02-PLAN.md -- Vite+ v0.1.15 refresh + generator.md updates (dependency freshness, Vite+ default, AI hierarchy, vp-first diagnostics)
 
 ### Phase 16: Architecture Documentation
 **Goal**: A reference file grounds the plugin's design in GAN, Cybernetics, and Turing test principles for users and future maintainers
@@ -199,5 +202,5 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 12. Convergence Logic Hardening | 2/2 | Complete   | 2026-04-02 | - |
 | 13. Orchestrator Integration | 2/2 | Complete    | 2026-04-02 | - |
 | 14. Enhanced Existing Critics | 1/1 | Complete    | 2026-04-03 | - |
-| 15. Generator Improvements | v1.2 | 0/0 | Not started | - |
+| 15. Generator Improvements | v1.2 | 0/2 | Planning complete | - |
 | 16. Architecture Documentation | v1.2 | 0/0 | Not started | - |
