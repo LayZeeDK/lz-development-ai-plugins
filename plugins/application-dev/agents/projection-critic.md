@@ -82,6 +82,23 @@ Each test maps to a SPEC.md feature and criteria pair. Cover:
 
 For console output, use `npx playwright-cli console error` (filtered to errors only) to catch functional-relevant issues (uncaught exceptions, API errors, failed network requests) without filling context with informational messages. Visual console errors belong to the perceptual-critic.
 
+#### Round-Trip Navigation Tests
+
+At the end of `acceptance-tests.spec.ts`, add a `test.describe('Round-trip navigation')` block with SPEC-derived round-trip tests. These catch state persistence bugs that single-visit feature tests miss -- a feature that works on first visit but loses state after navigating away and returning via `page.goBack()`.
+
+**Test patterns** (derive from SPEC.md features, not a generic checklist):
+
+- **CRUD persistence:** For each CRUD feature in SPEC.md, create data, navigate to a different view, return via `page.goBack()`, verify data persists
+- **Filter/sort persistence:** For each filtered or sorted view in SPEC.md, apply filters, click into a detail, return via `page.goBack()`, verify filters are still active
+- **URL integrity:** Navigate with query params, leave, return via back button, assert URL params intact
+- **Console error monitoring:** Monitor `page.on("console", ...)` during an A->B->A cycle, assert no errors
+
+**Return method:** Always use `page.goBack()` followed by a content assertion or `waitForURL()`. Never use `waitForTimeout` -- SPA routers update asynchronously.
+
+**Scoring dimension:** Round-trip test failures produce FN-X findings (Functionality dimension). They are NOT included in `acceptance_tests.results[]` feature mapping -- Product Depth measures feature presence, not feature durability. A feature that works on first visit but loses state on return is functionally buggy, not missing.
+
+**Round 2+ behavior:** Round-trip tests are part of the single acceptance-tests.spec.ts file, so they are automatically included in the existing round 2+ test reuse/heal/regenerate workflow. No special handling needed.
+
 ### Round 2+ Test Reuse
 
 In rounds 2 and later, reuse acceptance tests from the prior round before writing new ones. The orchestrator passes the round number ("This is evaluation round N.").
