@@ -50,7 +50,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 - [x] **Phase 13: Orchestrator Integration** - 3-critic spawn/check/retry/resume, architecture section update (completed 2026-04-02)
 - [x] **Phase 14: Enhanced Existing Critics** - Cross-page visual consistency, A->B->A navigation testing (completed 2026-04-03)
 - [x] **Phase 15: Generator Improvements** - Browser-agnostic LanguageModel, Vite+ refresh, dependency freshness (completed 2026-04-03)
-- [ ] **Phase 16: Architecture Documentation** - GAN/Cybernetics/Turing test principles reference file
+- [x] **Phase 16: Architecture Documentation** - GAN/Cybernetics/Turing test principles reference file (completed 2026-04-03)
 
 ## Phase Details
 
@@ -138,7 +138,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 16-01-PLAN.md -- Update docs/ARCHITECTURE.md with v1.2 ensemble architecture principles
-- [ ] 16-02-PLAN.md -- Update README.md and plugins/application-dev/README.md with v1.2 ensemble architecture
+- [x] 16-02-PLAN.md -- Update README.md and plugins/application-dev/README.md with v1.2 ensemble architecture
 
 ### v2.0 Advanced Discriminators (future)
 
@@ -207,4 +207,4 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 13. Orchestrator Integration | v1.2 | 2/2 | Complete | 2026-04-02 |
 | 14. Enhanced Existing Critics | v1.2 | 1/1 | Complete | 2026-04-03 |
 | 15. Generator Improvements | v1.2 | 2/2 | Complete | 2026-04-03 |
-| 16. Architecture Documentation | v1.2 | 1/2 | In Progress|  |
+| 16. Architecture Documentation | v1.2 | 2/2 | Complete   | 2026-04-03 |
