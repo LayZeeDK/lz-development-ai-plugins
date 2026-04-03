@@ -45,7 +45,7 @@ Requirements for the Dutch Art Museum Test Fixes milestone. Addresses all remain
 
 ### Documentation
 
-- [ ] **DOCS-01**: Architecture principles reference file (references/architecture-principles.md) grounding the plugin design in GAN, Cybernetics, and Turing test principles
+- [x] **DOCS-01**: Architecture principles reference file (references/architecture-principles.md) grounding the plugin design in GAN, Cybernetics, and Turing test principles
 
 ## v1.3 Requirements
 
@@ -108,7 +108,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GEN-02 | Phase 15 | Complete |
 | GEN-03 | Phase 15 | Complete |
 | GEN-04 | Phase 15 | Complete |
-| DOCS-01 | Phase 16 | Pending |
+| DOCS-01 | Phase 16 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 22 total

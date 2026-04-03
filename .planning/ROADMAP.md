@@ -137,7 +137,7 @@ Plans:
 **Pitfalls**: Pitfall 8 (staleness -- document principles, not implementation details)
 **Plans**: 2 plans
 Plans:
-- [ ] 16-01-PLAN.md -- Update docs/ARCHITECTURE.md with v1.2 ensemble architecture principles
+- [x] 16-01-PLAN.md -- Update docs/ARCHITECTURE.md with v1.2 ensemble architecture principles
 - [ ] 16-02-PLAN.md -- Update README.md and plugins/application-dev/README.md with v1.2 ensemble architecture
 
 ### v2.0 Advanced Discriminators (future)
@@ -207,4 +207,4 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 13. Orchestrator Integration | v1.2 | 2/2 | Complete | 2026-04-02 |
 | 14. Enhanced Existing Critics | v1.2 | 1/1 | Complete | 2026-04-03 |
 | 15. Generator Improvements | v1.2 | 2/2 | Complete | 2026-04-03 |
-| 16. Architecture Documentation | v1.2 | 0/2 | Planning | - |
+| 16. Architecture Documentation | v1.2 | 1/2 | In Progress|  |

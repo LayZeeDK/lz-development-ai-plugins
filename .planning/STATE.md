@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
-status: verifying
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-04-03T20:12:22.783Z"
+status: executing
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-04-03T20:55:53.749Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_plans: 11
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application.
-**Current focus:** Phase 15 — generator-improvements
+**Current focus:** Phase 16 — architecture-documentation
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
-Status: All plans finished, awaiting verification
+Phase: 16 (architecture-documentation) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-03
 
-Progress: [##########] 100%
+Progress: [#########.] 91%
 
 ## Accumulated Context
 
@@ -112,6 +112,13 @@ Progress: [##########] 100%
 - Proofreader informational-only in comparison table (OT 141-145, Chrome only, no dedicated reference)
 - Stale browser-prompt-api references remain in webllm/webnn/generator.md -- Plan 02 responsibility
 
+### From Phase 16, Plan 01 (Architecture Documentation)
+
+- docs/ARCHITECTURE.md rewritten from v1.0 three-agent (252 lines) to v1.2 ensemble architecture (465 lines)
+- Principles-only focus: no file paths, no threshold numbers, no dimension names -- resists staleness across milestones
+- Extensible contract principle for critic summary artifacts -- adding a new critic does not require aggregator changes
+- Theoretical grounding triple: GAN (adversarial separation), Cybernetics (feedback/convergence), Turing test (evaluation methodology)
+
 ### v1.2 Phase Dependencies
 
 - Sequential: Phase 11 -> Phase 12 -> Phase 13
@@ -124,6 +131,6 @@ Progress: [##########] 100%
 
 ## Session Continuity
 
-Last session: 2026-04-03T20:00:05.340Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-04-03T20:55:53.746Z
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None
