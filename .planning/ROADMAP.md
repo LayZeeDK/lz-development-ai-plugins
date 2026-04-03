@@ -133,10 +133,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `docs/ARCHITECTURE.md` covers GAN principles (Generator/Discriminator separation, WGAN continuous scoring, ensemble discriminator, information barrier), Cybernetics (damping principle, requisite variety, feedback loop, EMA smoothing, scaled thresholds, dual-path signals), and Turing test framing (critics as interrogators, product surface as evaluation boundary)
   2. The document focuses on principles (not implementation specifics like file paths or dimension names) so it resists staleness across milestones
+  3. `README.md` and `plugins/application-dev/README.md` accurately describe the v1.2 five-agent ensemble architecture with 4 scoring dimensions
 **Pitfalls**: Pitfall 8 (staleness -- document principles, not implementation details)
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
 - [ ] 16-01-PLAN.md -- Update docs/ARCHITECTURE.md with v1.2 ensemble architecture principles
+- [ ] 16-02-PLAN.md -- Update README.md and plugins/application-dev/README.md with v1.2 ensemble architecture
 
 ### v2.0 Advanced Discriminators (future)
 
@@ -205,4 +207,4 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 13. Orchestrator Integration | v1.2 | 2/2 | Complete | 2026-04-02 |
 | 14. Enhanced Existing Critics | v1.2 | 1/1 | Complete | 2026-04-03 |
 | 15. Generator Improvements | v1.2 | 2/2 | Complete | 2026-04-03 |
-| 16. Architecture Documentation | v1.2 | 0/1 | Planning | - |
+| 16. Architecture Documentation | v1.2 | 0/2 | Planning | - |
