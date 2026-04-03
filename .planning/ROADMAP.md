@@ -127,14 +127,16 @@ Plans:
 - [x] 15-02-PLAN.md -- Vite+ v0.1.15 refresh + generator.md updates (dependency freshness, Vite+ default, AI hierarchy, vp-first diagnostics)
 
 ### Phase 16: Architecture Documentation
-**Goal**: A reference file grounds the plugin's design in GAN, Cybernetics, and Turing test principles for users and future maintainers
+**Goal**: The existing docs/ARCHITECTURE.md is updated to reflect the full v1.2 ensemble architecture, grounded in GAN, Cybernetics, and Turing test principles
 **Depends on**: Nothing (independent; ordered last so it can reflect the shipped v1.2 architecture)
 **Requirements**: DOCS-01
 **Success Criteria** (what must be TRUE):
-  1. `references/architecture-principles.md` exists and covers GAN principles (Generator/Discriminator separation, convergence detection, information barrier), Cybernetics (damping principle, requisite variety, feedback loop), and Turing test framing (critics as interrogators, product surface as evaluation boundary)
+  1. `docs/ARCHITECTURE.md` covers GAN principles (Generator/Discriminator separation, WGAN continuous scoring, ensemble discriminator, information barrier), Cybernetics (damping principle, requisite variety, feedback loop, EMA smoothing, scaled thresholds, dual-path signals), and Turing test framing (critics as interrogators, product surface as evaluation boundary)
   2. The document focuses on principles (not implementation specifics like file paths or dimension names) so it resists staleness across milestones
 **Pitfalls**: Pitfall 8 (staleness -- document principles, not implementation details)
-**Plans**: TBD (est. 1)
+**Plans**: 1 plan
+Plans:
+- [ ] 16-01-PLAN.md -- Update docs/ARCHITECTURE.md with v1.2 ensemble architecture principles
 
 ### v2.0 Advanced Discriminators (future)
 
@@ -199,8 +201,8 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 9. Crash Recovery | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 10. v1.1 Audit Gap Closure | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 11. Scoring Foundation + Perturbation Critic | v1.2 | 2/2 | Complete | 2026-04-02 |
-| 12. Convergence Logic Hardening | 2/2 | Complete   | 2026-04-02 | - |
-| 13. Orchestrator Integration | 2/2 | Complete    | 2026-04-02 | - |
-| 14. Enhanced Existing Critics | 1/1 | Complete    | 2026-04-03 | - |
-| 15. Generator Improvements | v1.2 | 2/2 | Complete    | 2026-04-03 |
-| 16. Architecture Documentation | v1.2 | 0/0 | Not started | - |
+| 12. Convergence Logic Hardening | v1.2 | 2/2 | Complete | 2026-04-02 |
+| 13. Orchestrator Integration | v1.2 | 2/2 | Complete | 2026-04-02 |
+| 14. Enhanced Existing Critics | v1.2 | 1/1 | Complete | 2026-04-03 |
+| 15. Generator Improvements | v1.2 | 2/2 | Complete | 2026-04-03 |
+| 16. Architecture Documentation | v1.2 | 0/1 | Planning | - |
