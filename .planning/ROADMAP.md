@@ -48,7 +48,7 @@ See `.planning/milestones/v1.1-ROADMAP.md` for full phase details.
 - [x] **Phase 11: Scoring Foundation + Perturbation Critic** - DIMENSIONS constant update, new perturbation-critic agent, Robustness calibration (completed 2026-04-02)
 - [x] **Phase 12: Convergence Logic Hardening** - Scaled thresholds, per-dimension tracking, EMA smoothing (completed 2026-04-02)
 - [x] **Phase 13: Orchestrator Integration** - 3-critic spawn/check/retry/resume, architecture section update (completed 2026-04-02)
-- [ ] **Phase 14: Enhanced Existing Critics** - Cross-page visual consistency, A->B->A navigation testing
+- [x] **Phase 14: Enhanced Existing Critics** - Cross-page visual consistency, A->B->A navigation testing (completed 2026-04-03)
 - [ ] **Phase 15: Generator Improvements** - Browser-agnostic LanguageModel, Vite+ refresh, dependency freshness
 - [ ] **Phase 16: Architecture Documentation** - GAN/Cybernetics/Turing test principles reference file
 
@@ -198,6 +198,6 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 11. Scoring Foundation + Perturbation Critic | v1.2 | 2/2 | Complete | 2026-04-02 |
 | 12. Convergence Logic Hardening | 2/2 | Complete   | 2026-04-02 | - |
 | 13. Orchestrator Integration | 2/2 | Complete    | 2026-04-02 | - |
-| 14. Enhanced Existing Critics | v1.2 | 0/1 | Not started | - |
+| 14. Enhanced Existing Critics | 1/1 | Complete   | 2026-04-03 | - |
 | 15. Generator Improvements | v1.2 | 0/0 | Not started | - |
 | 16. Architecture Documentation | v1.2 | 0/0 | Not started | - |

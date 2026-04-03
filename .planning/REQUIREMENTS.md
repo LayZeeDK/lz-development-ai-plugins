@@ -32,9 +32,9 @@ Requirements for the Dutch Art Museum Test Fixes milestone. Addresses all remain
 
 ### Enhanced Critics
 
-- [ ] **EVAL-01**: Perceptual-critic enhanced with cross-page visual consistency checks (design token extraction, color/typography/spacing comparison across pages)
-- [ ] **EVAL-02**: Projection-critic enhanced with A->B->A navigation testing (round-trip navigation, state persistence, back-button behavior)
-- [ ] **EVAL-03**: Visual Design calibration scenarios in SCORING-CALIBRATION.md updated for expanded cross-page scope
+- [x] **EVAL-01**: Perceptual-critic enhanced with cross-page visual consistency checks (design token extraction, color/typography/spacing comparison across pages)
+- [x] **EVAL-02**: Projection-critic enhanced with A->B->A navigation testing (round-trip navigation, state persistence, back-button behavior)
+- [x] **EVAL-03**: Visual Design calibration scenarios in SCORING-CALIBRATION.md updated for expanded cross-page scope
 
 ### Generator Improvements
 
@@ -101,9 +101,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ORCH-03 | Phase 13 | Complete |
 | ORCH-04 | Phase 13 | Complete |
 | ORCH-05 | Phase 13 | Complete |
-| EVAL-01 | Phase 14 | Pending |
-| EVAL-02 | Phase 14 | Pending |
-| EVAL-03 | Phase 14 | Pending |
+| EVAL-01 | Phase 14 | Complete |
+| EVAL-02 | Phase 14 | Complete |
+| EVAL-03 | Phase 14 | Complete |
 | GEN-01 | Phase 15 | Pending |
 | GEN-02 | Phase 15 | Pending |
 | GEN-03 | Phase 15 | Pending |

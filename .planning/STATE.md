@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dutch Art Museum Test Fixes
 status: verifying
-stopped_at: Completed 13-02-PLAN.md
-last_updated: "2026-04-02T17:41:54.691Z"
-last_activity: 2026-04-02 -- Completed plan 13-02 (SKILL.md 3-critic integration)
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-04-03T15:03:38.414Z"
+last_activity: 2026-04-03 -- Completed plan 14-01 (enhanced existing critics)
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  completed_phases: 4
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Hands-off prompt-to-application development -- not prompt-to-partial-application.
-**Current focus:** v1.2 Dutch Art Museum Test Fixes -- Phase 13 (Orchestrator Integration)
+**Current focus:** v1.2 Dutch Art Museum Test Fixes -- Phase 14 (Enhanced Existing Critics)
 
 ## Current Position
 
-Phase: 13 of 16 (Orchestrator Integration)
-Plan: 2 of 2 (13-02 complete)
-Status: Phase 13 complete -- all plans finished, awaiting verification
-Last activity: 2026-04-02 -- Completed plan 13-02 (SKILL.md 3-critic integration)
+Phase: 14 of 16 (Enhanced Existing Critics)
+Plan: 1 of 1 (14-01 complete)
+Status: Phase 14 complete -- all plans finished, awaiting verification
+Last activity: 2026-04-03 -- Completed plan 14-01 (enhanced existing critics)
 
 Progress: [##########] 100%
 
@@ -86,6 +86,14 @@ Progress: [##########] 100%
 - Architecture section uses two-tier grouping: Planning and Generation / Critic Ensemble
 - All "both critics", "two critics", "Four agents" references eliminated from SKILL.md
 
+### From Phase 14, Plan 01 (Enhanced Existing Critics)
+- Cross-page consistency audit uses write-and-run fingerprinting with 3-tier extraction (shared components, palette discipline, CSS custom properties)
+- Perceptual-critic tool allowlist expanded with Bash(npx playwright test *) for write-and-run audit execution
+- Projection-critic A->B->A round-trip tests use page.goBack() + content assertion, produce FN-X findings
+- Round-trip test results explicitly excluded from acceptance_tests.results[] (Product Depth measures presence, not durability)
+- Shared component divergence ceiling (max 6) added to Visual Design calibration
+- Calibration and methodology updated atomically to prevent desync (Pitfall 2 prevention)
+
 ### v1.2 Phase Dependencies
 - Sequential: Phase 11 -> Phase 12 -> Phase 13
 - Independent (after Phase 11): Phase 14, Phase 15, Phase 16
@@ -96,6 +104,6 @@ Progress: [##########] 100%
 
 ## Session Continuity
 
-Last session: 2026-04-02T17:36:59.202Z
-Stopped at: Completed 13-02-PLAN.md
+Last session: 2026-04-03T15:03:38.412Z
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
