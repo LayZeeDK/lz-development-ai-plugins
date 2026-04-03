@@ -17,6 +17,17 @@
     "plan_check": true,
     "verifier": true,
     "nyquist_validation": true,
+    "auto_advance": false,
+    "ui_phase": false,
+    "ui_safety_gate": false,
+    "research_before_questions": true,
+    "skip_discuss": false,
     "_auto_chain_active": false
+  },
+  "git": {
+    "branching_strategy": "none"
+  },
+  "hooks": {
+    "context_warnings": false
   }
 }
