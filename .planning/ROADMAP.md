@@ -207,4 +207,4 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 13. Orchestrator Integration | v1.2 | 2/2 | Complete | 2026-04-02 |
 | 14. Enhanced Existing Critics | v1.2 | 1/1 | Complete | 2026-04-03 |
 | 15. Generator Improvements | v1.2 | 2/2 | Complete | 2026-04-03 |
-| 16. Architecture Documentation | v1.2 | 2/2 | Complete   | 2026-04-03 |
+| 16. Architecture Documentation | v1.2 | 2/2 | Complete    | 2026-04-03 |
