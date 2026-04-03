@@ -1,9 +1,9 @@
 ---
 phase: 14
 slug: enhanced-existing-critics
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-04-03
 ---
 
@@ -38,10 +38,9 @@ created: 2026-04-03
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 14-01-01 | 01 | 0 | EVAL-01, EVAL-02, EVAL-03 | structural | `node --test tests/phase-14-structural.test.mjs` | No -- Wave 0 creates | pending |
-| 14-02-01 | 02 | 1 | EVAL-01, EVAL-03 | structural | `node --test tests/phase-14-structural.test.mjs` | Yes (from W0) | pending |
-| 14-02-02 | 02 | 1 | EVAL-01 | structural | `node --test tests/phase-14-structural.test.mjs` | Yes (from W0) | pending |
-| 14-03-01 | 03 | 1 | EVAL-02 | structural | `node --test tests/phase-14-structural.test.mjs` | Yes (from W0) | pending |
+| 14-01-01 | 01 | 0 | EVAL-01, EVAL-02, EVAL-03 | structural | `node --test tests/phase-14-structural.test.mjs` | Yes | green |
+| 14-01-02 | 01 | 1 | EVAL-01, EVAL-03 | structural | `node --test tests/phase-14-structural.test.mjs` | Yes | green |
+| 14-01-03 | 01 | 1 | EVAL-02 | structural | `node --test tests/phase-14-structural.test.mjs` | Yes | green |
 
 *Status: pending / green / red / flaky*
 
@@ -49,33 +48,9 @@ created: 2026-04-03
 
 ## Wave 0 Requirements
 
-- [ ] `tests/phase-14-structural.test.mjs` -- structural tests covering EVAL-01, EVAL-02, EVAL-03
+- [x] `tests/phase-14-structural.test.mjs` -- 11 structural assertions covering EVAL-01 (4), EVAL-02 (4), EVAL-03 (3)
 
-Test patterns follow `tests/phase-10-structural.test.mjs`:
-- Import `node:test` (describe/it) and `node:assert/strict`
-- Use `readFileSync` to read plugin files
-- Assert presence/absence of specific strings and structural markers
-- Group by requirement ID using `describe` blocks
-
-**Specific structural assertions:**
-
-EVAL-01:
-- perceptual-critic.md tools array contains `Bash(npx playwright test *)`
-- perceptual-critic.md contains "consistency-audit" in OBSERVE section
-- perceptual-critic.md references `consistency-audit.spec.ts` or `consistency-audit.json`
-
-EVAL-02:
-- projection-critic.md contains "Round-trip" or "round-trip" or "A->B->A"
-- projection-critic.md references `page.goBack()` or `goBack`
-- projection-critic.md mentions FN- finding prefix in round-trip context
-- projection-critic.md states round-trip tests excluded from acceptance_tests.results[]
-
-EVAL-03:
-- SCORING-CALIBRATION.md Visual Design ceiling table has "shared component" or "nav/footer" divergence row
-- SCORING-CALIBRATION.md 6/10 scenario mentions cross-page or nav consistency
-- SCORING-CALIBRATION.md 8/10 scenario contains "ACROSS ALL PAGES" or cross-page language
-
-*If none: "Existing infrastructure covers all phase requirements."*
+All Wave 0 tests created and passing green.
 
 ---
 
@@ -91,11 +66,23 @@ EVAL-03:
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s (measured: 114ms)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** complete
+
+---
+
+## Validation Audit 2026-04-03
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All 11 structural assertions pass. Phase 14 is Nyquist-compliant.
