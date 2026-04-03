@@ -183,7 +183,8 @@ describe('EVAL-03: SCORING-CALIBRATION.md Visual Design calibration update', fun
 
     // Find the Visual Design 8/10 scenario area (Above Threshold)
     const aboveThresholdIndex = content.indexOf('Above Threshold: 8/10', content.indexOf('### Visual Design'));
-    const robustnessIndex = content.indexOf('### Robustness');
+    // Find the next ### heading after the 8/10 scenario (Robustness calibration section)
+    const robustnessIndex = content.indexOf('### Robustness', aboveThresholdIndex);
 
     assert.ok(
       aboveThresholdIndex !== -1,

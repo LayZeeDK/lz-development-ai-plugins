@@ -36,6 +36,7 @@ When a condition is met, the score for that criterion CANNOT exceed the ceiling.
 | All images placeholder | max 3 |
 | No design language match | max 5 |
 | Layout broken on mobile | max 5 |
+| Shared components (nav/footer/header) visually differ across pages | max 6 |
 
 ### Robustness
 
@@ -192,19 +193,19 @@ Not 5 because: A 5 would show some attempt at customization even if the overall 
 
 **At Threshold: 6/10**
 
-The same music app uses a dark background with a custom neon-green accent color. Typography uses a display font for headings (Orbitron) paired with a readable body font. The color palette is cohesive but limited -- neon green on dark gray with no secondary accents. Layout uses a sidebar navigation with album art grid. The design clearly targets the music domain. However: all album images are placeholders (solid color squares), hover states are basic opacity changes, and the player controls at the bottom use default browser audio elements with no custom styling.
+The same music app uses a dark background with a custom neon-green accent color. Typography uses a display font for headings (Orbitron) paired with a readable body font. The color palette is cohesive but limited -- neon green on dark gray with no secondary accents. Layout uses a sidebar navigation with album art grid. The design clearly targets the music domain. Navigation bar uses the same font but a slightly different accent color on the settings page. Heading sizes are consistent across pages. However: all album images are placeholders (solid color squares), hover states are basic opacity changes, and the player controls at the bottom use default browser audio elements with no custom styling.
 
 Score: 6/10 -- The design direction matches the spec. There is intentionality in font and color choices. The domain identity is present. But placeholder images (cosmetic impact since the app is music-focused), unstyled audio controls, and limited interaction design prevent a higher score.
 
-Not 7 because: A 7 requires the design to feel cohesive and complete. Placeholder images in a music app, unstyled core UI (the player), and limited color depth leave visible gaps.
+Not 7 because: A 7 requires visual coherence across all pages. Placeholder images plus the nav color inconsistency show incomplete design execution.
 
 **Above Threshold: 8/10**
 
-The music app has a fully realized dark theme with neon-green and electric-purple accents. Custom typography with an angular display font and clean sans-serif body. Album art displays with custom hover animations (scale + glow effect). The player is fully custom-styled with a waveform visualizer. Navigation uses smooth transitions. The color palette has 4 intentional accent colors used consistently. Responsive design works across breakpoints. One gap: the settings page reverts to a generic form layout that does not match the immersive feel of the rest of the app.
+The music app has a fully realized dark theme with neon-green and electric-purple accents. Custom typography with an angular display font and clean sans-serif body. Album art displays with custom hover animations (scale + glow effect). The player is fully custom-styled with a waveform visualizer. Navigation uses smooth transitions. Color palette has 4 intentional accent colors used consistently ACROSS ALL PAGES. Navigation and footer are visually identical on every page. Responsive design works across breakpoints. One gap: the settings page reverts to a generic form layout that does not match the immersive feel of the rest of the app.
 
-Score: 8/10 -- Strong design identity that clearly matches the spec's "dark, immersive, neon-accented" direction. Intentional typography, color, and interaction design. The inconsistent settings page is the only notable gap.
+Score: 8/10 -- Strong design identity that clearly matches the spec's "dark, immersive, neon-accented" direction. Intentional typography, color, and interaction design. Shared components are consistent across pages. The inconsistent settings page is the only notable gap.
 
-Not 9 because: A 9 requires design excellence throughout. The settings page breaking the design language shows incomplete execution, even though all other pages are strong.
+Not 9 because: The settings page reverts to a generic form layout -- shared components are consistent but page-level design language breaks.
 
 ### Robustness
 
