@@ -24,14 +24,14 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 - v1.1: Behavioral acceptance criteria in SPEC-TEMPLATE.md with testable tier minimums (SPEC-01..05)
 - v1.1: Token-efficient Playwright evaluation patterns with write-and-run and eval-first (PLAYWRIGHT-01..06, TOKEN-01..05)
 - v1.1: Crash recovery via resume-check artifact detection and static production build serving (RECOVERY-01..04)
+- v1.2: Perturbation-critic for Robustness dimension with adversarial testing. Validated in Phase 11 (CRITIC-01..04)
+- v1.2: Convergence logic hardening with scaled thresholds, EMA smoothing, per-dimension tracking. Validated in Phase 12 (CONV-01..05)
+- v1.2: Orchestrator integration for 3-critic ensemble spawn/check/retry/resume. Validated in Phase 13 (ORCH-01..05)
+- v1.2: Enhanced perceptual-critic (cross-page consistency) and projection-critic (A->B->A navigation). Validated in Phase 14 (EVAL-01..03)
+- v1.2: Generator improvements -- browser-built-in-ai meta-skill, Vite+ v0.1.15 refresh, dependency freshness. Validated in Phase 15 (GEN-01..04)
 
 ### Active
 
-- v1.2: Perturbation-critic for Robustness dimension with adversarial testing (CRITIC-01..04)
-- v1.2: Convergence logic hardening with scaled thresholds, EMA smoothing, per-dimension tracking (CONV-01..05)
-- v1.2: Orchestrator integration for 3-critic ensemble spawn/check/retry/resume (ORCH-01..05)
-- v1.2: Enhanced perceptual-critic (cross-page consistency) and projection-critic (A->B->A navigation) (EVAL-01..03)
-- v1.2: Generator improvements -- browser-agnostic LanguageModel, Vite+ refresh, dependency freshness (GEN-01..04)
 - v1.2: Architecture principles documentation grounded in GAN/Cybernetics/Turing test (DOCS-01)
 
 ### Out of Scope
@@ -68,9 +68,9 @@ Shipped v1.1 ensemble discriminator + crash recovery with 8,188 lines across 30 
 
 Tech stack:
 - Orchestrator: SKILL.md with appdev-cli.mjs (13 subcommands including compile-evaluation, install-dep, resume-check, static-serve)
-- Agents: planner.md, generator.md, perceptual-critic.md, projection-critic.md (4 agents)
-- Scoring: 3 dimensions (Product Depth CLI-computed, Functionality, Visual Design), thresholds 7/7/6
-- Skills: 6 bundled (browser-prompt-api, browser-webllm, browser-webnn, playwright-testing, vitest-browser, vite-plus)
+- Agents: planner.md, generator.md, perceptual-critic.md, projection-critic.md, perturbation-critic.md (5 agents)
+- Scoring: 4 dimensions (Product Depth CLI-computed, Functionality, Visual Design, Robustness), thresholds 7/7/6/6
+- Skills: 6 bundled (browser-built-in-ai, browser-webllm, browser-webnn, playwright-testing, vitest-browser, vite-plus)
 - References: 9 files (templates, calibration, probing, slop checklist, Playwright evaluation, acceptance criteria guide)
 - Tests: 57 tests passing (~17.5s)
 
@@ -97,7 +97,8 @@ plugins/application-dev/
     SKILL.md + references/ (3 files)
   skills/vitest-browser/SKILL.md
   skills/vite-plus/SKILL.md
-  skills/browser-prompt-api/SKILL.md
+  skills/browser-built-in-ai/
+    SKILL.md + references/ (5 files)
   skills/browser-webllm/SKILL.md
   skills/browser-webnn/SKILL.md
   agents/
@@ -105,6 +106,7 @@ plugins/application-dev/
     generator.md
     perceptual-critic.md
     projection-critic.md
+    perturbation-critic.md
   scripts/appdev-cli.mjs
   scripts/test-appdev-cli.mjs
   README.md
@@ -167,4 +169,4 @@ Key principle: improve quality by strengthening both sides. The Generator needs 
 | Per-critic retry on failure | Retrying both critics wastes the successful one's work | Good -- targeted recovery |
 
 ---
-*Last updated: 2026-04-02 after v1.1 milestone completion*
+*Last updated: 2026-04-03 after Phase 15 completion*
