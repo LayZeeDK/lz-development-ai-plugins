@@ -108,7 +108,9 @@ Plans:
   2. The projection-critic methodology includes A->B->A navigation test patterns (round-trip navigation, state persistence after navigate-away-and-return, back-button behavior)
   3. SCORING-CALIBRATION.md Visual Design scenarios are updated to account for the expanded cross-page scope so that the calibration anchors match the enhanced methodology
 **Pitfalls**: Pitfall 6 (Visual Design calibration gap -- update calibration scenarios alongside methodology expansion)
-**Plans**: TBD (est. 1-2)
+**Plans**: 1 plan
+Plans:
+- [ ] 14-01-PLAN.md -- Cross-page consistency audit (perceptual-critic), A->B->A round-trip tests (projection-critic), Visual Design calibration update
 
 ### Phase 15: Generator Improvements
 **Goal**: The Generator produces applications with browser-agnostic AI features, current dependencies, and modern Vite+ tooling where compatible
@@ -196,6 +198,6 @@ See `.planning/research/gan-discriminator-taxonomy.md` for the full 50+ type tax
 | 11. Scoring Foundation + Perturbation Critic | v1.2 | 2/2 | Complete | 2026-04-02 |
 | 12. Convergence Logic Hardening | 2/2 | Complete   | 2026-04-02 | - |
 | 13. Orchestrator Integration | 2/2 | Complete    | 2026-04-02 | - |
-| 14. Enhanced Existing Critics | v1.2 | 0/0 | Not started | - |
+| 14. Enhanced Existing Critics | v1.2 | 0/1 | Not started | - |
 | 15. Generator Improvements | v1.2 | 0/0 | Not started | - |
 | 16. Architecture Documentation | v1.2 | 0/0 | Not started | - |
