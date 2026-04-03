@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Claude Code marketplace plugin that turns a short prompt (1-4 sentences) into a complete, working application through autonomous multi-agent development. Uses a GAN-inspired four-agent ensemble architecture (Planner, Generator, Perceptual Critic, Projection Critic) with a deterministic CLI aggregator in an adversarial feedback loop with score-based convergence detection.
+A Claude Code marketplace plugin that turns a short prompt (1-4 sentences) into a complete, working application through autonomous multi-agent development. Uses a GAN-inspired five-agent ensemble architecture (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation Critic) with a deterministic CLI aggregator in an adversarial feedback loop with score-based convergence detection.
 
 ## Core Value
 
@@ -29,10 +29,11 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 - v1.2: Orchestrator integration for 3-critic ensemble spawn/check/retry/resume. Validated in Phase 13 (ORCH-01..05)
 - v1.2: Enhanced perceptual-critic (cross-page consistency) and projection-critic (A->B->A navigation). Validated in Phase 14 (EVAL-01..03)
 - v1.2: Generator improvements -- browser-built-in-ai meta-skill, Vite+ v0.1.15 refresh, dependency freshness. Validated in Phase 15 (GEN-01..04)
+- v1.2: Architecture principles documentation grounded in GAN/Cybernetics/Turing test. Validated in Phase 16 (DOCS-01)
 
 ### Active
 
-- v1.2: Architecture principles documentation grounded in GAN/Cybernetics/Turing test (DOCS-01)
+(none -- v1.2 milestone complete)
 
 ### Out of Scope
 
