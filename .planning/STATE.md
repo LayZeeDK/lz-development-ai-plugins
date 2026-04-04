@@ -57,7 +57,7 @@ Progress: [##########] 100%
 |---|-------------|------|--------|--------|-----------|
 | 260404-ft9 | Resolve issues identified during v1.2 Dutch art museum test | 2026-04-04 | 1f8bd94 | Verified | [260404-ft9-resolve-issues-identified-during-v1-2-du](./quick/260404-ft9-resolve-issues-identified-during-v1-2-du/) |
 | 260404-vqv | Resolve remaining v1.2 patch.0 issues (classification, assets, evaluation commit) | 2026-04-04 | 6875f7d | Verified | [260404-vqv-resolve-issues-identified-during-v1-2-pa](./quick/260404-vqv-resolve-issues-identified-during-v1-2-pa/) |
-| 260405-0az | Prevent hallucinations for real entities (planner entity research + critic detection) | 2026-04-05 | 93042cd | Complete | [260405-0az-prevent-hallucinations-for-real-entities](./quick/260405-0az-prevent-hallucinations-for-real-entities/) |
+| 260405-0az | Prevent hallucinations for real entities (planner entity research + critic detection) | 2026-04-05 | e1aa995 | Verified | [260405-0az-prevent-hallucinations-for-real-entities](./quick/260405-0az-prevent-hallucinations-for-real-entities/) |
 
 ## Session Continuity
 
