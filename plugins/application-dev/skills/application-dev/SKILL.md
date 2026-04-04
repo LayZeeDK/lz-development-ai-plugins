@@ -13,9 +13,8 @@ description: >-
   Runs without user intervention after the initial prompt.
 license: MIT
 compatibility: >-
-  Requires @playwright/cli and @playwright/test as project devDependencies
-  (installed automatically in Step 0.5 workspace setup -- no system PATH
-  dependency).
+  Requires @playwright/test and serve as project devDependencies (installed
+  automatically in Step 0.5 workspace setup -- no system PATH dependency).
   Sub-agents loaded from the plugin's agents/ directory.
 metadata:
   author: Lars Gyrup Brink Nielsen
@@ -141,11 +140,7 @@ Initialize package.json:
 Bash(npm init -y)
 ```
 
-Install @playwright/cli, @playwright/test, and serve as dev dependencies:
-
-```
-Bash(npm install --save-dev @playwright/cli)
-```
+Install @playwright/test and serve as dev dependencies:
 
 ```
 Bash(npm install --save-dev @playwright/test)
@@ -157,6 +152,10 @@ Bash(npm install --save-dev serve)
 
 The `serve` package is the static file server used by critics during evaluation
 of production builds.
+
+Do NOT install @playwright/cli, @anthropic-ai/claude-code-playwright, or any other
+Playwright package besides @playwright/test. Critics use `npx playwright-cli` which
+resolves via npx's remote package resolution -- no local devDependency needed.
 
 Seed .gitignore with harness infrastructure (use Write tool):
 
@@ -319,6 +318,14 @@ Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs compile-evaluation --roun
 exists and contains `## Scores`. Do NOT assess report quality -- the CLI
 compiles mechanically from critic summaries.
 
+**Commit compiled evaluation:** The orchestrator created EVALUATION.md via
+compile-evaluation, so it commits the result for crash recovery and tag integrity.
+
+```
+Bash(git add evaluation/round-N/EVALUATION.md)
+Bash(git commit -m "eval(round-N): compiled evaluation report")
+```
+
 #### Post-Evaluation Convergence Check
 
 Instead of parsing the verdict directly, delegate to appdev-cli:
@@ -438,6 +445,11 @@ Act on the JSON response:
   - Compile evaluation:
     ```
     Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs compile-evaluation --round {N+1})
+    ```
+  - Commit compiled evaluation:
+    ```
+    Bash(git add evaluation/round-{N+1}/EVALUATION.md)
+    Bash(git commit -m "eval(round-{N+1}): compiled evaluation report")
     ```
   - Run convergence check:
     ```

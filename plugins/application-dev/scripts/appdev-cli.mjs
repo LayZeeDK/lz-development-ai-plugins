@@ -1019,7 +1019,7 @@ async function cmdStaticServe(argv) {
     var port = await findAvailablePort(requestedPort);
 
     // Spawn serve process
-    var serveArgs = [absDir, "-l", String(port)];
+    var serveArgs = [absDir, "-l", String(port), "-n"];
 
     if (spa) {
       serveArgs.push("-s");
