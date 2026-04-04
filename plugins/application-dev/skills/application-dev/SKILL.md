@@ -28,21 +28,15 @@ Build a complete application from the user's prompt using five specialized
 agents (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation
 Critic) in an adversarial loop.
 
-## Execution Sequence (Gates)
+**FIRST ACTION -- run this command before doing anything else:**
 
-Every run MUST execute steps in this order. Never skip ahead to a later step.
-Never spawn any agent before the gate for that step is satisfied.
+```
+Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs exists)
+```
 
-| Step | Gate (must be true before step runs) |
-|------|--------------------------------------|
-| 0 | -- (always runs first) |
-| 0.5 | Step 0 dispatch resolved |
-| 1 | `git rev-parse --git-dir` succeeds (repo exists from Step 0.5) |
-| 2 | SPEC.md committed (from Step 1) |
-| 3 | Loop exited with exit_condition (from Step 2) |
-
-If you are about to spawn an agent and a prerequisite gate has not been
-satisfied, STOP and complete the missing steps first.
+Then follow Step 0 dispatch below. Do NOT spawn any agent until Steps 0 and
+0.5 are complete -- the Planner cannot commit SPEC.md without an initialized
+git repo.
 
 ## Rules
 
@@ -65,6 +59,9 @@ satisfied, STOP and complete the missing steps first.
 6. **All agents work in the current working directory.** Do not create a
    separate project directory -- let the Generator organize the project as it
    sees fit.
+7. **First tool call must be `appdev-cli exists`.** Every session starts with
+   `Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs exists)`. No other
+   tool -- especially Agent -- may be called before this completes.
 
 ## Workflow
 
@@ -210,11 +207,13 @@ Bash(git rev-parse --git-dir)
 
 If this fails, STOP -- Step 0.5 was skipped. Go back and complete it.
 
-Spawn the Planner agent with the user's prompt verbatim -- no additions, no
-rewording, no extra instructions:
+Spawn the Planner agent. The prompt string must contain ONLY the user's
+original text -- zero additional characters. If the user typed "Build me an
+app", the prompt is exactly "Build me an app", not "Build me an app. Write
+the spec to ..." or "Build me an app\n\nFocus areas: ...".
 
 ```
-Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim>")
+Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim -- NOTHING else>")
 ```
 
 Apply the error recovery pattern (see Error Recovery section).
