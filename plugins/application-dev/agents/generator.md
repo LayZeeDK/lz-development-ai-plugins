@@ -41,6 +41,33 @@ Read `SPEC.md` and build the full application it describes. Produce a working ap
 
 ## Tech Stack Selection
 
+### Project-Type Classification
+
+Before selecting a stack, classify the project from SPEC.md content:
+
+**Website** (museum, portfolio, blog, landing page, documentation, gallery,
+restaurant, event page): Content-first projects where the primary purpose is
+presenting information. Indicators: mostly static content pages, no complex
+user-generated data, no real-time features, no authenticated user flows.
+
+**App** (dashboard, task manager, chat, editor, game, tool, calculator):
+Interaction-first projects where the primary purpose is user manipulation of
+data or state. Indicators: CRUD operations, persistent user data, rich
+interactive controls, real-time updates, authentication.
+
+**For websites:** Use static HTML, CSS, and vanilla JavaScript. No framework
+runtime, no build step, no SPA router. Serve directly from the filesystem.
+The output should be plain `.html`, `.css`, and `.js` files in a flat or
+shallow directory structure. When recording the production build state, use
+`--build-dir .` (or the directory containing index.html) and `--spa false`.
+
+**For apps:** SPA frameworks (React/Vite, Svelte, etc.) and build tooling
+(Vite+) are appropriate. Follow the stack selection guidance below.
+
+When classification is ambiguous, prefer "website" -- content-focused projects
+do not benefit from framework overhead, and framework defaults (routing,
+favicon, boilerplate) actively harm the product quality for simple sites.
+
 Choose the best technology stack for the product based on your judgment. Consider:
 - The product's requirements and complexity
 - The UI interactions needed (simple pages vs. rich interactive editors)
@@ -94,6 +121,15 @@ Do NOT upgrade dependencies in Round 2+ (fix-only mode, cybernetics damping prin
 
 **Create or extend `.gitignore`.** Add entries appropriate for your tech stack. At minimum include: `node_modules/`, the build output folder (e.g., `dist/`, `build/`, `.next/`), and `.env` if applicable. The orchestrator has already seeded `.gitignore` with `.appdev-state.json`, `.playwright-cli/`, and `node_modules/` -- extend it, do not overwrite.
 
+**Favicon:** Generate a project-appropriate favicon during setup. Do not use
+framework default favicons (Vite logo, React logo, etc.). For websites, create
+a simple SVG favicon that reflects the project's identity (e.g., a museum icon
+for a museum site, a pen icon for a blog). Write it to the project's public/
+root as `favicon.svg` and reference it in the HTML `<head>` with
+`<link rel="icon" type="image/svg+xml" href="/favicon.svg">`. For apps, the
+same principle applies -- the favicon should match the product, not the
+framework.
+
 **First git commit** after setup: `git add <project files> && git commit -m 'feat(<project>): initial project setup with quality tooling'`
 
 **Testing decision framework:** Analyze SPEC.md app type during project setup and choose test emphasis. SPEC.md is the test oracle -- user stories, acceptance criteria, and feature descriptions define what tests verify.
@@ -117,6 +153,15 @@ Do NOT upgrade dependencies in Round 2+ (fix-only mode, cybernetics damping prin
 - Write unit/integration tests alongside each feature (SPEC.md is the test oracle -- verify requirements, not implementation)
 - Run ALL tests (not just new ones) to catch regressions
 - Commit after each major feature with conventional commit messages scoped to the feature, e.g., `feat(editor): implement level editor`, `feat(design): establish visual design system`
+- When a feature requires images (photos, illustrations, icons beyond simple
+  SVG), download them during generation and commit to public/ (or the project's
+  static asset directory). Use `curl -L -o public/images/<filename> <url>` to
+  fetch. Verify the source license permits redistribution (Wikimedia Commons
+  public domain, Unsplash, Pexels, etc.). Include attribution in ASSETS.md.
+  The generated application MUST NOT fetch images from external URLs at runtime
+  -- all images must be bundled locally. Why: external image hosts (Wikimedia,
+  Flickr) rate-limit or block automated requests, producing broken images in
+  the final product.
 
 **Step 4: Implement AI features.** Detect AI-feature requirements in SPEC.md (look for sections or keys named "AI", "assistant", "llm", "on-device", "browser-local", or an explicit 'ai' features block). When AI features are present, use the browser's Built-in AI APIs as the primary approach. Read `${CLAUDE_PLUGIN_ROOT}/skills/browser-built-in-ai/SKILL.md` for the decision tree that routes to the correct API:
 
