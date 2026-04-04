@@ -97,6 +97,56 @@
 
 ---
 
+## Milestone: v1.2 -- Dutch Art Museum Test Fixes
+
+**Shipped:** 2026-04-04
+**Phases:** 6 | **Plans:** 11 | **Sessions:** ~4
+
+### What Was Built
+- Perturbation-critic agent with chaos engineering methodology for Robustness dimension (4-dimension scoring)
+- EMA-smoothed convergence detection with scaled thresholds derived from DIMENSIONS.length and dual-path signal architecture
+- N-critic orchestrator integration: 3-critic parallel spawn, generalized resume-check (spawn-all-critics), per-critic retry
+- Enhanced perceptual-critic with cross-page visual consistency audit (design token extraction, fingerprinting)
+- Enhanced projection-critic with A->B->A round-trip navigation tests and state persistence verification
+- Browser-built-in-ai meta-skill with 7-API decision tree routing replacing single-API browser-prompt-api
+- Vite+ skill refreshed to v0.1.15 with vp CLI workflow and compatibility escape hatch
+- Architecture documentation grounded in GAN, Cybernetics, and Turing test principles (principles-only, no implementation details)
+
+### What Worked
+- Phase dependency structure (3 sequential + 3 independent) allowed parallel execution of Phases 14-16 after the foundation was set
+- DIMENSIONS constant as single source of truth continued to pay off: adding Robustness auto-propagated to all CLI subcommands
+- Principles-only approach for ARCHITECTURE.md: documenting GAN/Cybernetics/Turing test principles rather than file paths means the doc survives milestone changes
+- Milestone audit as pre-completion gate: audit found 4 stale text references ("both critics" -> "all critics") that would have shipped
+- Browser-built-in-ai meta-skill design: 7-API routing SKILL.md + 5 reference files, loaded on demand, stays within plugin context budget
+- Calibration-before-use pattern: writing Robustness ceiling rules and calibration scenarios before the first real evaluation run anchored scoring
+
+### What Was Inefficient
+- Phase 16 (docs) was purely documentation with no code -- manual-only validation strategy was appropriate but the Nyquist auditor still flagged it as "partial"
+- 15-02-SUMMARY.md lacked one_liner field -- same issue as v1.1, still not enforced by tooling
+- Phase 12-13 plan checkboxes in ROADMAP.md were left unchecked despite being complete -- cosmetic but creates confusion during audits
+- Worktree merge conflicts in Phase 15 required manual resolution when parallel plans modified overlapping files
+
+### Patterns Established
+- Dual-path signal architecture: safety-critical decisions (E-IV crisis, PASS) use raw scores, trend decisions (E-0 through E-II) use EMA-smoothed scores
+- Schmitt trigger hysteresis: asymmetric thresholds (2.5% entry vs 5% exit) prevent oscillation at convergence boundaries
+- N-critic generalization: resume-check threshold (>=2 invalid -> spawn-all) and per-critic retry scale to any number of critics
+- Meta-skill pattern: routing SKILL.md with decision tree + reference files loaded on demand for multiple related APIs
+- Principles-only documentation: document design principles, not implementation details, for staleness resistance
+
+### Key Lessons
+1. Milestone audit catches real staleness: 4 "both critics" references survived all phase verifications but were caught by the audit -- always audit before shipping
+2. N-critic generalization pays forward: Phase 13's generalized resume-check and retry logic means v2.0 critics (semantic, accessibility) require zero orchestrator changes
+3. EMA smoothing needs empirical calibration: alpha=0.4 was chosen from ISA-18.2 standards but real score distributions from test runs will validate or adjust
+4. Meta-skill pattern is the right abstraction for related APIs: browser-built-in-ai's 7-API routing is cleaner than 7 separate skills
+5. Worktree parallelization has merge conflict risk: disable for phases where plans modify overlapping files
+
+### Cost Observations
+- Model mix: ~50% opus (quality profile), ~40% sonnet (execution), ~10% haiku (web fetch)
+- Sessions: ~4 sessions over 2 days (faster than v1.0/v1.1 due to smaller scope per phase)
+- Notable: Phase 11 (foundation) was the highest-leverage phase -- DIMENSIONS constant extension auto-propagated to 6+ CLI subcommands
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -105,6 +155,7 @@
 |-----------|----------|--------|------------|
 | v1.0 | 7 | 6 | Established GAN architecture, two-layer enforcement, research-before-planning |
 | v1.1 | ~5 | 4 | Ensemble decomposition, TDD for CLI, audit-driven gap closure phases |
+| v1.2 | ~4 | 6 | N-critic generalization, EMA convergence, dual-path signals, meta-skill pattern |
 
 ### Cumulative Quality
 
@@ -112,10 +163,13 @@
 |-----------|-------|------------|--------------|
 | v1.0 | 7 (check-assets) + 37 (Nyquist) | 5,881 | 43/43 |
 | v1.1 | 57 (CLI + Nyquist) | 8,188 | 34/34 |
+| v1.2 | 57 (CLI + Nyquist) | 9,861 | 22/22 |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Research before designing -- web search for best practices produces concrete artifacts, not vague guidance
-2. Audit before shipping -- integration checkers find real wiring bugs that phase-level verification misses
+2. Audit before shipping -- integration checkers find real wiring bugs that phase-level verification misses (v1.2: 4 stale "both critics" references caught by audit)
 3. Always run gsd-verifier after phase execution -- orphaned requirements create unnecessary audit revisions and gap-closure phases (v1.1: 14 orphaned reqs from Phase 7)
 4. TDD for CLI subcommands -- 57 tests caught edge cases in resume-check, install-dep mutex, and static-serve that interactive testing would miss
+5. Single source of truth constants (DIMENSIONS) auto-propagate changes -- adding Robustness in v1.2 required zero manual updates to CLI subcommands
+6. Populate SUMMARY.md one_liner fields during execution -- missing in both v1.1 and v1.2, still not enforced by tooling

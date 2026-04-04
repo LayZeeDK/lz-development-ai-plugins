@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Claude Code marketplace plugin that turns a short prompt (1-4 sentences) into a complete, working application through autonomous multi-agent development. Uses a GAN-inspired five-agent ensemble architecture (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation Critic) with a deterministic CLI aggregator in an adversarial feedback loop with score-based convergence detection.
+A Claude Code marketplace plugin that turns a short prompt (1-4 sentences) into a complete, working application through autonomous multi-agent development. Uses a GAN-inspired five-agent ensemble architecture (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation Critic) with a deterministic CLI aggregator in an adversarial feedback loop with EMA-smoothed score-based convergence detection and 4 scoring dimensions (Product Depth, Functionality, Visual Design, Robustness).
 
 ## Core Value
 
@@ -33,7 +33,7 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 
 ### Active
 
-(none -- v1.2 milestone complete)
+(none -- planning next milestone)
 
 ### Out of Scope
 
@@ -49,30 +49,34 @@ Hands-off prompt-to-application development -- not prompt-to-partial-application
 - Separate cross-validation gate -- combinatorial explosion: N features -> N*(N-1)/2 pairs
 - Agent teams (experimental Claude Code feature) -- critical bugs (#30499, #24316, #31977)
 
-## Current Milestone: v1.2 Dutch Art Museum Test Fixes
+## Current State (post v1.2)
 
-**Goal:** Address all remaining issues from the Dutch art museum website test #1: perturbation-critic (Robustness), scoring convergence logic, planner/generator improvements, Visual Coherence expansion, architecture documentation.
+Shipped v1.2 Dutch Art Museum Test Fixes on 2026-04-04. All 22 requirements satisfied, milestone audit passed.
 
-**Target features:**
-- New perturbation-critic for Robustness dimension (adversarial testing)
-- Enhanced perceptual-critic for Visual Coherence (cross-page consistency)
-- Enhanced projection-critic for deeper Functionality (A->B->A navigation)
-- CLI-decided verdict with convergence logic hardening
-- Generator improvements: Vite+ adoption, dependency freshness, browser-agnostic LanguageModel
+**Shipped features (v1.2):**
+- New perturbation-critic for Robustness dimension (adversarial testing, chaos engineering)
+- EMA-smoothed convergence detection with scaled thresholds and dual-path signal architecture
+- N-critic orchestrator integration (3-critic parallel spawn, generalized resume-check)
+- Enhanced perceptual-critic (cross-page visual consistency audit)
+- Enhanced projection-critic (A->B->A round-trip navigation tests)
+- Browser-built-in-ai meta-skill (7-API routing, Chrome/Edge, graceful degradation)
 - Architecture documentation grounded in GAN/Cybernetics/Turing test principles
+
+**Next milestone:** TBD -- run `/gsd:new-milestone` to define
 
 ## Context
 
-### Current State (post v1.1)
+### Current State (post v1.2)
 
-Shipped v1.1 ensemble discriminator + crash recovery with 8,188 lines across 30 plugin files.
+Shipped v1.2 with 9,861 lines across 34 plugin files.
 
 Tech stack:
 - Orchestrator: SKILL.md with appdev-cli.mjs (13 subcommands including compile-evaluation, install-dep, resume-check, static-serve)
 - Agents: planner.md, generator.md, perceptual-critic.md, projection-critic.md, perturbation-critic.md (5 agents)
 - Scoring: 4 dimensions (Product Depth CLI-computed, Functionality, Visual Design, Robustness), thresholds 7/7/6/6
-- Skills: 6 bundled (browser-built-in-ai, browser-webllm, browser-webnn, playwright-testing, vitest-browser, vite-plus)
-- References: 9 files (templates, calibration, probing, slop checklist, Playwright evaluation, acceptance criteria guide)
+- Convergence: EMA-smoothed (alpha=0.4), scaled thresholds from DIMENSIONS.length, dual-path signals (safety/hybrid/trend)
+- Skills: 7 bundled (browser-built-in-ai, browser-webllm, browser-webnn, playwright-testing, vitest-browser, vite-plus)
+- References: 14 files (templates, calibration, probing, slop checklist, Playwright evaluation, acceptance criteria guide, architecture principles, browser-built-in-ai references)
 - Tests: 57 tests passing (~17.5s)
 
 ### Plugin structure (post v1.1)
@@ -168,6 +172,11 @@ Key principle: improve quality by strengthening both sides. The Generator needs 
 | Artifact-based crash recovery | resume-check reads state JSON + filesystem for 4 recovery states | Good -- survives any crash point |
 | Static production builds over dev servers | Dev servers are fragile, leak ports, and can't be resumed | Good -- static-serve is idempotent |
 | Per-critic retry on failure | Retrying both critics wastes the successful one's work | Good -- targeted recovery |
+| EMA smoothing for convergence (alpha=0.4) | Raw scores too noisy for reliable trend detection | Good -- dual-path signals: safety=raw, trend=EMA |
+| Dual-path signal architecture | Different escalation levels need different noise tolerance | Good -- Schmitt trigger hysteresis prevents oscillation |
+| N-critic generalized resume-check | Hard-coding critic count breaks when adding critics | Good -- spawn-all-critics threshold (>=2 invalid) |
+| Browser-built-in-ai meta-skill | Single browser-prompt-api too narrow; 7 APIs available | Good -- decision tree routing with graceful degradation |
+| Principles-only ARCHITECTURE.md | Implementation details cause staleness across milestones | Good -- zero file paths or threshold numbers |
 
 ---
-*Last updated: 2026-04-03 after Phase 15 completion*
+*Last updated: 2026-04-04 after v1.2 milestone*
