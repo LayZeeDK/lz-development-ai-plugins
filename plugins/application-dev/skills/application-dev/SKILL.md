@@ -264,26 +264,49 @@ Update state and set expected critics:
 Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs update --step evaluate --critics perceptual,projection,perturbation --round N)
 ```
 
-Spawn all three critics in parallel:
+Spawn critics sequentially (one at a time, not in parallel). Sequential
+spawning reduces memory pressure and avoids agent-freeze platform bugs in
+long-running multi-agent sessions. See platform bug context below.
 
 ```
 Agent(subagent_type: "application-dev:perceptual-critic", prompt: "This is evaluation round N.")
+```
+
+Apply the error recovery pattern. Binary check:
+```
+Bash(ls evaluation/round-N/perceptual/summary.json 2>/dev/null)
+```
+
+```
 Agent(subagent_type: "application-dev:projection-critic", prompt: "This is evaluation round N.")
+```
+
+Apply the error recovery pattern. Binary check:
+```
+Bash(ls evaluation/round-N/projection/summary.json 2>/dev/null)
+```
+
+```
 Agent(subagent_type: "application-dev:perturbation-critic", prompt: "This is evaluation round N.")
 ```
 
-Apply the error recovery pattern per critic (see below).
-
-**Binary checks:** Verify all three critics produced their summary artifacts:
-
+Apply the error recovery pattern. Binary check:
 ```
-Bash(ls evaluation/round-N/perceptual/summary.json 2>/dev/null)
-Bash(ls evaluation/round-N/projection/summary.json 2>/dev/null)
 Bash(ls evaluation/round-N/perturbation/summary.json 2>/dev/null)
 ```
 
 If any summary.json is missing, retry the SPECIFIC critic that failed (not
 all) with the same prompt. Counts toward the 2-retry limit per critic.
+
+**Commit evaluation artifacts:** After all three summary.json files exist,
+commit them to enable crash recovery. If the session dies during
+compile-evaluation or afterward, resume-check can detect the committed
+summaries and skip directly to compile-evaluation.
+
+```
+Bash(git add evaluation/round-N/)
+Bash(git commit -m "eval(round-N): critic summaries")
+```
 
 **Compile evaluation:** After all three summary.json files exist, compile the
 ensemble evaluation report:
@@ -383,13 +406,35 @@ Act on the JSON response:
     Agent(subagent_type: "application-dev:generator", prompt: "This is generation round {N+1}.")
     ```
   - Binary check (project files exist)
-  - Spawn all three critics in parallel:
+  - Spawn critics sequentially (one at a time, not in parallel):
     ```
     Agent(subagent_type: "application-dev:perceptual-critic", prompt: "This is evaluation round {N+1}.")
+    ```
+    Apply the error recovery pattern. Binary check:
+    ```
+    Bash(ls evaluation/round-{N+1}/perceptual/summary.json 2>/dev/null)
+    ```
+    ```
     Agent(subagent_type: "application-dev:projection-critic", prompt: "This is evaluation round {N+1}.")
+    ```
+    Apply the error recovery pattern. Binary check:
+    ```
+    Bash(ls evaluation/round-{N+1}/projection/summary.json 2>/dev/null)
+    ```
+    ```
     Agent(subagent_type: "application-dev:perturbation-critic", prompt: "This is evaluation round {N+1}.")
     ```
-  - Binary checks (all three summary.json files exist)
+    Apply the error recovery pattern. Binary check:
+    ```
+    Bash(ls evaluation/round-{N+1}/perturbation/summary.json 2>/dev/null)
+    ```
+    If any summary.json is missing, retry the SPECIFIC critic that failed (not
+    all) with the same prompt. Counts toward the 2-retry limit per critic.
+  - Commit evaluation artifacts:
+    ```
+    Bash(git add evaluation/round-{N+1}/)
+    Bash(git commit -m "eval(round-{N+1}): critic summaries")
+    ```
   - Compile evaluation:
     ```
     Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs compile-evaluation --round {N+1})
@@ -557,7 +602,7 @@ Five agents with distinct roles:
 
 The Generator and critics form an adversarial pair -- the critics' honest
 assessment drives the Generator to improve. Separating generation from
-evaluation prevents self-praise bias. The three critics run in parallel with
+evaluation prevents self-praise bias. The three critics run sequentially with
 non-overlapping scoring dimensions, and the CLI compiles their outputs into a
 unified EVALUATION.md.
 
@@ -569,3 +614,29 @@ only.
 Convergence detection uses escalation levels (E-0 through E-IV) computed by
 appdev-cli from score trajectory data. The orchestrator acts on the structured
 JSON response without interpreting scores directly.
+
+## Platform Bug Context
+
+The following Claude Code platform bugs affect multi-agent orchestration.
+The plugin's architecture already includes workarounds (binary file-exists
+checks, sequential critic spawning, commit checkpoints), but awareness of
+root causes helps interpret unexpected behavior during long sessions.
+
+- **Agent freeze** (#37521): Agents and subagents can freeze indefinitely on
+  Opus 4.6. No timeout mechanism exists. Sequential critic spawning reduces
+  exposure. If a critic appears stuck, the session may need to be restarted.
+- **Memory leak** (#32304): Multi-agent sessions leak memory aggressively
+  (18-92 GB/hour in ArrayBuffers). The commit checkpoint after critics ensures
+  evaluation artifacts survive if the process crashes from memory exhaustion.
+- **Subagent context exhaustion** (#14867): Subagents have no auto-compact.
+  Critics have ~60K token budgets. The write-and-run pattern and summary
+  reporters keep critics within budget.
+- **Context dump to parent** (#14118): When a subagent exhausts context, its
+  full tool log may dump into the parent. Binary file-exists checks avoid
+  parsing agent output, limiting blast radius.
+- **Output lost after compaction** (#23821): Context compaction in the parent
+  can lose subagent return values. Binary file-exists checks re-discover
+  completion state. The commit checkpoint adds a second durability layer.
+
+These bugs are tracked upstream. No plugin-level fix is possible for most of
+them -- the mitigations above are defense-in-depth.
