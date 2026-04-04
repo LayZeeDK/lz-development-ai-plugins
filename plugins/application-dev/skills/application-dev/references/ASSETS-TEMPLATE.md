@@ -7,14 +7,14 @@ and whether its URL has been verified.
 
 ## Asset Manifest
 
-| Asset | Type | Source | License | Attribution | URL | Verified |
-|-------|------|--------|---------|-------------|-----|----------|
-| hero-background.webp | image | web-search | CC0 | Unsplash / @photographer | https://unsplash.com/photos/abc123 | yes |
-| app-logo.svg | icon | procedural/SVG | N/A | N/A | local | yes |
-| inter-variable.woff2 | font | bundled-dependency | OFL-1.1 | Google Fonts | https://fonts.google.com/specimen/Inter | yes |
-| onboarding-demo.mp4 | video | generated | N/A | N/A | local | yes |
-| product-photo.jpg | image | stock-api | CC-BY-4.0 | Pexels / @creator | https://www.pexels.com/photo/123456 | no |
-| notification.mp3 | audio | user-provided | unknown | User-supplied | local | yes |
+| Asset | Type | Source | License | Attribution | Local Path | URL | Verified |
+|-------|------|--------|---------|-------------|------------|-----|----------|
+| hero-background.webp | image | web-search | CC0 | Unsplash / @photographer | public/images/hero-background.webp | https://unsplash.com/photos/abc123 | yes |
+| app-logo.svg | icon | procedural/SVG | N/A | N/A | public/favicon.svg | N/A | yes |
+| inter-variable.woff2 | font | bundled-dependency | OFL-1.1 | Google Fonts | public/fonts/inter-variable.woff2 | https://fonts.google.com/specimen/Inter | yes |
+| onboarding-demo.mp4 | video | generated | N/A | N/A | public/media/onboarding-demo.mp4 | N/A | yes |
+| product-photo.jpg | image | stock-api | CC-BY-4.0 | Pexels / @creator | public/images/product-photo.jpg | https://www.pexels.com/photo/123456 | no |
+| notification.mp3 | audio | user-provided | unknown | User-supplied | public/audio/notification.mp3 | N/A | yes |
 
 ## Column Definitions
 
@@ -30,7 +30,13 @@ and whether its URL has been verified.
 - **License** -- `MIT`, `CC0`, `CC-BY-4.0`, `OFL-1.1`, `proprietary`,
   `unknown`, or `N/A` (for locally generated assets)
 - **Attribution** -- required credit text, or `N/A` if none required
-- **URL** -- external source URL, or `local` for generated/bundled assets
+- **Local Path** -- relative path to the asset file in the project, or `N/A`
+  for assets referenced only by URL (e.g., CDN fonts loaded at runtime). For
+  bundled images, this is the path in public/ or the static asset directory.
+- **URL** -- original external source URL. For web-search and stock-api
+  sources, this is the page or direct download link. For locally generated or
+  procedural assets, use `N/A`. Never write `local` in this column -- use the
+  Local Path column for filesystem paths.
 - **Verified** -- `yes` if the URL was checked with `check-assets` or
   visually confirmed; `no` if pending verification
 

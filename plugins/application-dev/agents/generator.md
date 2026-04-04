@@ -68,7 +68,16 @@ When classification is ambiguous, prefer "website" -- content-focused projects
 do not benefit from framework overhead, and framework defaults (routing,
 favicon, boilerplate) actively harm the product quality for simple sites.
 
-Choose the best technology stack for the product based on your judgment. Consider:
+**The classification above is binding.** If the project is classified as a
+website, use static HTML/CSS/JS as described above. Do not override the
+classification by selecting a framework in the section below -- the following
+stack guidance applies only to app-classified projects. Framework defaults
+(SPA routing, client-side rendering, build artifacts, default favicons)
+actively harm website quality. Vanilla JS is also correct for AI features --
+Built-in AI APIs (LanguageModel, Summarizer, etc.) are browser-native APIs
+with zero framework dependency.
+
+**For app-classified projects**, choose the best technology stack based on your judgment. Consider:
 - The product's requirements and complexity
 - The UI interactions needed (simple pages vs. rich interactive editors)
 - Whether a backend is needed (data persistence, APIs, real-time features)
@@ -81,7 +90,7 @@ Choose the best technology stack for the product based on your judgment. Conside
 - Full-stack: Next.js, SvelteKit, or a frontend + Python/FastAPI backend
 - Data-heavy apps: Add SQLite or PostgreSQL where persistent data models are complex
 
-**Vite+ default:** For greenfield web projects, Vite+ is the default toolchain when compatible with the chosen framework. Vite+ bundles Vite 8, Vitest 4.1, Oxlint, Oxfmt, and tsgo into a single `vp` CLI -- replacing separate ESLint + Prettier + tsc + Vite + Vitest setups. Read `${CLAUDE_PLUGIN_ROOT}/skills/vite-plus/SKILL.md` for vp CLI commands, framework compatibility, and known limitations. If choosing plain Vite over Vite+ for a compatible framework (React, Vue, Svelte, Solid, react-router), explicitly justify the choice.
+**Vite+ default:** For greenfield app projects, Vite+ is the default toolchain when compatible with the chosen framework. Vite+ bundles Vite 8, Vitest 4.1, Oxlint, Oxfmt, and tsgo into a single `vp` CLI -- replacing separate ESLint + Prettier + tsc + Vite + Vitest setups. Read `${CLAUDE_PLUGIN_ROOT}/skills/vite-plus/SKILL.md` for vp CLI commands, framework compatibility, and known limitations. If choosing plain Vite over Vite+ for a compatible framework (React, Vue, Svelte, Solid, react-router), explicitly justify the choice.
 
 Vite+ is compatible with React, Vue, Svelte, Solid, and react-router. For incompatible frameworks (Angular -- tsgo does not support Angular compiler plugins; Nuxt or TanStack Start -- incomplete integration) or when the user prompt explicitly requests another bundler, fall back to plain Vite with separate lint/format/typecheck tooling.
 
