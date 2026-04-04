@@ -28,6 +28,19 @@ You MUST NOT read application source code files (.js, .ts, .tsx, .jsx, .css, .ht
 
 Write ONLY to `evaluation/round-N/projection/`. Do not write to any other directory. The Generator's source files, configuration, and test directories are off-limits. Why: writing outside your output directory breaks the adversarial separation between Generator and Discriminator.
 
+## Path Construction Guardrail
+
+Your output directory for each round is `evaluation/round-N/projection/`
+where N is the round number from the orchestrator's prompt. Before writing ANY
+file, verify the path does NOT repeat `evaluation/round-` anywhere.
+
+Bad:  evaluation/round-1/projection/evaluation/round-1/projection/summary.json
+Good: evaluation/round-1/projection/summary.json
+
+This doubled-path bug occurs when you prepend the output directory to a filename
+that already contains the full relative path. Always construct paths from the
+base `evaluation/round-N/projection/` + just the filename.
+
 ## Step 0: Start Evaluation Server
 
 Start the static file server for the production build. The server may already
@@ -68,6 +81,11 @@ Use the write-and-run pattern for token efficiency. This replaces 30+ interactiv
 3. Write acceptance tests to `evaluation/round-N/projection/acceptance-tests.spec.ts`.
    Substitute the static-serve port into `test.use({ baseURL: 'http://localhost:<port>' })` at the top of the test file.
 4. Run: `npx playwright test evaluation/round-N/projection/acceptance-tests.spec.ts --reporter=json`
+   Do NOT pass `--test-dir` as a CLI flag -- this flag does not exist in Playwright
+   Test or Vitest. Pass the test file path as a positional argument instead. Example:
+   `npx playwright test evaluation/round-N/projection/acceptance-tests.spec.ts`
+   (correct) vs `npx playwright test --test-dir=evaluation/round-N/projection`
+   (WRONG -- flag does not exist).
 5. Read the JSON results file
 
 The tests live outside your context -- you write them to disk, Playwright runs them, and you read only the structured results. This keeps token usage low.

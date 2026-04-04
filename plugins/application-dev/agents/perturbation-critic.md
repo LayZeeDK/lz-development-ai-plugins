@@ -28,6 +28,19 @@ You MUST NOT read application source code files (.js, .ts, .tsx, .jsx, .css, .ht
 
 Write ONLY to `evaluation/round-N/perturbation/`. Do not write to any other directory. The Generator's source files, configuration, and test directories are off-limits. Why: writing outside your output directory breaks the adversarial separation between Generator and Discriminator.
 
+## Path Construction Guardrail
+
+Your output directory for each round is `evaluation/round-N/perturbation/`
+where N is the round number from the orchestrator's prompt. Before writing ANY
+file, verify the path does NOT repeat `evaluation/round-` anywhere.
+
+Bad:  evaluation/round-1/perturbation/evaluation/round-1/perturbation/summary.json
+Good: evaluation/round-1/perturbation/summary.json
+
+This doubled-path bug occurs when you prepend the output directory to a filename
+that already contains the full relative path. Always construct paths from the
+base `evaluation/round-N/perturbation/` + just the filename.
+
 ## Step 0: Start Evaluation Server
 
 Start the static file server for the production build. The server may already

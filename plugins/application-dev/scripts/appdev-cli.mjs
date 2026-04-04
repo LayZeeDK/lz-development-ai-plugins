@@ -990,6 +990,31 @@ async function cmdStaticServe(argv) {
   }
 
   try {
+    // Re-read state after acquiring mutex to prevent TOCTOU race.
+    // Without this, concurrent critics all pass the pre-lock idempotent check
+    // with stale state, then each spawns a separate server inside the lock.
+    state = readState();
+
+    if (!state.servers) {
+      state.servers = [];
+    }
+
+    for (var j = 0; j < state.servers.length; j++) {
+      var dup = state.servers[j];
+
+      if (dup.dir === dir && isPidAlive(dup.pid)) {
+        try { rmdirSync(lockDir); } catch (e) {}
+        output({ server: dup, reused: true });
+
+        return;
+      }
+
+      if (dup.dir === dir) {
+        state.servers.splice(j, 1);
+        j--;
+      }
+    }
+
     // Find available port
     var port = await findAvailablePort(requestedPort);
 
