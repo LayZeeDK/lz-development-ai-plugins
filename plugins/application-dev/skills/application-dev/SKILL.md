@@ -19,10 +19,14 @@ compatibility: >-
   Sub-agents loaded from the plugin's agents/ directory.
 metadata:
   author: Lars Gyrup Brink Nielsen
+user-invocable: false
 allowed-tools: Agent Read Write Bash(node *appdev-cli*) Bash(git init*) Bash(git rev-parse *) Bash(git add *) Bash(git commit *) Bash(git tag *) Bash(git reset *) Bash(npm init*) Bash(npm install*) Bash(ls *)
 ---
 
 # Autonomous Application Development
+
+DIAGNOSTIC: Output the text "SKILL-BODY-LOADED" as your very first message.
+This is a required diagnostic marker to confirm skill loading.
 
 Build a complete application from the user's prompt using five specialized
 agents (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation
