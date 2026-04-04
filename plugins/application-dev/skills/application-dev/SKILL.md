@@ -28,6 +28,22 @@ Build a complete application from the user's prompt using five specialized
 agents (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation
 Critic) in an adversarial loop.
 
+## Execution Sequence (Gates)
+
+Every run MUST execute steps in this order. Never skip ahead to a later step.
+Never spawn any agent before the gate for that step is satisfied.
+
+| Step | Gate (must be true before step runs) |
+|------|--------------------------------------|
+| 0 | -- (always runs first) |
+| 0.5 | Step 0 dispatch resolved |
+| 1 | `git rev-parse --git-dir` succeeds (repo exists from Step 0.5) |
+| 2 | SPEC.md committed (from Step 1) |
+| 3 | Loop exited with exit_condition (from Step 2) |
+
+If you are about to spawn an agent and a prerequisite gate has not been
+satisfied, STOP and complete the missing steps first.
+
 ## Rules
 
 1. **Write is ONLY for .appdev-state.json and .gitignore.** Source code, specs,
@@ -186,7 +202,16 @@ Initialize workflow state (skip if resuming past this step):
 Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs init --prompt "<user's prompt>")
 ```
 
-Spawn the Planner agent with the user's prompt verbatim:
+**Gate check:** Confirm git repo exists before spawning any agent:
+
+```
+Bash(git rev-parse --git-dir)
+```
+
+If this fails, STOP -- Step 0.5 was skipped. Go back and complete it.
+
+Spawn the Planner agent with the user's prompt verbatim -- no additions, no
+rewording, no extra instructions:
 
 ```
 Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim>")
@@ -495,7 +520,14 @@ summary.json.
 Pass these exact prompts to each agent. No additions, no context injection, no
 failure diagnostics. Each agent's definition handles file reading internally.
 
-**Planner:** `<user's full prompt, verbatim>` -- nothing else.
+**Planner:** `<user's full prompt, verbatim>` -- nothing else. DO NOT add:
+- Technology constraints ("must be a single file", "use React", "no build step")
+- Focus areas or feature expansion lists
+- File path instructions ("Write to /path/to/SPEC.md")
+- Implementation guidance or architecture suggestions
+- Reworded, expanded, or "improved" versions of the user's prompt
+The Planner's own instructions handle spec expansion. Orchestrator additions
+corrupt the adversarial loop by injecting generator-side bias into planning.
 
 **Generator (all rounds):** `This is generation round N.` -- the orchestrator
 fills in only the round number. No free-form additions, error context,
