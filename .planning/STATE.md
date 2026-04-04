@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 Phase: (none -- milestone complete)
 Plan: (none)
 Status: v1.2 shipped -- run /gsd:new-milestone for next
-Last activity: 2026-04-04
+Last activity: 2026-04-04 - Completed quick task 260404-ft9: Resolve issues identified during v1.2 Dutch art museum test
 
 Progress: [##########] 100%
 
@@ -50,6 +50,12 @@ Progress: [##########] 100%
 ### Blockers/Concerns
 
 (none -- cleared for next milestone)
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260404-ft9 | Resolve issues identified during v1.2 Dutch art museum test | 2026-04-04 | 1f8bd94 | Verified | [260404-ft9-resolve-issues-identified-during-v1-2-du](./quick/260404-ft9-resolve-issues-identified-during-v1-2-du/) |
 
 ## Session Continuity
 
