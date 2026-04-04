@@ -29,16 +29,6 @@ Build a complete application from the user's prompt using five specialized
 agents (Planner, Generator, Perceptual Critic, Projection Critic, Perturbation
 Critic) in an adversarial loop.
 
-**FIRST ACTION -- run this command before doing anything else:**
-
-```
-Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs exists)
-```
-
-Then follow Step 0 dispatch below. Do NOT spawn any agent until Steps 0 and
-0.5 are complete -- the Planner cannot commit SPEC.md without an initialized
-git repo.
-
 ## Rules
 
 1. **Write is ONLY for .appdev-state.json and .gitignore.** Source code, specs,
@@ -60,9 +50,6 @@ git repo.
 6. **All agents work in the current working directory.** Do not create a
    separate project directory -- let the Generator organize the project as it
    sees fit.
-7. **First tool call must be `appdev-cli exists`.** Every session starts with
-   `Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs exists)`. No other
-   tool -- especially Agent -- may be called before this completes.
 
 ## Workflow
 
@@ -200,21 +187,10 @@ Initialize workflow state (skip if resuming past this step):
 Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs init --prompt "<user's prompt>")
 ```
 
-**Gate check:** Confirm git repo exists before spawning any agent:
+Spawn the Planner agent with the user's prompt verbatim:
 
 ```
-Bash(git rev-parse --git-dir)
-```
-
-If this fails, STOP -- Step 0.5 was skipped. Go back and complete it.
-
-Spawn the Planner agent. The prompt string must contain ONLY the user's
-original text -- zero additional characters. If the user typed "Build me an
-app", the prompt is exactly "Build me an app", not "Build me an app. Write
-the spec to ..." or "Build me an app\n\nFocus areas: ...".
-
-```
-Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim -- NOTHING else>")
+Agent(subagent_type: "application-dev:planner", prompt: "<user's full prompt, verbatim>")
 ```
 
 Apply the error recovery pattern (see Error Recovery section).
@@ -520,14 +496,7 @@ summary.json.
 Pass these exact prompts to each agent. No additions, no context injection, no
 failure diagnostics. Each agent's definition handles file reading internally.
 
-**Planner:** `<user's full prompt, verbatim>` -- nothing else. DO NOT add:
-- Technology constraints ("must be a single file", "use React", "no build step")
-- Focus areas or feature expansion lists
-- File path instructions ("Write to /path/to/SPEC.md")
-- Implementation guidance or architecture suggestions
-- Reworded, expanded, or "improved" versions of the user's prompt
-The Planner's own instructions handle spec expansion. Orchestrator additions
-corrupt the adversarial loop by injecting generator-side bias into planning.
+**Planner:** `<user's full prompt, verbatim>` -- nothing else.
 
 **Generator (all rounds):** `This is generation round N.` -- the orchestrator
 fills in only the round number. No free-form additions, error context,
