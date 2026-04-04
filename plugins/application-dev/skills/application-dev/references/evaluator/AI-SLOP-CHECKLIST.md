@@ -27,6 +27,7 @@ Visual patterns that indicate AI-generated default design rather than intentiona
 - Headlines that say nothing specific: "Build the future", "Your all-in-one platform", "Scale without limits"
 - Lorem ipsum or "Coming soon" placeholders
 - Stock photo aesthetic (glossy, over-lit, perfect) rather than intentional photography
+- Fabricated facts about named real-world entities: invented services, hallucinated client lists, imaginary company capabilities, or made-up product offerings that do not match the entity's actual business
 
 ## Motion Slop
 
