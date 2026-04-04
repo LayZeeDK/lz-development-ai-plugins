@@ -56,7 +56,7 @@ Progress: [##########] 100%
 | # | Description | Date | Commit | Status | Directory |
 |---|-------------|------|--------|--------|-----------|
 | 260404-ft9 | Resolve issues identified during v1.2 Dutch art museum test | 2026-04-04 | 1f8bd94 | Verified | [260404-ft9-resolve-issues-identified-during-v1-2-du](./quick/260404-ft9-resolve-issues-identified-during-v1-2-du/) |
-| 260404-vqv | Resolve remaining v1.2 patch.0 issues (classification, assets, evaluation commit) | 2026-04-04 | 8a1776e | Verified | [260404-vqv-resolve-issues-identified-during-v1-2-pa](./quick/260404-vqv-resolve-issues-identified-during-v1-2-pa/) |
+| 260404-vqv | Resolve remaining v1.2 patch.0 issues (classification, assets, evaluation commit) | 2026-04-04 | 6875f7d | Verified | [260404-vqv-resolve-issues-identified-during-v1-2-pa](./quick/260404-vqv-resolve-issues-identified-during-v1-2-pa/) |
 
 ## Session Continuity
 
