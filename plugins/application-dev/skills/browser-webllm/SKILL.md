@@ -8,8 +8,8 @@ description: >-
   Qwen, DeepSeek, Mistral) for in-browser inference, implementing
   OpenAI-compatible chat completions with WebGPU acceleration, streaming LLM
   responses in the browser, or selecting and loading models at runtime.
-  Do NOT trigger for server-side inference, the browser's built-in Prompt API
-  (use browser-prompt-api instead), or neural network graph construction
+  Do NOT trigger for server-side inference, the browser's built-in AI APIs
+  (use browser-built-in-ai instead), or neural network graph construction
   (use browser-webnn instead).
 ---
 

@@ -868,7 +868,7 @@ function cmdResumeCheck() {
     var evalPath = join(roundDir, "EVALUATION.md");
 
     if (!validateEvaluation(evalPath)) {
-      output({ next_action: "compile-evaluation", round: round, details: "Both summaries valid, EVALUATION.md missing" });
+      output({ next_action: "compile-evaluation", round: round, details: "All summaries valid, EVALUATION.md missing" });
 
       return;
     }

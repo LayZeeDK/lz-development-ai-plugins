@@ -10,7 +10,7 @@ description: >-
   Trigger when: SPEC.md references WebNN, neural network inference, on-device
   ML, image classification, audio processing, NPU acceleration, or ONNX models
   in the browser. Do NOT trigger for LLM chat or text generation (use
-  browser-prompt-api or browser-webllm), or for non-browser environments
+  browser-built-in-ai or browser-webllm), or for non-browser environments
   (WebNN is browser-only, inference-only).
 tags:
   - webnn

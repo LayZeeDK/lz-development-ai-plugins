@@ -518,6 +518,8 @@ Agents communicate through these file types:
   round, CLI reads it during compile-evaluation
 - `evaluation/round-N/projection/summary.json` -- Projection Critic writes per
   round, CLI reads it during compile-evaluation
+- `evaluation/round-N/perturbation/summary.json` -- Perturbation Critic writes
+  per round, CLI reads it during compile-evaluation
 - `evaluation/round-N/EVALUATION.md` -- CLI compiles from critic summaries,
   Generator reads the prior round's report in subsequent rounds
 
