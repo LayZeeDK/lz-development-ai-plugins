@@ -366,8 +366,19 @@ function findBestRound(rounds) {
 function determineExit(rounds, escalation, maxRounds) {
   const current = rounds[rounds.length - 1];
 
-  // PASS: all criteria meet thresholds
-  if (current.verdict === "PASS") {
+  // PASS: requires perfect scores on all dimensions (structurally unreachable
+  // with score cap making 10 never achievable -- PLATEAU is the normal exit)
+  var allPerfect = true;
+
+  for (var i = 0; i < DIMENSIONS.length; i++) {
+    if (current.scores[DIMENSIONS[i].key] !== 10) {
+      allPerfect = false;
+
+      break;
+    }
+  }
+
+  if (allPerfect) {
     return { exit_condition: "PASS", should_continue: false };
   }
 
@@ -1399,6 +1410,18 @@ function cmdCompileEvaluation(argv) {
     } else {
       allScores[dim.key] = 1;
       dimJustifications[dim.name] = "No " + dim.name + " summary found";
+    }
+  }
+
+  // One-sided label smoothing: cap scores by round (Salimans et al. 2016)
+  // Round 1: max 8. Round 2+: max 9. Perfect 10 never achievable.
+  var scoreCap = round === 1 ? 8 : 9;
+
+  for (var ci = 0; ci < DIMENSIONS.length; ci++) {
+    var capKey = DIMENSIONS[ci].key;
+
+    if (allScores[capKey] > scoreCap) {
+      allScores[capKey] = scoreCap;
     }
   }
 
