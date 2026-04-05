@@ -2064,12 +2064,12 @@ describe("EMA dual-path signal architecture", function () {
     assert.notEqual(parsed.escalation, "E-II", "Noisy trajectory with EMA window of 2.72 (>2) should NOT be plateau");
   });
 
-  it("PASS verdict still uses raw scores (safety path)", function () {
-    // Verify that PASS verdict is determined from raw scores, not EMA
-    // Round 1: total=20 (low), Round 2: total=26 (PASS: pd=7, fn=7, vd=6, rb=6)
-    // EMA doesn't affect PASS verdict since it's computed from raw per-dimension scores
+  it("PASS verdict still uses raw scores but threshold-met does not trigger PASS exit", function () {
+    // Verify that computeVerdict PASS is determined from raw scores (not EMA),
+    // but determineExit no longer triggers PASS on mere threshold-met.
+    // PASS exit now requires ALL dimensions scoring 10.
     var report1 = makeReport(5, 5, 5, 5); // total=20, FAIL
-    var report2 = makeReport(7, 7, 6, 6); // total=26, PASS
+    var report2 = makeReport(7, 7, 6, 6); // total=26, verdict=PASS (threshold-met)
     var reportPath1 = join(tmpDir, "EVAL1.md");
     var reportPath2 = join(tmpDir, "EVAL2.md");
     writeFileSync(reportPath1, report1);
@@ -2081,8 +2081,243 @@ describe("EMA dual-path signal architecture", function () {
     assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
 
     var parsed = JSON.parse(result.stdout);
-    assert.equal(parsed.verdict, "PASS", "PASS verdict should use raw scores");
-    assert.equal(parsed.should_continue, false, "PASS should stop continuation");
-    assert.equal(parsed.exit_condition, "PASS", "Exit condition should be PASS");
+    assert.equal(parsed.verdict, "PASS", "computeVerdict should still return PASS for threshold-met");
+    assert.equal(parsed.should_continue, true, "Threshold-met should NOT stop continuation (requires all-10s)");
+    assert.equal(parsed.exit_condition, null, "Exit condition should be null (not PASS) for threshold-met");
+  });
+});
+
+// =============================================================================
+// determineExit convergence: PASS requires all-10s
+// =============================================================================
+
+describe("determineExit convergence: PASS requires all-10s", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("convergence");
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 0,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("PASS exit requires all dimensions scoring 10", function () {
+    var report1 = makeReport(5, 5, 5, 5); // total=20, baseline
+    var report2 = makeReport(10, 10, 10, 10); // total=40, all perfect
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.exit_condition, "PASS", "All-10s should trigger PASS exit");
+    assert.equal(parsed.should_continue, false, "All-10s should stop continuation");
+  });
+
+  it("Threshold-met but not all-10s does not trigger PASS exit (7/7/6/6)", function () {
+    var report1 = makeReport(5, 5, 5, 5);
+    var report2 = makeReport(7, 7, 6, 6);
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.exit_condition, null, "Threshold-met (7/7/6/6) should NOT trigger PASS exit");
+    assert.equal(parsed.should_continue, true, "Should continue when not all-10s");
+  });
+
+  it("High but not perfect scores do not trigger PASS exit (9/9/9/9)", function () {
+    var report1 = makeReport(5, 5, 5, 5);
+    var report2 = makeReport(9, 9, 9, 9);
+    var reportPath1 = join(tmpDir, "EVAL1.md");
+    var reportPath2 = join(tmpDir, "EVAL2.md");
+    writeFileSync(reportPath1, report1);
+    writeFileSync(reportPath2, report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(reportPath1), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(reportPath2), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.exit_condition, null, "9/9/9/9 should NOT trigger PASS exit");
+    assert.equal(parsed.should_continue, true, "Should continue when not all-10s");
+  });
+});
+
+// =============================================================================
+// compile-evaluation score cap
+// =============================================================================
+
+describe("compile-evaluation score cap", function () {
+  let tmpDir;
+  let origCwd;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("scoreCap");
+    origCwd = process.cwd();
+  });
+
+  afterEach(function () {
+    process.chdir(origCwd);
+    cleanTempDir(tmpDir);
+  });
+
+  function setupRound(roundNum, perceptualData, projectionData, perturbationData) {
+    var roundDir = join(tmpDir, "evaluation", "round-" + roundNum);
+    var perceptualDir = join(roundDir, "perceptual");
+    var projectionDir = join(roundDir, "projection");
+
+    mkdirSync(perceptualDir, { recursive: true });
+    mkdirSync(projectionDir, { recursive: true });
+
+    writeFileSync(
+      join(perceptualDir, "summary.json"),
+      JSON.stringify(perceptualData, null, 2)
+    );
+    writeFileSync(
+      join(projectionDir, "summary.json"),
+      JSON.stringify(projectionData, null, 2)
+    );
+
+    if (perturbationData) {
+      var perturbationDir = join(roundDir, "perturbation");
+      mkdirSync(perturbationDir, { recursive: true });
+      writeFileSync(
+        join(perturbationDir, "summary.json"),
+        JSON.stringify(perturbationData, null, 2)
+      );
+    }
+
+    return roundDir;
+  }
+
+  it("Score cap: round 1 caps all scores at 8", function () {
+    var perceptual = makePerceptualSummary(10);
+    var projection = makeProjectionSummary(10, {
+      total: 10, passed: 10, failed: 0, skipped: 0,
+      results: [{ feature: "A", criteria: "c1", status: "passed", details: null }],
+    });
+    var perturbation = makePerturbationSummary(10);
+
+    setupRound(1, perceptual, projection, perturbation);
+
+    var result = runCLI("compile-evaluation --round 1", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var evalPath = join(tmpDir, "evaluation", "round-1", "EVALUATION.md");
+    var content = readFileSync(evalPath, "utf8");
+
+    // All four dimensions should be capped at 8
+    var fnMatch = content.match(/\|\s*Functionality\s*\|\s*(\d+)\/10/i);
+    var vdMatch = content.match(/\|\s*Visual Design\s*\|\s*(\d+)\/10/i);
+    var rbMatch = content.match(/\|\s*Robustness\s*\|\s*(\d+)\/10/i);
+    var pdMatch = content.match(/\|\s*Product Depth\s*\|\s*(\d+)\/10/i);
+
+    assert.ok(fnMatch, "Functionality should be in scores table");
+    assert.ok(vdMatch, "Visual Design should be in scores table");
+    assert.ok(rbMatch, "Robustness should be in scores table");
+    assert.ok(pdMatch, "Product Depth should be in scores table");
+
+    assert.equal(parseInt(fnMatch[1], 10), 8, "Functionality should be capped at 8 on round 1, got " + fnMatch[1]);
+    assert.equal(parseInt(vdMatch[1], 10), 8, "Visual Design should be capped at 8 on round 1, got " + vdMatch[1]);
+    assert.equal(parseInt(rbMatch[1], 10), 8, "Robustness should be capped at 8 on round 1, got " + rbMatch[1]);
+    assert.equal(parseInt(pdMatch[1], 10), 8, "Product Depth should be capped at 8 on round 1, got " + pdMatch[1]);
+
+    // Also verify the JSON output
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.scores.functionality, 8, "JSON scores.functionality should be 8");
+    assert.equal(parsed.scores.visual_design, 8, "JSON scores.visual_design should be 8");
+    assert.equal(parsed.scores.robustness, 8, "JSON scores.robustness should be 8");
+    assert.equal(parsed.scores.product_depth, 8, "JSON scores.product_depth should be 8");
+  });
+
+  it("Score cap: round 2 caps all scores at 9", function () {
+    var perceptual = makePerceptualSummary(10);
+    var projection = makeProjectionSummary(10, {
+      total: 10, passed: 10, failed: 0, skipped: 0,
+      results: [{ feature: "A", criteria: "c1", status: "passed", details: null }],
+    });
+    var perturbation = makePerturbationSummary(10);
+
+    setupRound(2, perceptual, projection, perturbation);
+
+    var result = runCLI("compile-evaluation --round 2", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var evalPath = join(tmpDir, "evaluation", "round-2", "EVALUATION.md");
+    var content = readFileSync(evalPath, "utf8");
+
+    var fnMatch = content.match(/\|\s*Functionality\s*\|\s*(\d+)\/10/i);
+    var vdMatch = content.match(/\|\s*Visual Design\s*\|\s*(\d+)\/10/i);
+    var rbMatch = content.match(/\|\s*Robustness\s*\|\s*(\d+)\/10/i);
+    var pdMatch = content.match(/\|\s*Product Depth\s*\|\s*(\d+)\/10/i);
+
+    assert.equal(parseInt(fnMatch[1], 10), 9, "Functionality should be capped at 9 on round 2, got " + fnMatch[1]);
+    assert.equal(parseInt(vdMatch[1], 10), 9, "Visual Design should be capped at 9 on round 2, got " + vdMatch[1]);
+    assert.equal(parseInt(rbMatch[1], 10), 9, "Robustness should be capped at 9 on round 2, got " + rbMatch[1]);
+    assert.equal(parseInt(pdMatch[1], 10), 9, "Product Depth should be capped at 9 on round 2, got " + pdMatch[1]);
+  });
+
+  it("Score cap: below-cap scores unchanged on round 1", function () {
+    var perceptual = makePerceptualSummary(5);
+    var projection = makeProjectionSummary(6, {
+      total: 10, passed: 5, failed: 5, skipped: 0,
+      results: [
+        { feature: "A", criteria: "c1", status: "passed", details: null },
+        { feature: "B", criteria: "c2", status: "failed", details: "missing" },
+      ],
+    });
+    var perturbation = makePerturbationSummary(3);
+
+    setupRound(1, perceptual, projection, perturbation);
+
+    var result = runCLI("compile-evaluation --round 1", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.scores.visual_design, 5, "Visual Design 5 should not be capped (below 8)");
+    assert.equal(parsed.scores.robustness, 3, "Robustness 3 should not be capped (below 8)");
+  });
+
+  it("Score cap: Product Depth is also capped on round 1", function () {
+    // High acceptance test pass rate should produce high PD, which gets capped
+    var projection = makeProjectionSummary(10, {
+      total: 10, passed: 10, failed: 0, skipped: 0,
+      results: [{ feature: "A", criteria: "c1", status: "passed", details: null }],
+    });
+    var perceptual = makePerceptualSummary(10);
+    var perturbation = makePerturbationSummary(10);
+
+    setupRound(1, perceptual, projection, perturbation);
+
+    var result = runCLI("compile-evaluation --round 1", { cwd: tmpDir });
+    assert.equal(result.exitCode, 0, "Should succeed. stderr: " + result.stderr);
+
+    var parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.scores.product_depth <= 8, "Product Depth should be capped at 8 on round 1, got " + parsed.scores.product_depth);
   });
 });
