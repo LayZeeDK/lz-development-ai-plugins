@@ -5,6 +5,25 @@ reduces context consumption by replacing verbose interactive commands with
 targeted data extraction or disk-based test execution. Critics read the
 sections relevant to their methodology step.
 
+## Browser channel
+
+Bundled Chromium does not support Chrome/Edge Built-in AI APIs
+(LanguageModel, Summarizer, Writer, Rewriter, Translator, LanguageDetector).
+A branded browser channel is required for AI API access during evaluation.
+
+**For `npx playwright-cli` commands:** Always pass `--browser msedge`.
+Fallback: `--browser chrome` if Edge is unavailable. Omit `--browser` only
+as a last resort -- bundled Chromium will run but AI APIs will not work,
+producing false negatives in functionality scoring.
+
+**For `npx playwright test` (write-and-run tests):** Add `channel: 'msedge'`
+inside the `test.use()` block of every test file. This tells Playwright Test
+to launch the installed Edge browser instead of bundled Chromium. Fallback
+comment: `// fallback: 'chrome'`.
+
+**Priority:** msedge (Phi-4-mini) -> chrome (Gemini Nano) -> chromium (no AI
+APIs).
+
 ## eval-first
 
 Structured JSON via `npx playwright-cli eval` -- targeted data extraction that
@@ -15,9 +34,9 @@ JSON result, keeping context lean. Reserve snapshots for when you need to
 discover element structure or ref IDs for interaction.
 
 ```bash
-npx playwright-cli eval "document.title"
-npx playwright-cli eval "document.querySelectorAll('img').length"
-npx playwright-cli eval "getComputedStyle(document.body).backgroundColor"
+npx playwright-cli eval --browser msedge "document.title"
+npx playwright-cli eval --browser msedge "document.querySelectorAll('img').length"
+npx playwright-cli eval --browser msedge "getComputedStyle(document.body).backgroundColor"
 ```
 
 ## write-and-run
@@ -29,7 +48,7 @@ context -- the agent reads only structured JSON results.
 **5-step workflow:**
 
 1. Read SPEC.md acceptance criteria (already done in UNDERSTAND)
-2. Take one snapshot for selector discovery: `npx playwright-cli snapshot`
+2. Take one snapshot for selector discovery: `npx playwright-cli snapshot --browser msedge`
 3. Write acceptance tests to `evaluation/round-N/projection/acceptance-tests.spec.ts`
 4. Run: `npx playwright test evaluation/round-N/projection/acceptance-tests.spec.ts --reporter=json`
 5. Read the JSON results file -- extract pass/fail counts and failure details
@@ -45,7 +64,10 @@ import { test, expect } from '@playwright/test';
 
 // Configure baseURL from the static-serve port.
 // Read the port from the static-serve JSON response and substitute below.
-test.use({ baseURL: 'http://localhost:PORT' });
+test.use({
+  baseURL: 'http://localhost:PORT',
+  channel: 'msedge', // Required for AI API access; fallback: 'chrome'
+});
 
 test.describe('Feature 1: Artwork Gallery [Core]', () => {
   test.beforeEach(async ({ page }) => {
@@ -85,7 +107,7 @@ Key patterns in the skeleton:
 
 ## snapshot-as-fallback
 
-`npx playwright-cli snapshot` saves the accessibility tree to disk for element
+`npx playwright-cli snapshot --browser msedge` saves the accessibility tree to disk for element
 and ref ID discovery. The output file lands at
 `.playwright-cli/page-{timestamp}.yml`.
 
@@ -94,7 +116,7 @@ alone cannot determine element structure. Snapshot output is verbose -- prefer
 eval for targeted queries.
 
 ```bash
-npx playwright-cli snapshot
+npx playwright-cli snapshot --browser msedge
 ```
 
 ## resize+eval
@@ -104,13 +126,13 @@ via eval after resize is more token-efficient than taking screenshots at every
 breakpoint. Take screenshots only at key viewpoints for the evaluation report.
 
 ```bash
-npx playwright-cli viewport 320 800
-npx playwright-cli eval "document.querySelectorAll('.card').length"
-npx playwright-cli screenshot --filename=mobile-320.png
+npx playwright-cli viewport --browser msedge 320 800
+npx playwright-cli eval --browser msedge "document.querySelectorAll('.card').length"
+npx playwright-cli screenshot --browser msedge --filename=mobile-320.png
 
-npx playwright-cli viewport 1280 800
-npx playwright-cli eval "document.querySelectorAll('.card').length"
-npx playwright-cli screenshot --filename=desktop-1280.png
+npx playwright-cli viewport --browser msedge 1280 800
+npx playwright-cli eval --browser msedge "document.querySelectorAll('.card').length"
+npx playwright-cli screenshot --browser msedge --filename=desktop-1280.png
 ```
 
 ## console filtering
@@ -122,7 +144,7 @@ token waste.
 
 ```bash
 # Use this -- filtered to errors only
-npx playwright-cli console error
+npx playwright-cli console --browser msedge error
 
 # NOT this -- returns all log levels, wastes tokens
 # npx playwright-cli console
@@ -140,7 +162,7 @@ reported.
 
 1. Identify failing tests from JSON results
 2. Categorize each failure as selector timeout or assertion failure
-3. For selector timeouts: `npx playwright-cli snapshot`, find updated selectors
+3. For selector timeouts: `npx playwright-cli snapshot --browser msedge`, find updated selectors
    in the new accessibility tree, update the test file, re-run
 4. For assertion failures: report as findings -- these indicate actual behavioral
    issues in the application
