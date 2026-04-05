@@ -68,7 +68,7 @@ export default defineConfig({
             enabled: true,
             provider: playwright({
               launchOptions: {
-                channel: 'chrome', // branded channel for browser AI APIs
+                channel: 'msedge', // branded channel -- Edge ships Phi-4-mini for browser AI APIs
               },
               actionTimeout: 5_000,
             }),
@@ -106,29 +106,30 @@ lacks LanguageModel, WebGPU compute shaders, and WebNN backends.
 
 | Channel | Browser | AI APIs available |
 |---------|---------|-------------------|
+| `'msedge'` | Microsoft Edge (default) | LanguageModel (Phi-4-mini, 3.8B), WebGPU, WebNN |
+| `'msedge-dev'` | Edge Dev | LanguageModel (latest), WebGPU, WebNN |
 | `'chrome'` | Google Chrome | LanguageModel (Gemini Nano), WebGPU, WebNN |
 | `'chrome-beta'` | Chrome Beta | LanguageModel (latest), WebGPU, WebNN |
-| `'msedge'` | Microsoft Edge | LanguageModel (Phi-4-mini), WebGPU, WebNN |
-| `'msedge-dev'` | Edge Dev | LanguageModel (latest), WebGPU, WebNN |
 | (omitted) | Bundled Chromium | WebGPU (limited), no LanguageModel, no WebNN |
 
 Set the channel on the provider's `launchOptions`:
 
 ```typescript
 provider: playwright({
-  launchOptions: { channel: 'chrome' },
+  launchOptions: { channel: 'msedge' },
 }),
 ```
 
 ### Fallback when branded channel is unavailable
 
 If the browser is not installed, Playwright throws:
-`browserType.launch: Executable doesn't exist at /path/to/google-chrome`
+`browserType.launch: Executable doesn't exist at /path/to/msedge`
 
-Use an environment variable for CI/local flexibility:
+Fallback chain: msedge -> chrome -> bundled chromium. Use an environment
+variable for CI/local flexibility:
 
 ```typescript
-const channel = process.env.BROWSER_CHANNEL || 'chrome';
+const channel = process.env.BROWSER_CHANNEL || 'msedge';
 
 provider: playwright({
   launchOptions: {
@@ -137,8 +138,11 @@ provider: playwright({
 }),
 ```
 
-Set `BROWSER_CHANNEL=bundled` in CI where Chrome/Edge are not installed.
-Non-AI browser tests (DOM, CSS, canvas) work fine with bundled Chromium.
+Fallback chain: `msedge` -> `chrome` -> `bundled`. When Edge is unavailable,
+set `BROWSER_CHANNEL=chrome` (Gemini Nano). If neither branded browser is
+installed, set `BROWSER_CHANNEL=bundled` (Playwright's bundled Chromium --
+AI API tests will not work). Non-AI browser tests (DOM, CSS, canvas) work
+fine with bundled Chromium.
 
 ---
 
@@ -165,7 +169,7 @@ instances: [
 
 // CORRECT -- repeat all needed options at the instance level
 instances: [
-  { browser: 'chromium', launchOptions: { channel: 'chrome', args: ['--disable-gpu'] } },
+  { browser: 'chromium', launchOptions: { channel: 'msedge', args: ['--disable-gpu'] } },
 ],
 ```
 

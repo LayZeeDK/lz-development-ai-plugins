@@ -312,6 +312,7 @@ Two testing skills are available for writing and running tests:
 - **No stubs.** Placeholder features waste a generation round because the critic ensemble will flag them and the Generator must implement them anyway.
 - **No dead code.** Remove unused imports, commented-out code, and abandoned experiments.
 - **No fabricated URLs.** External URLs that return 404 break the app for every user and trigger the critic ensemble's asset validation as Critical bugs.
+- **No fabricated testimonials.** If SPEC.md includes testimonials sourced from the real website, use those verbatim. If no real testimonials are available, use clearly-marked placeholders (e.g., "[Placeholder - Client Name]", "-- A satisfied customer") with generic roles. Never name real people or real customer companies in fabricated testimonials. Why: fabricated testimonials attributing fake quotes to real entities is a legal and reputational hazard.
 - **Consistent style.** Use consistent naming, formatting, and patterns throughout the codebase.
 - **Error handling.** The app should not crash on common user actions. Handle loading states, empty states, and error states.
 - **Responsive layout.** The UI should work at common viewport sizes.

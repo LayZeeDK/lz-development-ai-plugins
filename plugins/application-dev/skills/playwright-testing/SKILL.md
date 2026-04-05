@@ -125,8 +125,8 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'edge',
+      use: { ...devices['Desktop Edge'], channel: 'msedge' },
     },
   ],
   webServer: {
@@ -136,6 +136,10 @@ export default defineConfig({
   },
 });
 ```
+
+Default channel is `msedge` for Phi-4-mini AI API access. If Edge is
+unavailable, fall back to `channel: 'chrome'` (Gemini Nano), then omit
+`channel` for bundled Chromium (no AI API access).
 
 Adjust `baseURL` and `webServer.command` to match the generated app's dev
 server. Use `workers: 1` during generation and healing for deterministic

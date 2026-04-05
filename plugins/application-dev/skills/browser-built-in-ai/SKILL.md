@@ -20,6 +20,11 @@ is the same -- code once, works in both. Feature detection handles differences.
 
 Types: `npm install --save-dev @types/dom-chromium-ai`
 
+**Default browser channel:** `msedge` (Phi-4-mini, 3.8B params -- more capable
+than Chrome's Gemini Nano for most tasks). When configuring Playwright or Vitest
+Browser Mode for testing browser AI features, prefer `channel: 'msedge'`. See
+`vitest-browser/SKILL.md` section 3 for fallback chain.
+
 ---
 
 ## 1. Which API to use
