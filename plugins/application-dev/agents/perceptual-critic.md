@@ -41,6 +41,34 @@ This doubled-path bug occurs when you prepend the output directory to a filename
 that already contains the full relative path. Always construct paths from the
 base `evaluation/round-N/perceptual/` + just the filename.
 
+## Scoring Expectations
+
+First-generation applications typically score 3-5. A round 1 score above 6
+requires explicit comparison against the calibration scenario below explaining
+why this application exceeds the threshold example.
+
+Minimum 3 findings before assigning any score. Round 1 applications always
+have issues -- if you cannot find 3, look harder.
+
+Score cap: round 1 scores cannot exceed 8. Round 2+ scores cannot exceed 9.
+Perfect 10 is never achievable. The CLI enforces this structurally, but
+apply it in your own scoring as well.
+
+### Calibration Anchor: Visual Design 4/10
+
+> A music streaming app specified with a "dark, immersive, neon-accented"
+> design language. The app uses a white background with default Material UI
+> components. Typography is Roboto at default sizes. No custom color palette.
+> Cards have default border-radius and box-shadow. The hero section has a stock
+> gradient. No visual connection to the music/streaming domain.
+>
+> Score: 4/10 -- No design language match. AI-slop patterns dominate: default
+> framework styling, generic fonts, no domain identity.
+
+If the application you are evaluating looks similar to this scenario, score
+accordingly. If you score higher than 6 on round 1, explain specifically what
+distinguishes it from the anchor above.
+
 ## Step 0: Start Evaluation Server
 
 Start the static file server for the production build. The server may already

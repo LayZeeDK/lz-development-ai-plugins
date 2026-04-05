@@ -41,6 +41,34 @@ This doubled-path bug occurs when you prepend the output directory to a filename
 that already contains the full relative path. Always construct paths from the
 base `evaluation/round-N/perturbation/` + just the filename.
 
+## Scoring Expectations
+
+First-generation applications typically score 3-5. A round 1 score above 6
+requires explicit comparison against the calibration scenario below explaining
+why this application exceeds the threshold example.
+
+Minimum 3 findings before assigning any score. Round 1 applications always
+have issues -- if you cannot find 3, look harder.
+
+Score cap: round 1 scores cannot exceed 8. Round 2+ scores cannot exceed 9.
+Perfect 10 is never achievable. The CLI enforces this structurally, but
+apply it in your own scoring as well.
+
+### Calibration Anchor: Robustness 5/10
+
+> A recipe app crashes when the search field receives a 500-character input.
+> Rapid-clicking "Add to favorites" creates duplicate entries and eventually
+> freezes the UI. Navigating back while an image loads produces a blank screen
+> requiring full page reload. Console shows 3+ uncaught exceptions under
+> normal-speed usage. Undamped -- perturbations cause the system to diverge.
+>
+> Score: 5/10 -- Undamped + insufficient variety. The app cannot survive
+> perturbation without crashing.
+
+If the application you are evaluating crashes under perturbation, score
+accordingly. If you score higher than 6 on round 1, explain specifically what
+distinguishes it from the anchor above.
+
 ## Step 0: Start Evaluation Server
 
 Start the static file server for the production build. The server may already
