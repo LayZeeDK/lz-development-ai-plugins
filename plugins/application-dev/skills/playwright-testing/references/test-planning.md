@@ -14,11 +14,11 @@ Before writing test plans, understand the current state of the app.
 
 ```bash
 # Take a screenshot of the current page
-npx playwright-cli screenshot http://localhost:5173 --output screenshot.png
+npx playwright-cli screenshot --browser msedge http://localhost:5173 --output screenshot.png
 
 # Take a screenshot at a specific viewport
-npx playwright-cli screenshot http://localhost:5173 --viewport 1280x720 --output desktop.png
-npx playwright-cli screenshot http://localhost:5173 --viewport 375x812 --output mobile.png
+npx playwright-cli screenshot --browser msedge http://localhost:5173 --viewport 1280x720 --output desktop.png
+npx playwright-cli screenshot --browser msedge http://localhost:5173 --viewport 375x812 --output mobile.png
 ```
 
 ### What to observe

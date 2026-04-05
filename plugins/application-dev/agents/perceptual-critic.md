@@ -80,7 +80,7 @@ be running from a concurrent critic -- the command is idempotent.
    Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --dir <build_dir>)
    ```
 3. The server responds with JSON containing the `port`. Use that port for all
-   `npx playwright-cli` commands (e.g., `npx playwright-cli open http://localhost:<port>`).
+   `npx playwright-cli` commands (e.g., `npx playwright-cli open --browser msedge http://localhost:<port>`).
 4. If `build_dir` is not set in state, stop with an error -- the Generator
    should have recorded it via `update --build-dir`.
 
@@ -105,14 +105,14 @@ Use eval-first for structured page state -- `npx playwright-cli eval` returns DO
 
 For responsive testing, resize the viewport and re-evaluate:
 ```
-npx playwright-cli viewport 320 800
-npx playwright-cli eval "document.title"
-npx playwright-cli screenshot --filename=home-320.png
-npx playwright-cli viewport 1280 800
-npx playwright-cli screenshot --filename=home-1280.png
+npx playwright-cli viewport --browser msedge 320 800
+npx playwright-cli eval --browser msedge "document.title"
+npx playwright-cli screenshot --browser msedge --filename=home-320.png
+npx playwright-cli viewport --browser msedge 1280 800
+npx playwright-cli screenshot --browser msedge --filename=home-1280.png
 ```
 
-For console output, use `npx playwright-cli console error` (filtered to errors only) to catch visual-relevant issues (CSS errors, font loading failures, image decode errors) without filling context with informational messages. Functional console errors belong to the projection-critic.
+For console output, use `npx playwright-cli console --browser msedge error` (filtered to errors only) to catch visual-relevant issues (CSS errors, font loading failures, image decode errors) without filling context with informational messages. Functional console errors belong to the projection-critic.
 
 #### Cross-Page Consistency Audit
 
@@ -120,7 +120,7 @@ After per-page observation, run a cross-page visual consistency audit using the 
 
 1. **Discover internal pages** from homepage navigation links:
    ```
-   npx playwright-cli eval "[...document.querySelectorAll('a[href]')].map(a => new URL(a.href, location.origin)).filter(u => u.origin === location.origin).map(u => u.pathname).filter((v,i,a) => a.indexOf(v) === i).slice(0, 4)"
+   npx playwright-cli eval --browser msedge "[...document.querySelectorAll('a[href]')].map(a => new URL(a.href, location.origin)).filter(u => u.origin === location.origin).map(u => u.pathname).filter((v,i,a) => a.indexOf(v) === i).slice(0, 4)"
    ```
    Cap at 5 total pages (homepage + up to 4 discovered).
 

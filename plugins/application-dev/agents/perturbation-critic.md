@@ -127,7 +127,7 @@ Adversarial test categories in priority order:
 
 1. **Input perturbation** -- boundary/extreme values on every form field: empty strings, whitespace-only, 1000+ characters, XSS payloads like `<script>alert(1)</script>`, SQL injection strings, special characters, negative numbers, zero, very large numbers. Test every input the SPEC mentions.
 
-2. **Console monitoring under stress** -- run `npx playwright-cli console error` DURING all other perturbation categories (concurrent monitoring, not a separate step). This is the spectral/R-FID analog: catches invisible fragility that surface-level testing misses. Record uncaught exceptions, unhandled promise rejections, and network errors that appear only under adversarial conditions.
+2. **Console monitoring under stress** -- run `npx playwright-cli console --browser msedge error` DURING all other perturbation categories (concurrent monitoring, not a separate step). This is the spectral/R-FID analog: catches invisible fragility that surface-level testing misses. Record uncaught exceptions, unhandled promise rejections, and network errors that appear only under adversarial conditions.
 
 3. **Rapid navigation** -- back/forward/reload sequences during page transitions, rapid clicking of navigation links, navigating away during async operations (form submission, data loading). Test state management under timing faults.
 

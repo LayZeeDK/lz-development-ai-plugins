@@ -105,7 +105,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/PLAYWRIG
 Use the write-and-run pattern for token efficiency. This replaces 30+ interactive browser commands with approximately 5 tool calls:
 
 1. Read SPEC.md acceptance criteria (already done in UNDERSTAND)
-2. Take one snapshot for selector discovery: `npx playwright-cli snapshot`
+2. Take one snapshot for selector discovery: `npx playwright-cli snapshot --browser msedge`
 3. Write acceptance tests to `evaluation/round-N/projection/acceptance-tests.spec.ts`.
    Substitute the static-serve port into `test.use({ baseURL: 'http://localhost:<port>' })` at the top of the test file.
 4. Run: `npx playwright test evaluation/round-N/projection/acceptance-tests.spec.ts --reporter=json`
@@ -126,7 +126,7 @@ Each test maps to a SPEC.md feature and criteria pair. Cover:
 - Error states (empty forms, invalid data, impossible actions)
 - One negative test per feature
 
-For console output, use `npx playwright-cli console error` (filtered to errors only) to catch functional-relevant issues (uncaught exceptions, API errors, failed network requests) without filling context with informational messages. Visual console errors belong to the perceptual-critic.
+For console output, use `npx playwright-cli console --browser msedge error` (filtered to errors only) to catch functional-relevant issues (uncaught exceptions, API errors, failed network requests) without filling context with informational messages. Visual console errors belong to the perceptual-critic.
 
 #### Round-Trip Navigation Tests
 

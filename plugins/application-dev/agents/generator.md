@@ -126,7 +126,7 @@ Do NOT upgrade dependencies in Round 2+ (fix-only mode, cybernetics damping prin
 3. **Format config:** `vp check` if using Vite+ (Oxfmt replaces Prettier), or Prettier if using plain Vite
 4. **Test framework:** Analyze SPEC.md app type and choose emphasis (see testing decision framework below). Install Vitest for unit/integration tests.
 5. **Browser test environment:** If the app uses browser AI APIs (LanguageModel, WebGPU, WebNN), set up Vitest Browser Mode with branded channels for real API access. Read `${CLAUDE_PLUGIN_ROOT}/skills/vitest-browser/SKILL.md` for the projects config that splits unit (node) and browser (real Chrome) tests.
-6. **E2e framework:** Install Playwright Test if the app has 3+ pages or complex user flows. Read `${CLAUDE_PLUGIN_ROOT}/skills/playwright-testing/SKILL.md` for configuration and the plan/generate/heal workflow.
+6. **E2e framework:** Install Playwright Test if the app has 3+ pages or complex user flows. Read `${CLAUDE_PLUGIN_ROOT}/skills/playwright-testing/SKILL.md` for configuration and the plan/generate/heal workflow. The Playwright config MUST use `channel: 'msedge'` (or `'chrome'` as fallback) -- bundled Chromium does not support Browser Built-in AI APIs. The playwright-testing SKILL.md shows the correct project configuration.
 
 **Create or extend `.gitignore`.** Add entries appropriate for your tech stack. At minimum include: `node_modules/`, the build output folder (e.g., `dist/`, `build/`, `.next/`), and `.env` if applicable. The orchestrator has already seeded `.gitignore` with `.appdev-state.json`, `.playwright-cli/`, and `node_modules/` -- extend it, do not overwrite.
 
@@ -223,7 +223,7 @@ Run the full CI suite in sequence:
 3. Static analysis: `vp check` (or `npx tsc --noEmit && npx eslint . && npx prettier --check .` if using plain Vite) -- `vp check` combines lint + format + typecheck in one pass
 4. Unit tests: `vp test` (or `npx vitest run --project unit` if using plain Vite)
 5. Browser tests: `npx vitest run --project browser` (same regardless of Vite+) -- if applicable
-6. E2e tests: `npx playwright test` (same regardless of Vite+) -- if applicable
+6. E2e tests: `npx playwright test` (same regardless of Vite+) -- if applicable. E2e tests run against msedge channel per playwright.config.ts
 
 **Production Build and State Update (after step 1 succeeds):**
 
@@ -254,10 +254,10 @@ Fix quick wins in one pass (things that take less than 2 minutes each). Document
 
 **Step 9: Visual self-assessment.**
 
-Screenshot the app at key viewports using `npx playwright-cli screenshot`:
-- Mobile: 375x667
-- Tablet: 768x1024
-- Desktop: 1280x800
+Screenshot the app at key viewports using `npx playwright-cli screenshot --browser msedge`:
+- Mobile: `npx playwright-cli screenshot --browser msedge --viewport 375x667 --filename=mobile.png`
+- Tablet: `npx playwright-cli screenshot --browser msedge --viewport 768x1024 --filename=tablet.png`
+- Desktop: `npx playwright-cli screenshot --browser msedge --viewport 1280x800 --filename=desktop.png`
 
 Inspect screenshots for broken images, layout issues, placeholder patterns, and missing content. Fix visible issues before handoff.
 
