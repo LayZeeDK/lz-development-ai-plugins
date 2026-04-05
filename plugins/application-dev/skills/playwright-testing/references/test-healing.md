@@ -140,7 +140,7 @@ actually looks like:
 
 ```bash
 # Screenshot the page at the failing URL
-npx playwright-cli screenshot http://localhost:5173/checkout --output actual-state.png
+npx playwright-cli screenshot --browser msedge http://localhost:5173/checkout --output actual-state.png
 ```
 
 Compare the actual state to what the test expects. This reveals:
