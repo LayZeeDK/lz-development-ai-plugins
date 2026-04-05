@@ -227,7 +227,7 @@ function computeProductDepth(projectionSummary) {
     pass: score >= 7,
     ceiling_applied: ceilingRule,
     pass_rate: passRate,
-    justification: "Product Depth " + score + "/10 -- " + tests.passed + "/" + tests.total + " acceptance tests passed (" + Math.round(passRate * 100) + "%). " + (ceilingRule ? "Ceiling: " + ceilingRule + "." : "No ceiling applied."),
+    justification: tests.passed + "/" + tests.total + " acceptance tests passed (" + Math.round(passRate * 100) + "%)." + (ceilingRule ? " Ceiling: " + ceilingRule + "." : " No ceiling applied."),
   };
 }
 
@@ -1324,6 +1324,205 @@ function cmdComputeVerdict(argv) {
   output({ verdict: verdict, scores: scores });
 }
 
+// --- Fix-registry for cross-round regression detection ---
+
+function manageFixRegistry(round, currentFindings, roundDir) {
+  var registryPath = join(process.cwd(), "evaluation", "fix-registry.json");
+  var registry;
+
+  if (existsSync(registryPath)) {
+    try {
+      registry = JSON.parse(readFileSync(registryPath, "utf8"));
+    } catch (e) {
+      registry = { version: 1, fixes: [] };
+    }
+  } else {
+    registry = { version: 1, fixes: [] };
+  }
+
+  function normalize(title) {
+    return (title || "").toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  }
+
+  function slug(title) {
+    return (title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  // Build normalized title set for current findings
+  var currentNormalized = [];
+
+  for (var ci = 0; ci < currentFindings.length; ci++) {
+    currentNormalized.push(normalize(currentFindings[ci].title));
+  }
+
+  // Detect resolved bugs from prior round
+  if (round > 1) {
+    var priorEvalPath = join(process.cwd(), "evaluation", "round-" + (round - 1), "EVALUATION.md");
+
+    if (existsSync(priorEvalPath)) {
+      var priorContent = readFileSync(priorEvalPath, "utf8");
+      var priorFindings = parsePriorityFixesTable(priorContent);
+
+      for (var pi = 0; pi < priorFindings.length; pi++) {
+        var pf = priorFindings[pi];
+
+        if (pf.severity !== "Major" && pf.severity !== "Critical") {
+          continue;
+        }
+
+        var pfNorm = normalize(pf.title);
+        var stillPresent = false;
+
+        for (var ni = 0; ni < currentNormalized.length; ni++) {
+          if (currentNormalized[ni] === pfNorm) {
+            stillPresent = true;
+
+            break;
+          }
+        }
+
+        if (!stillPresent) {
+          // Bug is resolved -- check if already tracked
+          var alreadyTracked = false;
+
+          for (var ti = 0; ti < registry.fixes.length; ti++) {
+            if (registry.fixes[ti].fingerprint === pf.id.split("-")[0].toLowerCase() + ":" + pf.id + ":" + slug(pf.title)) {
+              alreadyTracked = true;
+
+              break;
+            }
+          }
+
+          if (!alreadyTracked) {
+            registry.fixes.push({
+              id: pf.id,
+              title: pf.title,
+              severity: pf.severity,
+              critic: pf.id.split("-")[0].toLowerCase(),
+              fixed_in_round: round,
+              last_seen_round: round - 1,
+              fingerprint: pf.id.split("-")[0].toLowerCase() + ":" + pf.id + ":" + slug(pf.title),
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Detect regressions: previously fixed bugs that reappear
+  var regressions = [];
+  var regIndex = 1;
+  var fixesToRemove = [];
+
+  for (var fi = 0; fi < registry.fixes.length; fi++) {
+    var fix = registry.fixes[fi];
+    var fixNorm = normalize(fix.title);
+    var regressed = false;
+
+    for (var ri = 0; ri < currentNormalized.length; ri++) {
+      if (currentNormalized[ri] === fixNorm) {
+        regressed = true;
+
+        break;
+      }
+    }
+
+    if (regressed) {
+      regressions.push({
+        id: "REG-" + regIndex,
+        severity: "Critical",
+        title: "REGRESSION: " + fix.title,
+        description: "Bug was fixed in round " + fix.fixed_in_round + " but has reappeared in round " + round + ". Originally reported as " + fix.id + " (" + fix.severity + ").",
+        affects_dimensions: [],
+      });
+      fixesToRemove.push(fi);
+      regIndex++;
+    }
+  }
+
+  // Remove regressed entries (iterate in reverse to preserve indices)
+  for (var di = fixesToRemove.length - 1; di >= 0; di--) {
+    registry.fixes.splice(fixesToRemove[di], 1);
+  }
+
+  // Write updated registry
+  var evalDir = join(process.cwd(), "evaluation");
+
+  if (!existsSync(evalDir)) {
+    mkdirSync(evalDir, { recursive: true });
+  }
+
+  writeFileSync(registryPath, JSON.stringify(registry, null, 2) + "\n", "utf8");
+
+  return regressions;
+}
+
+function parsePriorityFixesTable(content) {
+  var findings = [];
+  var lines = content.split("\n");
+  var inFixesSection = false;
+  var pastSeparator = false;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+
+    if (line.startsWith("## Priority Fixes")) {
+      inFixesSection = true;
+
+      continue;
+    }
+
+    if (inFixesSection && line.startsWith("##")) {
+      break;
+    }
+
+    if (!inFixesSection) {
+      continue;
+    }
+
+    if (line === "No findings reported.") {
+      break;
+    }
+
+    // Skip header row
+    if (line.startsWith("| #") || line.startsWith("| ---") || /^\|\s*---/.test(line)) {
+      if (/^\|\s*---/.test(line) || line.startsWith("|---")) {
+        pastSeparator = true;
+      }
+
+      continue;
+    }
+
+    if (!pastSeparator) {
+      continue;
+    }
+
+    if (!line.startsWith("|")) {
+      if (line === "") {
+        break;
+      }
+
+      continue;
+    }
+
+    // Parse table row: | # | Severity | ID | Title | Description |
+    var cells = line.split("|").map(function (c) { return c.trim(); }).filter(function (c, idx, arr) {
+      return idx > 0 && idx < arr.length - 1;
+    });
+
+    if (cells.length >= 5) {
+      findings.push({
+        severity: cells[1],
+        id: cells[2],
+        title: cells[3],
+        description: cells[4],
+      });
+    }
+  }
+
+  return findings;
+}
+
 // --- compile-evaluation subcommand ---
 
 function cmdCompileEvaluation(argv) {
@@ -1429,6 +1628,13 @@ function cmdCompileEvaluation(argv) {
 
   // Assemble priority fixes
   var fixes = assemblePriorityFixes(summaries);
+
+  // Cross-round regression detection via fix-registry
+  var regressions = manageFixRegistry(round, fixes, roundDir);
+
+  for (var ri = 0; ri < regressions.length; ri++) {
+    fixes.unshift(regressions[ri]);  // Critical regressions go to top
+  }
 
   // Build status string helper
   function statusStr(score, threshold) {
