@@ -128,12 +128,17 @@ breakpoint. Take screenshots only at key viewpoints for the evaluation report.
 ```bash
 npx playwright-cli viewport --browser msedge 320 800
 npx playwright-cli eval --browser msedge "document.querySelectorAll('.card').length"
-npx playwright-cli screenshot --browser msedge --filename=mobile-320.png
+npx playwright-cli screenshot --browser msedge --filename=evaluation/round-N/<critic>/mobile-320.png
 
 npx playwright-cli viewport --browser msedge 1280 800
 npx playwright-cli eval --browser msedge "document.querySelectorAll('.card').length"
-npx playwright-cli screenshot --browser msedge --filename=desktop-1280.png
+npx playwright-cli screenshot --browser msedge --filename=evaluation/round-N/<critic>/desktop-1280.png
 ```
+
+Substitute the round number and critic name (perceptual, projection,
+perturbation) into the path. The --filename flag creates directories
+automatically. This keeps screenshots organized per round and critic rather
+than accumulating in the project root.
 
 ## console filtering
 

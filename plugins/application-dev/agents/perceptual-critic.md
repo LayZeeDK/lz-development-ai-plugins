@@ -103,14 +103,51 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/evaluator/PLAYWRIG
 
 Use eval-first for structured page state -- `npx playwright-cli eval` returns DOM state as structured JSON, consuming far fewer tokens than screenshots or accessibility snapshots. Take screenshots only at key viewpoints (one per page per critical breakpoint), not at every scroll position.
 
+#### Initial-State Visibility
+
+Before scrolling or resizing, verify that key interactive elements are visible
+in the initial viewport (above the fold at 1280x800). Elements that require
+scrolling to discover are invisible to first-time visitors:
+
+```
+npx playwright-cli eval --browser msedge "(() => { const vp = { w: window.innerWidth, h: window.innerHeight }; const check = (sel, label) => { const el = document.querySelector(sel); if (!el) return { label, found: false }; const r = el.getBoundingClientRect(); return { label, found: true, visible: r.top < vp.h && r.bottom > 0 && r.left < vp.w && r.right > 0, top: Math.round(r.top), bottom: Math.round(r.bottom) }; }; return [ check('a[href*=scroll], button[class*=scroll], [class*=cta], [class*=hero] a, [class*=hero] button', 'Hero CTA'), check('[class*=scroll-indicator], [class*=scroll-down], [class*=scroll-hint]', 'Scroll affordance') ]; })()"
+```
+
+If a hero CTA or scroll affordance has `visible: false` (its `top` exceeds the
+viewport height), report as Major finding: key interactive element below the
+fold at initial viewport.
+
 For responsive testing, resize the viewport and re-evaluate:
 ```
 npx playwright-cli viewport --browser msedge 320 800
 npx playwright-cli eval --browser msedge "document.title"
-npx playwright-cli screenshot --browser msedge --filename=home-320.png
+npx playwright-cli screenshot --browser msedge --filename=evaluation/round-N/perceptual/home-320.png
 npx playwright-cli viewport --browser msedge 1280 800
-npx playwright-cli screenshot --browser msedge --filename=home-1280.png
+npx playwright-cli screenshot --browser msedge --filename=evaluation/round-N/perceptual/home-1280.png
 ```
+
+#### Scroll-Trigger Verification
+
+Scroll-driven animations (fade-in, slide-up, parallax) are invisible to
+static viewport screenshots. Verify them with a before/after comparison:
+
+1. Capture pre-scroll state at the hero section:
+   ```
+   npx playwright-cli eval --browser msedge "[...document.querySelectorAll('[class*=animate], [class*=fade], [class*=slide], [data-scroll], [data-aos]')].map(el => ({ tag: el.tagName, classes: el.className, opacity: getComputedStyle(el).opacity, transform: getComputedStyle(el).transform }))"
+   ```
+
+2. Scroll past the fold to trigger animations:
+   ```
+   npx playwright-cli mousewheel 0 1500
+   ```
+
+3. Wait briefly for animations to fire, then re-evaluate:
+   ```
+   npx playwright-cli eval --browser msedge "[...document.querySelectorAll('[class*=animate], [class*=fade], [class*=slide], [data-scroll], [data-aos]')].map(el => ({ tag: el.tagName, classes: el.className, opacity: getComputedStyle(el).opacity, transform: getComputedStyle(el).transform }))"
+   ```
+
+4. Compare: if opacity, transform, or class values are identical before and
+   after scroll, the animations are not firing. Report as a Major finding.
 
 For console output, use `npx playwright-cli console --browser msedge error` (filtered to errors only) to catch visual-relevant issues (CSS errors, font loading failures, image decode errors) without filling context with informational messages. Functional console errors belong to the projection-critic.
 
