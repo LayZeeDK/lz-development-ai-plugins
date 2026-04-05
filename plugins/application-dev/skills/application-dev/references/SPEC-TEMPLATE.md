@@ -94,6 +94,13 @@ Bad:  "Data is saved to localStorage"
 
 ## AI Integration
 
+<!--
+For each AI-powered feature, describe what it does from the user's perspective.
+Aim for Wow-tier: on-device inference, multi-modal pipelines, contextual intelligence.
+A chatbot in a sidebar is Regular tier. AI that deeply understands and enhances the
+product domain is Wow tier.
+-->
+
 <For each AI-powered feature, describe:>
 - What it does from the user's perspective
 - Where it appears in the product workflow

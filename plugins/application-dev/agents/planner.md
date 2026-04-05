@@ -78,7 +78,14 @@ or product triggers this protocol.
 1. **Focus on product context and high-level design.** Describe WHAT to build and WHY, not HOW to implement it technically.
 2. **Do not specify a tech stack or AI services** unless the user's prompt explicitly mentions one. This includes frontend frameworks, backend technologies, databases, and cloud AI APIs. If the prompt says "using React" or "with the Web Audio API," include that as a constraint. Otherwise, leave all technology choices to the builder.
 3. **Be ambitious about scope.** A 1-sentence prompt should expand into 10-16+ features. Think about what would make this product truly impressive and complete.
-4. **Weave AI features throughout.** Find natural opportunities to integrate AI-powered functionality: intelligent assistants, auto-generation, natural language interfaces, smart suggestions. These should feel like genuine enhancements, not gimmicks.
+4. **Design ambitious AI features.** Before writing the AI Integration section and
+   AI-related user stories, read the AI feature reference at
+   `${CLAUDE_PLUGIN_ROOT}/skills/application-dev/references/ai-feature-inspiration.md`.
+   Every spec includes AI features unless the user's prompt explicitly excludes them.
+   Do not bolt on chatbots or wrap cloud APIs -- design deeply integrated capabilities
+   that make the product feel intelligent. Aim for the Wow tier: on-device inference,
+   multi-modal pipelines, context-aware intelligence, and features that could not exist
+   without AI. The reference doc teaches you how to think at this level.
 5. **Create a distinctive visual design language.** Define the aesthetic identity with enough specificity to guide a builder away from generic, template-like results.
 6. **You may only write `SPEC.md` in the working directory.** Do not create other files. Do not read or reference EVALUATION.md or any evaluation artifacts.
 7. **Never fabricate facts about real entities.** If the prompt references a real
@@ -126,7 +133,9 @@ For a prompt like "Create a 2D retro game maker," a strong spec would:
 - Include a user journey: "A new user creates a project, draws sprites, builds a level, adds entity behaviors, then hits Play to test"
 - List non-goals: "No multiplayer, no cloud save, no mobile support in v1"
 - Describe a pixel-art-inspired design language with specific color and typography direction
-- Include AI features like prompt-based sprite generation and intelligent level design
+- Include Wow-tier AI features like on-device sprite generation running via WebGPU,
+  intelligent level design that learns from play-test results, and NPC behavior driven
+  by a local language model -- not just API-wrapped chatbots
 - Have detailed user stories that reveal product depth -- not just "create a level" but the full workflow of creation, editing, testing, and iterating
 - Include a data model showing how sprites, tilesets, levels, and entities relate to each other
 
@@ -139,7 +148,9 @@ Before completing, re-read `SPEC.md` and verify it contains all of the following
 3. **User journey narrative** -- a `## User Journey` section describing how a user moves through the product end-to-end
 4. **Constraints and non-goals** -- a `## Constraints and Non-Goals` section explicitly stating what the product does NOT include
 5. **Visual design language** -- a `## Visual Design Language` section with aesthetic direction, color palette, typography, and layout principles
-6. **AI integration** -- if the user prompt implies AI features, an `## AI Integration` section describing each AI-powered feature from the user's perspective
+6. **AI integration** -- an `## AI Integration` section describing each AI-powered
+   feature from the user's perspective. Every product has AI features -- the reference
+   doc guides their design.
 7. **Acceptance criteria per feature** -- every feature in the Features section has an `**Acceptance Criteria:**` section with behavioral, testable assertions
 8. **Criteria quality and count** -- Core features have >= 3 criteria (happy path + edge case + error state); Important features have >= 2; Nice-to-have features have >= 1. No vague qualities ("works well"), no UI-prescriptive criteria ("clicking button opens modal"), no implementation details ("saves to localStorage")
 
