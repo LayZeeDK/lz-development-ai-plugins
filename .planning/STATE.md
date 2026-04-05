@@ -59,7 +59,7 @@ Progress: [##########] 100%
 | 260404-vqv | Resolve remaining v1.2 patch.0 issues (classification, assets, evaluation commit) | 2026-04-04 | 6875f7d | Verified | [260404-vqv-resolve-issues-identified-during-v1-2-pa](./quick/260404-vqv-resolve-issues-identified-during-v1-2-pa/) |
 | 260405-0az | Prevent hallucinations for real entities (planner entity research + critic detection) | 2026-04-05 | e1aa995 | Verified | [260405-0az-prevent-hallucinations-for-real-entities](./quick/260405-0az-prevent-hallucinations-for-real-entities/) |
 | 260405-33d | Consensus.dk test fixes: score cap, convergence, calibration, testimonials, msedge | 2026-04-05 | cfc5bd2 | Verified | [260405-33d-consensus-dk-website-test-for-applicatio](./quick/260405-33d-consensus-dk-website-test-for-applicatio/) |
-| 260405-5bh | Prime planner for Wow-tier AI features (reference doc + instruction strengthening) | 2026-04-05 | f5515a0 | Done | [260405-5bh-prime-the-planner-to-add-several-wow-tie](./quick/260405-5bh-prime-the-planner-to-add-several-wow-tie/) |
+| 260405-5bh | Prime planner for Wow-tier AI features (reference doc + instruction strengthening) | 2026-04-05 | f5515a0 | Verified | [260405-5bh-prime-the-planner-to-add-several-wow-tie](./quick/260405-5bh-prime-the-planner-to-add-several-wow-tie/) |
 
 ## Session Continuity
 
