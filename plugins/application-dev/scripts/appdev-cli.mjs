@@ -1326,8 +1326,8 @@ function cmdComputeVerdict(argv) {
 
 // --- Fix-registry for cross-round regression detection ---
 
-function manageFixRegistry(round, currentFindings, roundDir) {
-  var registryPath = join(process.cwd(), "evaluation", "fix-registry.json");
+function manageFixRegistry(round, currentFindings, evalBaseDir) {
+  var registryPath = join(evalBaseDir, "fix-registry.json");
   var registry;
 
   if (existsSync(registryPath)) {
@@ -1357,7 +1357,7 @@ function manageFixRegistry(round, currentFindings, roundDir) {
 
   // Detect resolved bugs from prior round
   if (round > 1) {
-    var priorEvalPath = join(process.cwd(), "evaluation", "round-" + (round - 1), "EVALUATION.md");
+    var priorEvalPath = join(evalBaseDir, "round-" + (round - 1), "EVALUATION.md");
 
     if (existsSync(priorEvalPath)) {
       var priorContent = readFileSync(priorEvalPath, "utf8");
@@ -1446,10 +1446,8 @@ function manageFixRegistry(round, currentFindings, roundDir) {
   }
 
   // Write updated registry
-  var evalDir = join(process.cwd(), "evaluation");
-
-  if (!existsSync(evalDir)) {
-    mkdirSync(evalDir, { recursive: true });
+  if (!existsSync(evalBaseDir)) {
+    mkdirSync(evalBaseDir, { recursive: true });
   }
 
   writeFileSync(registryPath, JSON.stringify(registry, null, 2) + "\n", "utf8");
@@ -1630,7 +1628,8 @@ function cmdCompileEvaluation(argv) {
   var fixes = assemblePriorityFixes(summaries);
 
   // Cross-round regression detection via fix-registry
-  var regressions = manageFixRegistry(round, fixes, roundDir);
+  var evalBaseDir = join(process.cwd(), "evaluation");
+  var regressions = manageFixRegistry(round, fixes, evalBaseDir);
 
   for (var ri = 0; ri < regressions.length; ri++) {
     fixes.unshift(regressions[ri]);  // Critical regressions go to top
