@@ -5,7 +5,7 @@ milestone_name: Dutch Art Museum Test Fixes
 status: shipped
 stopped_at: Milestone complete
 last_updated: "2026-04-04T09:00:00.000Z"
-last_activity: 2026-04-05
+last_activity: "2026-04-05"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 Phase: (none -- milestone complete)
 Plan: (none)
 Status: v1.2 shipped -- run /gsd:new-milestone for next
-Last activity: 2026-04-05 - Completed quick task 260405-33d: Consensus.dk website test fixes (score cap, convergence, calibration, testimonials, msedge)
+Last activity: 2026-04-05 - Completed quick task 260405-5bh: Prime planner for Wow-tier AI features
 
 Progress: [##########] 100%
 
@@ -59,9 +59,10 @@ Progress: [##########] 100%
 | 260404-vqv | Resolve remaining v1.2 patch.0 issues (classification, assets, evaluation commit) | 2026-04-04 | 6875f7d | Verified | [260404-vqv-resolve-issues-identified-during-v1-2-pa](./quick/260404-vqv-resolve-issues-identified-during-v1-2-pa/) |
 | 260405-0az | Prevent hallucinations for real entities (planner entity research + critic detection) | 2026-04-05 | e1aa995 | Verified | [260405-0az-prevent-hallucinations-for-real-entities](./quick/260405-0az-prevent-hallucinations-for-real-entities/) |
 | 260405-33d | Consensus.dk test fixes: score cap, convergence, calibration, testimonials, msedge | 2026-04-05 | cfc5bd2 | Verified | [260405-33d-consensus-dk-website-test-for-applicatio](./quick/260405-33d-consensus-dk-website-test-for-applicatio/) |
+| 260405-5bh | Prime planner for Wow-tier AI features (reference doc + instruction strengthening) | 2026-04-05 | f5515a0 | Done | [260405-5bh-prime-the-planner-to-add-several-wow-tie](./quick/260405-5bh-prime-the-planner-to-add-several-wow-tie/) |
 
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Completed quick task 260405-33d
+Stopped at: Completed quick task 260405-5bh
 Resume file: None
