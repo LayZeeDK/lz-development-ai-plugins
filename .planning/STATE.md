@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 Phase: (none -- milestone complete)
 Plan: (none)
 Status: v1.2 shipped -- run /gsd:new-milestone for next
-Last activity: 2026-04-05 - Completed quick task 260405-0az: Prevent hallucinations for real entities
+Last activity: 2026-04-05 - Completed quick task 260405-33d: Consensus.dk website test fixes (score cap, convergence, calibration, testimonials, msedge)
 
 Progress: [##########] 100%
 
@@ -58,9 +58,10 @@ Progress: [##########] 100%
 | 260404-ft9 | Resolve issues identified during v1.2 Dutch art museum test | 2026-04-04 | 1f8bd94 | Verified | [260404-ft9-resolve-issues-identified-during-v1-2-du](./quick/260404-ft9-resolve-issues-identified-during-v1-2-du/) |
 | 260404-vqv | Resolve remaining v1.2 patch.0 issues (classification, assets, evaluation commit) | 2026-04-04 | 6875f7d | Verified | [260404-vqv-resolve-issues-identified-during-v1-2-pa](./quick/260404-vqv-resolve-issues-identified-during-v1-2-pa/) |
 | 260405-0az | Prevent hallucinations for real entities (planner entity research + critic detection) | 2026-04-05 | e1aa995 | Verified | [260405-0az-prevent-hallucinations-for-real-entities](./quick/260405-0az-prevent-hallucinations-for-real-entities/) |
+| 260405-33d | Consensus.dk test fixes: score cap, convergence, calibration, testimonials, msedge | 2026-04-05 | 8569cab | Complete | [260405-33d-consensus-dk-website-test-for-applicatio](./quick/260405-33d-consensus-dk-website-test-for-applicatio/) |
 
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Completed quick task 260405-0az
+Stopped at: Completed quick task 260405-33d
 Resume file: None
