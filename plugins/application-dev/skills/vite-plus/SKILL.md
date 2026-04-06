@@ -266,6 +266,14 @@ available in Vite+.
   curl/irm.
 - **Limited framework templates** -- only `vite`, `react-router`, `vue`,
   `svelte` available in `vp create`.
+- **Port conflicts with `vp dev` and `vp preview`** -- If port 5173 (or the
+  configured port) is already in use, `vp dev` and `vp preview` may fail
+  silently or error. Before starting the dev server, kill any existing
+  process on the target port. Use `npx kill-port 5173` or
+  `lsof -ti:5173 | xargs kill -9` (macOS/Linux) /
+  `netstat -ano | findstr :5173` + `taskkill /PID <pid> /F` (Windows).
+  Alternatively, pass `--port 0` to auto-assign an available port (Vite 8
+  supports this).
 
 ---
 

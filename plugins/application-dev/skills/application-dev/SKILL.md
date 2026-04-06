@@ -304,7 +304,9 @@ summaries and skip directly to compile-evaluation.
 
 ```
 Bash(git add evaluation/round-N/)
-Bash(git commit -m "eval(round-N): critic summaries")
+Bash(git add evaluation/fix-registry.json)
+Bash(git add SPEC.md)
+Bash(git commit -m "eval(round-N): evaluation artifacts")
 ```
 
 **Compile evaluation:** After all three summary.json files exist, compile the
@@ -440,7 +442,9 @@ Act on the JSON response:
   - Commit evaluation artifacts:
     ```
     Bash(git add evaluation/round-{N+1}/)
-    Bash(git commit -m "eval(round-{N+1}): critic summaries")
+    Bash(git add evaluation/fix-registry.json)
+    Bash(git add SPEC.md)
+    Bash(git commit -m "eval(round-{N+1}): evaluation artifacts")
     ```
   - Compile evaluation:
     ```

@@ -34,6 +34,20 @@ Enable both flags in `chrome://flags`, then restart:
 
 Verify: `await LanguageModel.availability()` in DevTools Console.
 
+### Console warning fix
+
+If the browser console shows "No output language was specified in a
+LanguageModel API request", add `expectedOutputs` to `LanguageModel.create()`:
+
+```javascript
+const session = await LanguageModel.create({
+  expectedOutputs: [{ type: 'text', languages: ['en'] }],
+  // ... other options
+});
+```
+
+This applies to all Built-in AI APIs that accept `expectedOutputs`.
+
 ---
 
 ## Session creation
