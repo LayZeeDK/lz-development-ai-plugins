@@ -2321,3 +2321,125 @@ describe("compile-evaluation score cap", function () {
     assert.ok(parsed.scores.product_depth <= 8, "Product Depth should be capped at 8 on round 1, got " + parsed.scores.product_depth);
   });
 });
+
+// =============================================================================
+// determineExit dimension regression guard
+// =============================================================================
+
+describe("determineExit dimension regression guard", function () {
+  let tmpDir;
+
+  beforeEach(function () {
+    tmpDir = makeTempDir("dimRegression");
+    writeFileSync(
+      join(tmpDir, ".appdev-state.json"),
+      JSON.stringify({
+        prompt: "Test",
+        step: "evaluate",
+        round: 0,
+        status: "in_progress",
+        exit_condition: null,
+        rounds: [],
+      })
+    );
+  });
+
+  afterEach(function () {
+    cleanTempDir(tmpDir);
+  });
+
+  it("triggers DIMENSION_REGRESSION when a dimension drops 3+ points (9->5)", function () {
+    var report1 = makeReport(9, 7, 7, 7); // total=30
+    var report2 = makeReport(9, 7, 7, 7); // total=30 (identical)
+    var report3 = makeReport(5, 7, 7, 7); // PD drops 9->5 (delta=4)
+    writeFileSync(join(tmpDir, "R1.md"), report1);
+    writeFileSync(join(tmpDir, "R2.md"), report2);
+    writeFileSync(join(tmpDir, "R3.md"), report3);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(join(tmpDir, "R1.md")), { cwd: tmpDir });
+    runCLI("round-complete --round 2 --report " + JSON.stringify(join(tmpDir, "R2.md")), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 3 --report " + JSON.stringify(join(tmpDir, "R3.md")), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "stderr: " + result.stderr);
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.exit_condition, "DIMENSION_REGRESSION");
+    assert.equal(parsed.should_continue, false);
+    assert.ok(parsed.best_round !== undefined, "Should include best_round");
+    assert.equal(parsed.regressed_dimension, "Product Depth");
+    assert.equal(parsed.drop, 4);
+  });
+
+  it("does NOT trigger for 2-point drop (9->7)", function () {
+    var report1 = makeReport(9, 7, 7, 7);
+    var report2 = makeReport(7, 7, 7, 7); // PD drops 9->7 (delta=2, below threshold)
+    writeFileSync(join(tmpDir, "R1.md"), report1);
+    writeFileSync(join(tmpDir, "R2.md"), report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(join(tmpDir, "R1.md")), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(join(tmpDir, "R2.md")), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "stderr: " + result.stderr);
+    var parsed = JSON.parse(result.stdout);
+    assert.notEqual(parsed.exit_condition, "DIMENSION_REGRESSION", "2-point drop should not trigger guard");
+  });
+
+  it("triggers even when EMA total is increasing", function () {
+    var report1 = makeReport(5, 5, 5, 5); // total=20
+    var report2 = makeReport(9, 6, 6, 6); // total=27 (big jump)
+    var report3 = makeReport(5, 9, 9, 9); // total=32 (total UP, but PD 9->5 = drop of 4)
+    writeFileSync(join(tmpDir, "R1.md"), report1);
+    writeFileSync(join(tmpDir, "R2.md"), report2);
+    writeFileSync(join(tmpDir, "R3.md"), report3);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(join(tmpDir, "R1.md")), { cwd: tmpDir });
+    runCLI("round-complete --round 2 --report " + JSON.stringify(join(tmpDir, "R2.md")), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 3 --report " + JSON.stringify(join(tmpDir, "R3.md")), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "stderr: " + result.stderr);
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.exit_condition, "DIMENSION_REGRESSION", "Should trigger despite total increasing");
+  });
+
+  it("does NOT trigger when multiple dimensions each drop 2 points", function () {
+    var report1 = makeReport(9, 9, 8, 8); // total=34
+    var report2 = makeReport(7, 7, 6, 6); // total=26, each dim drops 2 (below 3 threshold)
+    writeFileSync(join(tmpDir, "R1.md"), report1);
+    writeFileSync(join(tmpDir, "R2.md"), report2);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(join(tmpDir, "R1.md")), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 2 --report " + JSON.stringify(join(tmpDir, "R2.md")), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "stderr: " + result.stderr);
+    var parsed = JSON.parse(result.stdout);
+    assert.notEqual(parsed.exit_condition, "DIMENSION_REGRESSION", "No single dim drops 3+");
+  });
+
+  it("does NOT trigger on round 1 (no prior data)", function () {
+    var report1 = makeReport(3, 3, 3, 3); // Low scores but first round
+    writeFileSync(join(tmpDir, "R1.md"), report1);
+
+    var result = runCLI("round-complete --round 1 --report " + JSON.stringify(join(tmpDir, "R1.md")), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "stderr: " + result.stderr);
+    var parsed = JSON.parse(result.stdout);
+    assert.notEqual(parsed.exit_condition, "DIMENSION_REGRESSION", "Round 1 has no prior data");
+  });
+
+  it("includes best_round in DIMENSION_REGRESSION response", function () {
+    var report1 = makeReport(9, 9, 9, 9); // total=36, best round
+    var report2 = makeReport(8, 8, 8, 8); // total=32
+    var report3 = makeReport(5, 8, 8, 8); // PD drops 8->5 (delta=3, exactly threshold)
+    writeFileSync(join(tmpDir, "R1.md"), report1);
+    writeFileSync(join(tmpDir, "R2.md"), report2);
+    writeFileSync(join(tmpDir, "R3.md"), report3);
+
+    runCLI("round-complete --round 1 --report " + JSON.stringify(join(tmpDir, "R1.md")), { cwd: tmpDir });
+    runCLI("round-complete --round 2 --report " + JSON.stringify(join(tmpDir, "R2.md")), { cwd: tmpDir });
+    var result = runCLI("round-complete --round 3 --report " + JSON.stringify(join(tmpDir, "R3.md")), { cwd: tmpDir });
+
+    assert.equal(result.exitCode, 0, "stderr: " + result.stderr);
+    var parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.exit_condition, "DIMENSION_REGRESSION");
+    assert.equal(parsed.best_round, 1, "Best round should be round 1 (highest total)");
+  });
+});
