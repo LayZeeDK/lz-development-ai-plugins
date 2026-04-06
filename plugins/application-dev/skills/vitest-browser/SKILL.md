@@ -156,7 +156,8 @@ provider: playwright({
     channel: 'msedge-dev',
     headless: false, // REQUIRED for Built-in AI APIs
     args: [
-      '--enable-features=AIPromptAPI',
+      // Edge Dev: enable all 4 supported Edge AI APIs
+      '--enable-features=AIPromptAPI,AISummarizationAPI,AIWriterAPI,AIRewriterAPI',
       '--disable-features=OnDeviceModelPerformanceParams',
     ],
     ignoreDefaultArgs: [
@@ -167,6 +168,29 @@ provider: playwright({
   },
 }),
 ```
+
+For Chrome Beta, replace the channel and args:
+
+```typescript
+provider: playwright({
+  launchOptions: {
+    channel: 'chrome-beta',
+    headless: false, // REQUIRED for Built-in AI APIs
+    args: [
+      // enable all 7 Chrome AI APIs
+      '--enable-features=OptimizationGuideOnDeviceModel,PromptAPIForGeminiNano,AISummarizationAPI,AIWriterAPI,AIRewriterAPI,TranslationAPI,LanguageDetectionAPI,AIProofreadingAPI',
+    ],
+    ignoreDefaultArgs: [
+      '--disable-field-trial-config',
+      '--disable-background-networking',
+      '--disable-component-update',
+    ],
+  },
+}),
+```
+
+Chrome does not need `--disable-features=OnDeviceModelPerformanceParams`
+(that flag is Edge-specific).
 
 Non-AI browser tests (DOM, CSS, canvas) work fine with the default headless
 mode. Only add `headless: false` when the test file exercises AI APIs.

@@ -146,6 +146,24 @@ require a visible browser window. Headless Chromium silently returns
 `undefined` for all AI globals, causing every AI feature to fall back to
 static/canned implementations.
 
+### Per-API feature flags
+
+Each Built-in AI API has its own `--enable-features` flag. Chrome and Edge use
+different flag names for the Prompt API but share names for the other APIs.
+
+| API | Chrome `--enable-features` | Edge `--enable-features` |
+|-----|---------------------------|-------------------------|
+| LanguageModel | `PromptAPIForGeminiNano` | `AIPromptAPI` |
+| Summarizer | `AISummarizationAPI` | `AISummarizationAPI` |
+| Writer | `AIWriterAPI` | `AIWriterAPI` |
+| Rewriter | `AIRewriterAPI` | `AIRewriterAPI` |
+| Translator | `TranslationAPI` | -- (not available in Edge) |
+| LanguageDetector | `LanguageDetectionAPI` | -- (not available in Edge) |
+| Proofreader | `AIProofreadingAPI` | -- (not available in Edge) |
+
+Chrome also requires the foundational flag `OptimizationGuideOnDeviceModel`
+for all APIs. Always include it in Chrome's `--enable-features` list.
+
 ### Required configuration
 
 All Playwright and Vitest Browser configs that test AI features MUST set:
@@ -155,8 +173,8 @@ launchOptions: {
   headless: false,
   channel: 'msedge-dev', // or 'chrome-beta' for latest API support
   args: [
-    // Edge Dev: enable AI Prompt API and disable performance gating
-    '--enable-features=AIPromptAPI',
+    // Edge Dev: enable all supported Edge AI APIs
+    '--enable-features=AIPromptAPI,AISummarizationAPI,AIWriterAPI,AIRewriterAPI',
     '--disable-features=OnDeviceModelPerformanceParams',
   ],
   ignoreDefaultArgs: [
@@ -168,11 +186,21 @@ launchOptions: {
 },
 ```
 
-For Chrome Beta, replace the args with:
+For Chrome Beta, replace the channel and args:
 ```typescript
-args: [
-  '--enable-features=OptimizationGuideOnDeviceModel,PromptAPIForGeminiNano',
-],
+launchOptions: {
+  headless: false,
+  channel: 'chrome-beta',
+  args: [
+    // enable all 7 Chrome AI APIs
+    '--enable-features=OptimizationGuideOnDeviceModel,PromptAPIForGeminiNano,AISummarizationAPI,AIWriterAPI,AIRewriterAPI,TranslationAPI,LanguageDetectionAPI,AIProofreadingAPI',
+  ],
+  ignoreDefaultArgs: [
+    '--disable-field-trial-config',
+    '--disable-background-networking',
+    '--disable-component-update',
+  ],
+},
 ```
 
 ### Persistent browser context
