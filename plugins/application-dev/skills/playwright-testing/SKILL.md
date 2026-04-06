@@ -145,6 +145,47 @@ Adjust `baseURL` and `webServer.command` to match the generated app's dev
 server. Use `workers: 1` during generation and healing for deterministic
 execution; increase for CI after tests are stable.
 
+### AI-aware Playwright configuration
+
+When the generated app uses Browser Built-in AI APIs (LanguageModel,
+Summarizer, Writer, etc.), the Playwright config MUST use headed mode.
+Headless Chromium silently fails for all AI APIs -- see
+`browser-built-in-ai/SKILL.md` section 6 for full details.
+
+Minimal AI-aware config changes:
+
+```typescript
+use: {
+  baseURL: 'http://localhost:5173',
+  headless: false, // REQUIRED for Built-in AI APIs
+  trace: 'on-first-retry',
+},
+projects: [
+  {
+    name: 'edge',
+    use: {
+      ...devices['Desktop Edge'],
+      channel: 'msedge-dev',
+      launchOptions: {
+        args: [
+          '--enable-features=AIPromptAPI',
+          '--disable-features=OnDeviceModelPerformanceParams',
+        ],
+        ignoreDefaultArgs: [
+          '--disable-field-trial-config',
+          '--disable-background-networking',
+          '--disable-component-update',
+        ],
+      },
+    },
+  },
+],
+```
+
+If the app does NOT use Browser Built-in AI APIs, keep `headless: true` (the
+default config above). Only switch to headed mode when AI features need real
+browser API access.
+
 ---
 
 ## 5. Key principles

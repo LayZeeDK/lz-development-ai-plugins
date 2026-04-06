@@ -144,6 +144,36 @@ installed, set `BROWSER_CHANNEL=bundled` (Playwright's bundled Chromium --
 AI API tests will not work). Non-AI browser tests (DOM, CSS, canvas) work
 fine with bundled Chromium.
 
+### Headed mode for AI API testing
+
+Built-in AI APIs require headed mode (`headless: false`). Add `headless: false`
+to the provider's `launchOptions` alongside the channel when testing components
+that use LanguageModel, Summarizer, Writer, or other on-device AI APIs:
+
+```typescript
+provider: playwright({
+  launchOptions: {
+    channel: 'msedge-dev',
+    headless: false, // REQUIRED for Built-in AI APIs
+    args: [
+      '--enable-features=AIPromptAPI',
+      '--disable-features=OnDeviceModelPerformanceParams',
+    ],
+    ignoreDefaultArgs: [
+      '--disable-field-trial-config',
+      '--disable-background-networking',
+      '--disable-component-update',
+    ],
+  },
+}),
+```
+
+Non-AI browser tests (DOM, CSS, canvas) work fine with the default headless
+mode. Only add `headless: false` when the test file exercises AI APIs.
+
+See `browser-built-in-ai/SKILL.md` section 6 for warm-up, persistent context,
+and page navigation requirements.
+
 ---
 
 ## 4. Browser instances configuration

@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 Phase: (none -- milestone complete)
 Plan: (none)
 Status: v1.2 shipped -- run /gsd:new-milestone for next
-Last activity: 2026-04-05 - Completed quick task 260405-ovl: v1.2 patch.3 test fixes
+Last activity: 2026-04-06 - Completed quick task 260406-627: v1.2 patch.4 consensus test issues
 
 Progress: [##########] 100%
 
@@ -62,9 +62,10 @@ Progress: [##########] 100%
 | 260405-5bh | Prime planner for Wow-tier AI features (reference doc + instruction strengthening) | 2026-04-05 | f5515a0 | Verified | [260405-5bh-prime-the-planner-to-add-several-wow-tie](./quick/260405-5bh-prime-the-planner-to-add-several-wow-tie/) |
 | 260405-k8s | Enforce msedge browser channel for all Playwright usage (Generator + 3 critics) | 2026-04-05 | a0ddb9d | Complete | [260405-k8s-make-generator-and-evaluator-agents-use-](./quick/260405-k8s-make-generator-and-evaluator-agents-use-/) |
 | 260405-ovl | v1.2 patch.3 test fixes: score cap justification, fix-registry regression detection, scroll-animation verification, above-the-fold check, screenshot paths | 2026-04-05 | 9f393de | Verified | [260405-ovl-application-dev-v1-2-patch-3-test-for-co](./quick/260405-ovl-application-dev-v1-2-patch-3-test-for-co/) |
+| 260406-627 | v1.2 patch.4 consensus test issues: headed mode, port conflicts, content quality rules, dimension regression guard | 2026-04-06 | 8f52da7 | Complete | [260406-627-resolve-v1-2-patch-4-consensus-test-issu](./quick/260406-627-resolve-v1-2-patch-4-consensus-test-issu/) |
 
 ## Session Continuity
 
-Last session: 2026-04-05
-Stopped at: Completed quick task 260405-ovl
+Last session: 2026-04-06
+Stopped at: Completed quick task 260406-627
 Resume file: None

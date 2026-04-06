@@ -22,7 +22,7 @@ Types: `npm install --save-dev @types/dom-chromium-ai`
 
 **Default browser channel:** `msedge` (Phi-4-mini, 3.8B params -- more capable
 than Chrome's Gemini Nano for most tasks). When configuring Playwright or Vitest
-Browser Mode for testing browser AI features, prefer `channel: 'msedge'`. See
+Browser Mode for testing browser AI features, prefer `channel: 'msedge-dev'` (or `'msedge'` if Dev channel unavailable). See
 `vitest-browser/SKILL.md` section 3 for fallback chain.
 
 ---
@@ -135,3 +135,66 @@ works without configuration). Cross-origin iframes need `allow="<directive>"`.
 | Rewriter | `rewriter` |
 | Translator | `translator` |
 | LanguageDetector | `language-detector` |
+
+---
+
+## 6. Testing browser AI features (headed mode)
+
+**CRITICAL: Headless mode does NOT work with Built-in AI APIs.** The
+LanguageModel, Summarizer, Writer, Rewriter, and other on-device AI APIs
+require a visible browser window. Headless Chromium silently returns
+`undefined` for all AI globals, causing every AI feature to fall back to
+static/canned implementations.
+
+### Required configuration
+
+All Playwright and Vitest Browser configs that test AI features MUST set:
+
+```typescript
+launchOptions: {
+  headless: false,
+  channel: 'msedge-dev', // or 'chrome-beta' for latest API support
+  args: [
+    // Edge Dev: enable AI Prompt API and disable performance gating
+    '--enable-features=AIPromptAPI',
+    '--disable-features=OnDeviceModelPerformanceParams',
+  ],
+  ignoreDefaultArgs: [
+    // Playwright injects these by default -- they DISABLE the AI features
+    '--disable-field-trial-config',
+    '--disable-background-networking',
+    '--disable-component-update',
+  ],
+},
+```
+
+For Chrome Beta, replace the args with:
+```typescript
+args: [
+  '--enable-features=OptimizationGuideOnDeviceModel,PromptAPIForGeminiNano',
+],
+```
+
+### Persistent browser context
+
+Built-in AI APIs require persistent browser profiles (not isolated per-test
+contexts). The model download state and feature flags are stored in the
+browser's Local State file. Use `launchPersistentContext` or Vitest Browser
+Mode's default (which reuses the browser instance across tests in a file).
+
+### Model warm-up
+
+First-time model initialization takes 12-110 minutes for cold download.
+Before running AI feature tests:
+
+1. Launch the browser manually with the args above
+2. Navigate to any page and call `await LanguageModel.availability()`
+3. If `"downloadable"`, trigger `LanguageModel.create()` and wait for
+   download to complete
+4. Subsequent test runs use the cached model (seconds, not minutes)
+
+### Page navigation requirement
+
+Built-in AI APIs are only available on navigated pages, NOT on `about:blank`.
+Tests must navigate to a real URL before accessing `LanguageModel` or other
+AI globals.

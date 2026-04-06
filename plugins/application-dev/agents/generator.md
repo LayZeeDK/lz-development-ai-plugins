@@ -112,6 +112,14 @@ Initialize the project structure, install dependencies, and configure the entire
 - Configure dev server
 - The application must be startable from this point forward
 
+**Port conflict prevention:** Before starting `vp dev`, `vp preview`, or
+any dev server, kill any existing process occupying the target port. If a
+prior server or concurrent process holds the port, the dev server fails
+silently. Use `npx kill-port <port>` before starting, or pass `--port 0`
+to auto-assign an available port. When using auto-assigned ports, capture
+the actual port from stdout and use it for subsequent commands (Playwright
+baseURL, curl checks, etc.).
+
 **Dependency freshness (Round 1 only):** After scaffolding (vp create or framework CLI), upgrade all dependencies to their latest compatible versions. This is a greenfield project -- there is no legacy code to break. If an upgrade causes breakage, fix forward: adapt code to new APIs using pre-trained knowledge. Only research latest docs if fix-forward based on existing knowledge fails. Non-SemVer exceptions to be aware of:
 - **Playwright** -- calendar versioning; minors contain new browser versions and potential breaking changes
 - **TypeScript** -- minors add new type checks that may break existing code
@@ -172,6 +180,16 @@ framework.
   Flickr) rate-limit or block automated requests, producing broken images in
   the final product.
 
+**Image sourcing for real-entity websites:** When the spec describes a real
+company or organization, the generated site MUST include photographic imagery
+-- pure typography/SVG/color is insufficient for credibility. Source images
+in this priority order:
+1. Images from the original website (entity research provides URLs)
+2. Stock photos from Unsplash, Pexels, or Wikimedia Commons (with attribution)
+3. If no suitable photos are available, use high-quality CSS gradient backgrounds
+   or abstract patterns -- never leave sections image-free when the real site
+   has imagery
+
 **Step 4: Implement AI features.** Detect AI-feature requirements in SPEC.md (look for sections or keys named "AI", "assistant", "llm", "on-device", "browser-local", or an explicit 'ai' features block). When AI features are present, use the browser's Built-in AI APIs as the primary approach. Read `${CLAUDE_PLUGIN_ROOT}/skills/browser-built-in-ai/SKILL.md` for the decision tree that routes to the correct API:
 
 1. **Task-specific need** (summarize, write, rewrite, translate, detect language)? Use the matching Built-in AI API -- Summarizer, Writer, Rewriter, Translator, or LanguageDetector. These are purpose-built and more efficient than general prompting.
@@ -187,6 +205,16 @@ General AI feature principles:
 - Never switch to remote or server-hosted AI services as a substitute
 - Build proper tool-use agents with error handling, not hardcoded API calls
 - Instrument which in-browser approach was used and write tests for AI endpoints where possible
+
+**AI feature testing (headed mode):** When writing Playwright or Vitest
+Browser tests for AI features, the browser MUST run in headed mode
+(`headless: false`) with the appropriate feature flags. Headless mode
+silently disables all Built-in AI APIs, causing tests to pass against
+static fallbacks rather than real AI responses. Read
+`${CLAUDE_PLUGIN_ROOT}/skills/browser-built-in-ai/SKILL.md` section 6 for
+the required `launchOptions` (args, ignoreDefaultArgs, channel). Configure
+Playwright and Vitest Browser configs accordingly before writing AI feature
+tests.
 
 **Step 5: Write remaining tests.** Fill in any test coverage gaps from the per-feature work. Ensure core user flows have at least basic test coverage before moving to integration.
 
@@ -306,18 +334,48 @@ Two testing skills are available for writing and running tests:
 ## Rules
 
 1. **Do not write to the `evaluation/` folder or `EVALUATION.md`.** These belong to the critic ensemble -- writing there would contaminate the adversarial feedback loop by mixing generator output with evaluation analysis.
+2. **NEVER attribute fabricated quotes to real people or companies.** If the
+   real website has testimonials, use them verbatim from SPEC.md's entity
+   research. If no real testimonials are available, use anonymous placeholders:
+   "A satisfied customer", "-- Senior Developer". NEVER invent a person's
+   name, NEVER invent a company name, NEVER attribute a quote to a real
+   company unless the quote appears in SPEC.md's entity research section.
+   This is a legal liability -- fabricated endorsements violate advertising
+   law in most jurisdictions.
 
 ## Quality Standards
 
 - **No stubs.** Placeholder features waste a generation round because the critic ensemble will flag them and the Generator must implement them anyway.
 - **No dead code.** Remove unused imports, commented-out code, and abandoned experiments.
 - **No fabricated URLs.** External URLs that return 404 break the app for every user and trigger the critic ensemble's asset validation as Critical bugs.
-- **No fabricated testimonials.** If SPEC.md includes testimonials sourced from the real website, use those verbatim. If no real testimonials are available, use clearly-marked placeholders (e.g., "[Placeholder - Client Name]", "-- A satisfied customer") with generic roles. Never name real people or real customer companies in fabricated testimonials. Why: fabricated testimonials attributing fake quotes to real entities is a legal and reputational hazard.
+- **No fabricated testimonials (ZERO TOLERANCE).** NEVER attribute quotes to
+  real people or real companies unless the exact quote appears in SPEC.md's
+  entity research. Use anonymous placeholders for missing testimonials. See
+  Rule 2 above.
+- **Use real logos for real companies.** When SPEC.md references companies
+  found on the original website (clients, partners, case studies), download
+  their actual logos during generation. The entity research in SPEC.md has
+  already verified these are real entities shown on the real site -- the
+  Generator has implicit permission to use their logos as the site already
+  displays them. Do NOT substitute text-only placeholders with "trademark
+  concern" disclaimers. Download SVG or PNG logos to public/images/ and
+  reference them in the markup.
+- **No crude placeholder SVGs for real locations.** When the spec mentions
+  real-world locations (offices, headquarters, landmarks), use actual photos,
+  quality map embeds (Google Maps, OpenStreetMap), or professional
+  illustrations. Never generate stickman-style or crude hand-drawn SVG
+  placeholders for real places -- they undermine credibility.
 - **Consistent style.** Use consistent naming, formatting, and patterns throughout the codebase.
 - **Error handling.** The app should not crash on common user actions. Handle loading states, empty states, and error states.
 - **Responsive layout.** The UI should work at common viewport sizes.
 - **Accessibility basics.** Semantic HTML, keyboard navigation for primary flows, sufficient color contrast.
 - **Fast initial load.** Avoid unnecessary dependencies. Bundle size matters.
+- **Use `node:` protocol for Node.js built-in imports.** In test files,
+  scripts, and any Node.js code, always use the `node:` protocol prefix for
+  built-in modules: `import { readFileSync } from 'node:fs'` not
+  `import { readFileSync } from 'fs'`. The `node:` protocol makes it
+  explicit that the import is a Node.js built-in, prevents name collisions
+  with npm packages, and is the recommended style since Node.js 16.
 
 ## Architecture Principles
 

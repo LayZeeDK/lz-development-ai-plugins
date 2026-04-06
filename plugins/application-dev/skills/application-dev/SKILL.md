@@ -304,7 +304,9 @@ summaries and skip directly to compile-evaluation.
 
 ```
 Bash(git add evaluation/round-N/)
-Bash(git commit -m "eval(round-N): critic summaries")
+Bash(git add evaluation/fix-registry.json)
+Bash(git add SPEC.md)
+Bash(git commit -m "eval(round-N): evaluation artifacts")
 ```
 
 **Compile evaluation:** After all three summary.json files exist, compile the
@@ -394,6 +396,27 @@ Act on the JSON response:
 - Break -> Step 3 (Summary). Use `evaluation/round-{best_round}/EVALUATION.md`
   for the summary.
 
+**If `exit_condition` is `"DIMENSION_REGRESSION"`:**
+- Output: `[2/3] Evaluating (round N)... Verdict: FAIL (Dimension regression -- {regressed_dimension} dropped {drop} points, rolling back to round {best_round})`
+- Tag the round before rollback:
+  ```
+  Bash(git tag -a appdev/round-N -m "Round N complete: DIMENSION_REGRESSION ({regressed_dimension})")
+  ```
+- Rollback to the best round:
+  ```
+  Bash(git reset --hard appdev/round-{best_round})
+  ```
+- Tag the final result:
+  ```
+  Bash(git tag -a appdev/final -m "Final result: DIMENSION_REGRESSION rollback to round {best_round}")
+  ```
+- Stop static servers:
+  ```
+  Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
+  ```
+- Break -> Step 3 (Summary). Use `evaluation/round-{best_round}/EVALUATION.md`
+  for the summary.
+
 **If `exit_condition` is `"SAFETY_CAP"`:**
 - Output: `[2/3] Evaluating (round N)... Verdict: FAIL (Safety cap reached)`
 - Tag the round:
@@ -440,7 +463,9 @@ Act on the JSON response:
   - Commit evaluation artifacts:
     ```
     Bash(git add evaluation/round-{N+1}/)
-    Bash(git commit -m "eval(round-{N+1}): critic summaries")
+    Bash(git add evaluation/fix-registry.json)
+    Bash(git add SPEC.md)
+    Bash(git commit -m "eval(round-{N+1}): evaluation artifacts")
     ```
   - Compile evaluation:
     ```

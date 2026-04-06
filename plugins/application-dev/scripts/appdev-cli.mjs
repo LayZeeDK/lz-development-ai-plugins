@@ -9,7 +9,7 @@ const STATE_FILE = join(process.cwd(), ".appdev-state.json");
 
 const VALID_STEPS = ["plan", "generate", "evaluate", "summary", "complete"];
 const VALID_STATUSES = ["in_progress", "error", "complete"];
-const VALID_EXIT_CONDITIONS = ["PASS", "PLATEAU", "REGRESSION", "SAFETY_CAP"];
+const VALID_EXIT_CONDITIONS = ["PASS", "PLATEAU", "REGRESSION", "SAFETY_CAP", "DIMENSION_REGRESSION"];
 
 const DIMENSIONS = [
   { name: "Product Depth", key: "product_depth", threshold: 7 },
@@ -382,6 +382,32 @@ function determineExit(rounds, escalation, maxRounds) {
     return { exit_condition: "PASS", should_continue: false };
   }
 
+  // DIMENSION_REGRESSION: any single dimension drops 3+ points
+  // Prevents PLATEAU exit when a dimension collapses but the EMA total
+  // appears stable because other dimensions compensate.
+  if (rounds.length >= 2) {
+    var prev = rounds[rounds.length - 2];
+
+    for (var di = 0; di < DIMENSIONS.length; di++) {
+      var dimKey = DIMENSIONS[di].key;
+      var currentScore = current.scores[dimKey];
+      var prevScore = prev.scores[dimKey];
+
+      if (prevScore !== undefined && currentScore !== undefined &&
+          prevScore - currentScore >= 3) {
+        var bestRound = findBestRound(rounds);
+
+        return {
+          exit_condition: "DIMENSION_REGRESSION",
+          should_continue: false,
+          best_round: bestRound.round,
+          regressed_dimension: DIMENSIONS[di].name,
+          drop: prevScore - currentScore,
+        };
+      }
+    }
+  }
+
   // PLATEAU
   if (escalation.level === "E-II") {
     return { exit_condition: "PLATEAU", should_continue: false };
@@ -718,6 +744,14 @@ function cmdRoundComplete(argv) {
 
   if (exitResult.best_round !== undefined) {
     result.best_round = exitResult.best_round;
+  }
+
+  if (exitResult.regressed_dimension !== undefined) {
+    result.regressed_dimension = exitResult.regressed_dimension;
+  }
+
+  if (exitResult.drop !== undefined) {
+    result.drop = exitResult.drop;
   }
 
   output(result);
