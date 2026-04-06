@@ -396,6 +396,27 @@ Act on the JSON response:
 - Break -> Step 3 (Summary). Use `evaluation/round-{best_round}/EVALUATION.md`
   for the summary.
 
+**If `exit_condition` is `"DIMENSION_REGRESSION"`:**
+- Output: `[2/3] Evaluating (round N)... Verdict: FAIL (Dimension regression -- {regressed_dimension} dropped {drop} points, rolling back to round {best_round})`
+- Tag the round before rollback:
+  ```
+  Bash(git tag -a appdev/round-N -m "Round N complete: DIMENSION_REGRESSION ({regressed_dimension})")
+  ```
+- Rollback to the best round:
+  ```
+  Bash(git reset --hard appdev/round-{best_round})
+  ```
+- Tag the final result:
+  ```
+  Bash(git tag -a appdev/final -m "Final result: DIMENSION_REGRESSION rollback to round {best_round}")
+  ```
+- Stop static servers:
+  ```
+  Bash(node ${CLAUDE_PLUGIN_ROOT}/scripts/appdev-cli.mjs static-serve --stop)
+  ```
+- Break -> Step 3 (Summary). Use `evaluation/round-{best_round}/EVALUATION.md`
+  for the summary.
+
 **If `exit_condition` is `"SAFETY_CAP"`:**
 - Output: `[2/3] Evaluating (round N)... Verdict: FAIL (Safety cap reached)`
 - Tag the round:
